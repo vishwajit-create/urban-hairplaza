@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Grooming Services – Urban Hairplaza | Araria, Bihar</title>
+<meta name="description" content="Explore all in-shop and home visit grooming services at Urban Hairplaza. Haircuts, beard trims, royal shaves and more — affordable, premium quality.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">✂️</div>
+      <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="services.html" class="active">Services</a>
+      <a href="barbers.html">Our Barbers</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="visualizer.html">AI Visualizer</a>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+    <div class="nav-actions">
+      <a href="book.html" class="btn btn-primary btn-sm">Book Now</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+<div id="mobile-menu">
+  <a href="index.html">Home</a>
+  <a href="services.html">Services</a>
+  <a href="barbers.html">Our Barbers</a>
+  <a href="gallery.html">Gallery</a>
+  <a href="visualizer.html">AI Visualizer</a>
+  <a href="about.html">About Us</a>
+  <a href="contact.html">Contact Us</a>
+  <a href="book.html" class="btn btn-primary">Book Now</a>
+</div>
+
+<!-- PAGE HERO -->
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a> <span>›</span> Services</div>
+    <div class="section-label" style="justify-content:center;">What We Offer</div>
+    <h1 style="font-size:clamp(32px,5vw,60px);">Our <span class="text-gold">Services</span></h1>
+    <p>Premium grooming in-shop or delivered to your doorstep. Choose your preferred service mode below.</p>
+  </div>
+</section>
+
+<!-- SERVICES SECTION -->
+<section class="section" style="background: var(--black);">
+  <div class="container">
+
+    <!-- Toggle -->
+    <div class="services-toggle reveal">
+      <button class="toggle-btn active" id="toggle-inshop" onclick="showServices('inshop')">🏢 In-Shop Services</button>
+      <button class="toggle-btn" id="toggle-home" onclick="showServices('home')">🏠 Home Visit Services</button>
+    </div>
+
+    <!-- In-Shop -->
+    <div id="services-inshop">
+      <div style="text-align:center; margin-bottom: 32px;" class="reveal">
+        <div class="section-label" style="justify-content:center;">In-Shop Grooming</div>
+        <h2 style="color:var(--white);">Visit Our Premium Shop</h2>
+        <div class="gold-divider center"></div>
+        <p>Walk in or book ahead — enjoy a relaxing, full-service barbershop experience.</p>
+      </div>
+
+      <!-- Cards Grid -->
+      <div class="grid-3" style="margin-bottom: 40px;">
+        <div class="card service-card reveal">
+          <img class="card-img" src="images/service_haircut.png" alt="Classic Haircut" loading="lazy">
+          <div class="card-body">
+            <div class="card-tag">Classic · Most Popular</div>
+            <h3>Classic Haircut</h3>
+            <p>A precision cut tailored to your face shape. From traditional styles to modern cuts — our master barbers deliver perfection every time.</p>
+            <div class="card-meta">
+              <div class="price">₹150</div>
+              <div class="duration">⏱ 30 min</div>
+            </div>
+          </div>
+        </div>
+        <div class="card service-card reveal reveal-delay-1">
+          <img class="card-img" src="images/service_beard.png" alt="Beard Trim" loading="lazy">
+          <div class="card-body">
+            <div class="card-tag">Grooming · Bestseller</div>
+            <h3>Beard Trim & Shape-Up</h3>
+            <p>Expert beard shaping, lining, and styling. We'll define your beard to perfection with clean edges and a sharp finish.</p>
+            <div class="card-meta">
+              <div class="price">₹200</div>
+              <div class="duration">⏱ 20 min</div>
+            </div>
+          </div>
+        </div>
+        <div class="card service-card reveal reveal-delay-2">
+          <img class="card-img" src="images/service_shave.png" alt="Royal Shave" loading="lazy">
+          <div class="card-body">
+            <div class="card-tag">Premium · Signature</div>
+            <h3>Royal Shave</h3>
+            <p>Experience the luxury of a traditional hot-towel straight-razor shave. The ultimate grooming indulgence.</p>
+            <div class="card-meta">
+              <div class="price">₹250</div>
+              <div class="duration">⏱ 30 min</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="services-table-card reveal">
+        <table class="services-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Description</th>
+              <th>Duration</th>
+              <th>Price</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="svc-name-cell">✂️ Classic Haircut</div></td>
+              <td><div class="svc-desc-cell">Precision cut, any style</div></td>
+              <td><div class="dur-cell">30 min</div></td>
+              <td><div class="price-cell">₹150</div></td>
+              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">🧔 Beard Trim & Shape-Up</div></td>
+              <td><div class="svc-desc-cell">Shaping, lining & styling</div></td>
+              <td><div class="dur-cell">20 min</div></td>
+              <td><div class="price-cell">₹200</div></td>
+              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">👑 Royal Shave</div></td>
+              <td><div class="svc-desc-cell">Hot-towel straight-razor shave</div></td>
+              <td><div class="dur-cell">30 min</div></td>
+              <td><div class="price-cell">₹250</div></td>
+              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">💈 Haircut + Beard Combo</div></td>
+              <td><div class="svc-desc-cell">Full cut + beard trim package</div></td>
+              <td><div class="dur-cell">50 min</div></td>
+              <td><div class="price-cell">₹500</div></td>
+              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">🪒 Head Shave</div></td>
+              <td><div class="svc-desc-cell">Clean head shave, razor smooth</div></td>
+              <td><div class="dur-cell">30 min</div></td>
+              <td><div class="price-cell">₹400</div></td>
+              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Home Visit -->
+    <div id="services-home" style="display:none;">
+      <div style="text-align:center; margin-bottom: 32px;" class="reveal">
+        <div class="section-label" style="justify-content:center;">Home Visit Grooming</div>
+        <h2 style="color:var(--white);">We Come To You</h2>
+        <div class="gold-divider center"></div>
+        <p>Premium barbershop services delivered at your doorstep. Available across Araria.</p>
+      </div>
+
+      <div style="background: rgba(76,175,118,0.06); border: 1px solid rgba(76,175,118,0.2); border-radius: var(--radius); padding: 16px 24px; margin-bottom: 32px; display: flex; align-items: center; gap: 12px;" class="reveal">
+        <span style="font-size: 20px;">🏠</span>
+        <div>
+          <strong style="color: #5CB87E; font-size: 14px;">Home Visit Service</strong>
+          <p style="font-size: 13px; margin: 0;">Prices include travel to your location within Araria. Available 9 AM – 9 PM, every day. Call to confirm availability.</p>
+        </div>
+      </div>
+
+      <div class="services-table-card reveal">
+        <table class="services-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Description</th>
+              <th>Duration</th>
+              <th>Price</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="svc-name-cell">✂️ Classic Haircut</div></td>
+              <td><div class="svc-desc-cell">Precision cut at your home</div></td>
+              <td><div class="dur-cell">30 min</div></td>
+              <td><div class="price-cell">₹250</div></td>
+              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">🧔 Beard Trim</div></td>
+              <td><div class="svc-desc-cell">Shaping & lining at your home</div></td>
+              <td><div class="dur-cell">20 min</div></td>
+              <td><div class="price-cell">₹350</div></td>
+              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">👑 Royal Shave</div></td>
+              <td><div class="svc-desc-cell">Hot-towel shave at your home</div></td>
+              <td><div class="dur-cell">30 min</div></td>
+              <td><div class="price-cell">₹400</div></td>
+              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">💈 Haircut + Beard Combo</div></td>
+              <td><div class="svc-desc-cell">Full home grooming package</div></td>
+              <td><div class="dur-cell">50 min</div></td>
+              <td><div class="price-cell">₹500</div></td>
+              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+            <tr>
+              <td><div class="svc-name-cell">👦 Kids Haircut (Under 12)</div></td>
+              <td><div class="svc-desc-cell">Gentle cut for kids at home</div></td>
+              <td><div class="dur-cell">25 min</div></td>
+              <td><div class="price-cell">₹200</div></td>
+              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-banner reveal" style="margin-top: 60px;">
+      <h2>Ready to Book Your Appointment?</h2>
+      <div class="gold-divider center"></div>
+      <p>Available every day from 9 AM to 9 PM. In-shop or at your home — your choice.</p>
+      <div class="btn-group">
+        <a href="book.html" class="btn btn-primary btn-lg">Book Now 📅</a>
+        <a href="contact.html" class="btn btn-outline btn-lg">Contact Us 📞</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" style="display:flex; margin-bottom: 16px;">
+          <div class="nav-logo-icon">✂️</div>
+          <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
+        </a>
+        <p>Araria's premier barbershop offering premium grooming services in-shop and at your doorstep.</p>
+        <div class="social-links" style="margin-top: 20px;">
+          <a href="#" class="social-link">📷</a>
+          <a href="#" class="social-link">📘</a>
+          <a href="#" class="social-link">💬</a>
+          <a href="mailto:urbanhairplazapvtltd@gmail.com" class="social-link">✉️</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Quick Links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="barbers.html">Our Barbers</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="visualizer.html">AI Visualizer</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+          <li><a href="book.html">Book Now</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact Us</h5>
+        <ul class="footer-contact">
+          <li><span class="icon">📍</span><span>Near Phanishwar Narh Renu Statue, Simraha, Araria – 854331, Bihar</span></li>
+          <li><span class="icon">📱</span><div><a href="tel:+916202692426">+91 6202 692 426</a><br><a href="tel:+917322056520">+91 73220 56520</a></div></li>
+          <li><span class="icon">🕐</span><span>Mon – Sun: 9:00 AM – 9:00 PM</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 <strong style="color:var(--gold);">URBAN HAIRPLAZA PRIVATE LIMITED</strong>. All rights reserved.</p>
+      <p>Developed with ❤️ by <a href="#">Vishwajit Yadav</a></p>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script>
+function showServices(type) {
+  const inshop = document.getElementById('services-inshop');
+  const home = document.getElementById('services-home');
+  const btnInshop = document.getElementById('toggle-inshop');
+  const btnHome = document.getElementById('toggle-home');
+  if (type === 'inshop') {
+    inshop.style.display = 'block';
+    home.style.display = 'none';
+    btnInshop.classList.add('active');
+    btnHome.classList.remove('active');
+  } else {
+    inshop.style.display = 'none';
+    home.style.display = 'block';
+    btnHome.classList.add('active');
+    btnInshop.classList.remove('active');
+  }
+}
+// Check URL param
+const urlType = new URLSearchParams(window.location.search).get('type');
+if (urlType === 'home') showServices('home');
+</script>
+</body>
+</html>

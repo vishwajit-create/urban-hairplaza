@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meet Our Expert Barbers – Urban Hairplaza</title>
+<meta name="description" content="Meet the skilled barbers at Urban Hairplaza. Raj Kumar, Sameer Khan, and Amit Singh — Araria's finest grooming professionals.">
+<link rel="stylesheet" href="styles.css">
+<style>
+.barbers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.barber-full-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: var(--transition);
+}
+.barber-full-card:hover {
+  border-color: var(--border-gold);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-gold);
+}
+.barber-img-wrap { position: relative; height: 360px; overflow: hidden; }
+.barber-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.barber-full-card:hover .barber-img-wrap img { transform: scale(1.04); }
+.barber-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%);
+}
+.barber-img-badge {
+  position: absolute;
+  top: 16px; left: 16px;
+  background: var(--gold);
+  color: var(--black);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+}
+.barber-body { padding: 28px; }
+.barber-body h3 { color: var(--white); font-size: 24px; margin-bottom: 4px; }
+.barber-role {
+  color: var(--gold);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.barber-bio { font-size: 14px; margin-bottom: 20px; line-height: 1.7; }
+.barber-specialties-label { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
+.barber-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.barber-tag {
+  font-size: 12px;
+  padding: 5px 12px;
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.2);
+  color: var(--gold);
+  border-radius: 20px;
+  font-weight: 500;
+}
+@media(max-width:900px){ .barbers-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; } }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">✂️</div>
+      <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="services.html">Services</a>
+      <a href="barbers.html" class="active">Our Barbers</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="visualizer.html">AI Visualizer</a>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+    <div class="nav-actions"><a href="book.html" class="btn btn-primary btn-sm">Book Now</a></div>
+    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<div id="mobile-menu">
+  <a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a>
+  <a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a>
+  <a href="about.html">About Us</a><a href="contact.html">Contact Us</a>
+  <a href="book.html" class="btn btn-primary">Book Now</a>
+</div>
+
+<!-- PAGE HERO -->
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a> <span>›</span> Our Barbers</div>
+    <div class="section-label" style="justify-content:center;">The Team</div>
+    <h1 style="font-size:clamp(32px,5vw,60px);">Meet Our <span class="text-gold">Expert Barbers</span></h1>
+    <p>Passionate, skilled, and dedicated to making you look your absolute best — every single visit.</p>
+  </div>
+</section>
+
+<!-- BARBERS -->
+<section class="section" style="background: var(--black);">
+  <div class="container">
+    <div class="barbers-grid">
+
+      <!-- RAJ KUMAR -->
+      <div class="barber-full-card reveal">
+        <div class="barber-img-wrap">
+          <img src="images/barber_raj.png" alt="Raj Kumar – Master Barber" loading="lazy">
+          <div class="barber-img-overlay"></div>
+          <div class="barber-img-badge">✦ Master Barber</div>
+        </div>
+        <div class="barber-body">
+          <h3>Raj Kumar</h3>
+          <div class="barber-role">Master Barber · 3+ Years</div>
+          <p class="barber-bio">Raj is the founder and lead barber of Urban Hairplaza. With over 3 years of experience perfecting his craft, he specializes in classic cuts and the art of the straight-razor shave. His precision and passion for barbering have made him a trusted name in Araria.</p>
+          <div class="barber-specialties-label">Specialties</div>
+          <div class="barber-tags">
+            <span class="barber-tag">Classic Haircuts</span>
+            <span class="barber-tag">Royal Shaves</span>
+            <span class="barber-tag">Fades</span>
+            <span class="barber-tag">Razor Lining</span>
+          </div>
+          <a href="book.html?barber=raj" class="btn btn-primary" style="width:100%; justify-content:center;">Book with Raj 📅</a>
+        </div>
+      </div>
+
+      <!-- SAMEER KHAN -->
+      <div class="barber-full-card reveal reveal-delay-1">
+        <div class="barber-img-wrap">
+          <img src="images/barber_sameer.png" alt="Sameer Khan – Senior Barber" loading="lazy">
+          <div class="barber-img-overlay"></div>
+          <div class="barber-img-badge">✦ Senior Barber</div>
+        </div>
+        <div class="barber-body">
+          <h3>Sameer Khan</h3>
+          <div class="barber-role">Senior Barber · Modern Styles</div>
+          <p class="barber-bio">Sameer brings a modern touch to Urban Hairplaza. An expert in contemporary hairstyles and beard sculpting, he keeps up with the latest global trends to deliver cutting-edge looks. Clients who want a modern, fashion-forward style always ask for Sameer.</p>
+          <div class="barber-specialties-label">Specialties</div>
+          <div class="barber-tags">
+            <span class="barber-tag">Modern Styles</span>
+            <span class="barber-tag">Beard Sculpting</span>
+            <span class="barber-tag">Hair Coloring</span>
+            <span class="barber-tag">Skin Fades</span>
+          </div>
+          <a href="book.html?barber=sameer" class="btn btn-primary" style="width:100%; justify-content:center;">Book with Sameer 📅</a>
+        </div>
+      </div>
+
+      <!-- AMIT SINGH -->
+      <div class="barber-full-card reveal reveal-delay-2">
+        <div class="barber-img-wrap">
+          <img src="images/barber_amit.png" alt="Amit Singh – Barber" loading="lazy">
+          <div class="barber-img-overlay"></div>
+          <div class="barber-img-badge">✦ Barber</div>
+        </div>
+        <div class="barber-body">
+          <h3>Amit Singh</h3>
+          <div class="barber-role">Barber · Sharp Precision</div>
+          <p class="barber-bio">The newest and most energetic member of the Urban Hairplaza family, Amit brings youthful energy and sharp precision to every cut. He's particularly great with kids and excels at clean sharp lineups and fades. Highly recommended for younger clients.</p>
+          <div class="barber-specialties-label">Specialties</div>
+          <div class="barber-tags">
+            <span class="barber-tag">Sharp Fades</span>
+            <span class="barber-tag">Kids Haircuts</span>
+            <span class="barber-tag">Lineups</span>
+            <span class="barber-tag">Classic Cuts</span>
+          </div>
+          <a href="book.html?barber=amit" class="btn btn-primary" style="width:100%; justify-content:center;">Book with Amit 📅</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-banner reveal" style="margin-top: 72px;">
+      <h2>Not sure who to choose?</h2>
+      <div class="gold-divider center"></div>
+      <p>All our barbers are experts — book any appointment and we'll match you with the right barber based on your style preference and availability.</p>
+      <div class="btn-group">
+        <a href="book.html" class="btn btn-primary btn-lg">Book Any Barber 📅</a>
+        <a href="services.html" class="btn btn-outline btn-lg">View Services ✂️</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" style="display:flex; margin-bottom: 16px;">
+          <div class="nav-logo-icon">✂️</div>
+          <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
+        </a>
+        <p>Araria's premier barbershop offering premium grooming in-shop and at your doorstep.</p>
+        <div class="social-links" style="margin-top: 20px;">
+          <a href="#" class="social-link">📷</a><a href="#" class="social-link">📘</a>
+          <a href="#" class="social-link">💬</a><a href="mailto:urbanhairplazapvtltd@gmail.com" class="social-link">✉️</a>
+        </div>
+      </div>
+      <div class="footer-col"><h5>Quick Links</h5><ul>
+        <li><a href="index.html">Home</a></li><li><a href="services.html">Services</a></li>
+        <li><a href="barbers.html">Our Barbers</a></li><li><a href="gallery.html">Gallery</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Company</h5><ul>
+        <li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact Us</a></li>
+        <li><a href="book.html">Book Now</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Contact Us</h5><ul class="footer-contact">
+        <li><span class="icon">📍</span><span>Simraha, Araria – 854331, Bihar</span></li>
+        <li><span class="icon">📱</span><a href="tel:+916202692426">+91 6202 692 426</a></li>
+        <li><span class="icon">🕐</span><span>Mon – Sun: 9 AM – 9 PM</span></li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 <strong style="color:var(--gold);">URBAN HAIRPLAZA PRIVATE LIMITED</strong>. All rights reserved.</p>
+      <p>Developed with ❤️ by <a href="#">Vishwajit Yadav</a></p>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>

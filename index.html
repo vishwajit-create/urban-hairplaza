@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Urban Hairplaza – Premium Barbershop & Home Service | Araria, Bihar</title>
+<meta name="description" content="Urban Hairplaza offers premium barbershop services and home visit grooming in Araria, Bihar. Book your appointment today.">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* HOME-SPECIFIC */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--black);
+  padding-top: var(--nav-h);
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('images/hero_barbershop.png');
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.05);
+  transition: transform 8s ease;
+}
+.hero.loaded .hero-bg { transform: scale(1); }
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg,
+    rgba(0,0,0,0.88) 0%,
+    rgba(0,0,0,0.65) 40%,
+    rgba(0,0,0,0.3) 100%
+  );
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+}
+.hero-badge {
+  display: inline-block;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.4);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border-radius: 2px;
+  margin-bottom: 28px;
+  animation: fadeIn 0.6s ease both;
+}
+.hero h1 {
+  color: var(--white);
+  letter-spacing: -2px;
+  margin-bottom: 22px;
+  animation: slideUp 0.7s ease 0.2s both;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--gold);
+}
+.hero-sub {
+  font-size: 18px;
+  color: rgba(255,255,255,0.65);
+  max-width: 500px;
+  margin-bottom: 40px;
+  line-height: 1.7;
+  animation: slideUp 0.7s ease 0.35s both;
+}
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  animation: slideUp 0.7s ease 0.5s both;
+}
+.hero-scroll {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.3);
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 2px;
+  z-index: 2;
+  animation: fadeIn 1s ease 1s both;
+}
+.hero-scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, var(--gold), transparent);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+/* WELCOME */
+.welcome-section { background: var(--dark2); }
+.welcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.welcome-img {
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.welcome-img img { width: 100%; height: 460px; object-fit: cover; }
+.welcome-img-badge {
+  position: absolute;
+  bottom: -20px; right: -20px;
+  background: var(--gold);
+  color: var(--black);
+  border-radius: 10px;
+  padding: 20px 24px;
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+}
+.welcome-img-badge .big { font-size: 36px; font-weight: 900; line-height: 1; }
+.welcome-img-badge .small { font-size: 12px; font-weight: 600; margin-top: 4px; }
+.features-list { display: flex; flex-direction: column; gap: 16px; margin-top: 28px; }
+.feature-item { display: flex; gap: 16px; align-items: flex-start; }
+.feature-icon {
+  width: 42px; height: 42px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.feature-item h4 { color: var(--white); font-size: 15px; font-family: 'DM Sans'; margin-bottom: 2px; }
+.feature-item p { font-size: 13px; }
+
+/* SERVICES PREVIEW */
+.services-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+/* MODE BADGE (home vs away) */
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.mode-badge.inshop { background: rgba(76,142,201,0.1); color: #5BA3D9; border: 1px solid rgba(76,142,201,0.2); }
+.mode-badge.home { background: rgba(76,175,118,0.1); color: #5CB87E; border: 1px solid rgba(76,175,118,0.2); }
+
+/* AI PROMO */
+.ai-promo {
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1200 50%, #0d0d0d 100%);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 100px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.ai-promo::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+}
+.ai-promo-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+.ai-promo h2 { color: var(--white); margin-bottom: 16px; }
+.ai-promo p { font-size: 16px; margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; }
+.ai-features { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-bottom: 40px; }
+.ai-feature { text-align: center; }
+.ai-feature .af-icon { font-size: 28px; margin-bottom: 8px; }
+.ai-feature p { font-size: 13px; }
+
+/* GALLERY TEASER */
+.gallery-four { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 240px 240px; gap: 12px; }
+.gallery-four > div:first-child { grid-row: span 2; }
+
+/* TESTIMONIALS */
+.testimonials-section { background: var(--dark2); }
+.testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+/* WHY US */
+.why-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.why-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  text-align: center;
+  transition: var(--transition);
+}
+.why-card:hover { border-color: var(--border-gold); transform: translateY(-4px); }
+.why-icon { font-size: 32px; margin-bottom: 12px; }
+.why-card h4 { color: var(--white); font-size: 15px; font-family: 'DM Sans'; font-weight: 700; margin-bottom: 8px; }
+.why-card p { font-size: 13px; }
+
+@media (max-width: 768px) {
+  .welcome-grid { grid-template-columns: 1fr; }
+  .services-row { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .gallery-four { grid-template-columns: 1fr 1fr; grid-template-rows: 160px 160px 160px; }
+  .gallery-four > div:first-child { grid-row: span 1; }
+  .hero h1 { letter-spacing: -1px; }
+}
+@media (max-width: 480px) {
+  .why-grid { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">✂️</div>
+      <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="services.html">Services</a>
+      <a href="barbers.html">Our Barbers</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="visualizer.html">AI Visualizer</a>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+    <div class="nav-actions">
+      <a href="book.html" class="btn btn-primary btn-sm">Book Now</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div id="mobile-menu">
+  <a href="index.html">Home</a>
+  <a href="services.html">Services</a>
+  <a href="barbers.html">Our Barbers</a>
+  <a href="gallery.html">Gallery</a>
+  <a href="visualizer.html">AI Visualizer</a>
+  <a href="about.html">About Us</a>
+  <a href="contact.html">Contact Us</a>
+  <a href="book.html" class="btn btn-primary">Book Now</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge">✦ Premium Barbershop · Araria, Bihar</div>
+      <h1>Your Style,<br><em>Your Place.</em></h1>
+      <p class="hero-sub">Premium grooming, in-shop or at home. Experience the future of barbering with our AI Hairstyle Visualizer and expert barbers.</p>
+      <div class="hero-actions">
+        <a href="book.html?type=inshop" class="btn btn-primary btn-lg">Book In-Shop ✂️</a>
+        <a href="book.html?type=home" class="btn btn-outline btn-lg">Book Home Service 🏠</a>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="hero-scroll-line"></div>
+    SCROLL
+  </div>
+</section>
+
+<!-- WHY US STRIP -->
+<section class="section-sm" style="background: var(--dark2); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="why-grid">
+      <div class="why-card reveal">
+        <div class="why-icon">🏆</div>
+        <h4>Master Barbers</h4>
+        <p>Expertly trained professionals with years of grooming experience.</p>
+      </div>
+      <div class="why-card reveal reveal-delay-1">
+        <div class="why-icon">🏠</div>
+        <h4>Home Service</h4>
+        <p>We come to you — premium grooming delivered at your doorstep.</p>
+      </div>
+      <div class="why-card reveal reveal-delay-2">
+        <div class="why-icon">🤖</div>
+        <h4>AI Visualizer</h4>
+        <p>Preview your new cut before the first snip with our AI tool.</p>
+      </div>
+      <div class="why-card reveal reveal-delay-3">
+        <div class="why-icon">💎</div>
+        <h4>Premium Products</h4>
+        <p>Top-grade grooming products for every service we offer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WELCOME -->
+<section class="section welcome-section">
+  <div class="container">
+    <div class="welcome-grid">
+      <div class="welcome-img reveal">
+        <img src="images/gallery_shop_interior.png" alt="Urban Hairplaza Interior" loading="lazy">
+        <div class="welcome-img-badge">
+          <div class="big">3+</div>
+          <div class="small">Years of Excellence</div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-1">
+        <div class="section-label">Welcome to Urban Hairplaza</div>
+        <h2 style="color:var(--white);">Where Tradition Meets Modern Craft</h2>
+        <div class="gold-divider"></div>
+        <p style="margin-bottom: 20px;">We are Araria's premier barbershop, blending the timeless art of traditional barbering with contemporary techniques and cutting-edge AI technology. Every client who walks through our doors — or calls us to their home — receives a personalized, world-class experience.</p>
+        <p>Founded right here in Simraha, we are proud to be a community-first brand dedicated to making premium grooming accessible to every style-conscious individual in Bihar.</p>
+        <div class="features-list" style="margin-top: 28px;">
+          <div class="feature-item">
+            <div class="feature-icon">✂️</div>
+            <div>
+              <h4>In-Shop Grooming</h4>
+              <p>Visit our premium shop for a relaxing, immersive barbershop experience.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🏠</div>
+            <div>
+              <h4>Home Visit Service</h4>
+              <p>We bring the barbershop to your home — convenience at its finest.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🤖</div>
+            <div>
+              <h4>AI Hairstyle Visualizer</h4>
+              <p>Upload your photo and preview your new look before your appointment.</p>
+            </div>
+          </div>
+        </div>
+        <a href="about.html" class="btn btn-ghost" style="margin-top: 32px;">Our Story →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES PREVIEW -->
+<section class="section" style="background: var(--black);">
+  <div class="container">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:48px;">
+      <div class="reveal">
+        <div class="section-label">Our Craftsmanship</div>
+        <h2 style="color:var(--white);">Popular Services</h2>
+        <div class="gold-divider"></div>
+      </div>
+      <a href="services.html" class="btn btn-ghost reveal" style="margin-bottom: 40px;">View All Services →</a>
+    </div>
+    <div class="services-row">
+      <div class="card service-card reveal">
+        <img class="card-img" src="images/service_haircut.png" alt="Classic Haircut" loading="lazy">
+        <div class="card-body">
+          <div class="card-tag">In-Shop • Popular</div>
+          <h3>Classic Haircut</h3>
+          <p>A timeless, precision cut tailored to your face shape and style preferences by our master barbers.</p>
+          <div class="card-meta">
+            <div class="price">₹150</div>
+            <div class="duration">⏱ 30 min</div>
+          </div>
+        </div>
+      </div>
+      <div class="card service-card reveal reveal-delay-1">
+        <img class="card-img" src="images/service_beard.png" alt="Beard Trim" loading="lazy">
+        <div class="card-body">
+          <div class="card-tag">In-Shop • Bestseller</div>
+          <h3>Beard Trim & Shape-Up</h3>
+          <p>Expert beard shaping, lining, and styling to give your facial hair a sharp, defined look.</p>
+          <div class="card-meta">
+            <div class="price">₹200</div>
+            <div class="duration">⏱ 20 min</div>
+          </div>
+        </div>
+      </div>
+      <div class="card service-card reveal reveal-delay-2">
+        <img class="card-img" src="images/service_shave.png" alt="Royal Shave" loading="lazy">
+        <div class="card-body">
+          <div class="card-tag">In-Shop • Premium</div>
+          <h3>Royal Shave</h3>
+          <p>Indulge in our signature hot-towel straight-razor shave — the ultimate grooming luxury.</p>
+          <div class="card-meta">
+            <div class="price">₹250</div>
+            <div class="duration">⏱ 30 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI PROMO -->
+<section class="ai-promo">
+  <div class="ai-promo-inner reveal">
+    <div class="section-label" style="justify-content:center;">Revolutionary Feature</div>
+    <h2 style="color:var(--white);">Visualize Your Perfect Cut<br>with <span style="color:var(--gold);">AI Technology</span></h2>
+    <div class="gold-divider center"></div>
+    <p>Upload a selfie, pick a hairstyle, and our AI will render a realistic preview — before you even book an appointment. The future of grooming is here.</p>
+    <div class="ai-features">
+      <div class="ai-feature">
+        <div class="af-icon">📸</div>
+        <p>Upload photo</p>
+      </div>
+      <div class="ai-feature">
+        <div class="af-icon">✂️</div>
+        <p>Pick a style</p>
+      </div>
+      <div class="ai-feature">
+        <div class="af-icon">🪄</div>
+        <p>See AI preview</p>
+      </div>
+      <div class="ai-feature">
+        <div class="af-icon">📅</div>
+        <p>Book the look</p>
+      </div>
+    </div>
+    <a href="visualizer.html" class="btn btn-primary btn-lg">Try AI Visualizer 🤖</a>
+  </div>
+</section>
+
+<!-- GALLERY TEASER -->
+<section class="section" style="background: var(--dark2);">
+  <div class="container">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:40px;">
+      <div class="reveal">
+        <div class="section-label">Our Craft</div>
+        <h2 style="color:var(--white);">See Our Work</h2>
+        <div class="gold-divider"></div>
+      </div>
+      <a href="gallery.html" class="btn btn-ghost reveal" style="margin-bottom: 40px;">Explore Gallery →</a>
+    </div>
+    <div class="gallery-four reveal">
+      <div class="gallery-item large">
+        <img src="images/gallery_fade_haircut.png" alt="Fade Haircut" loading="lazy">
+        <div class="gallery-overlay">🔍</div>
+      </div>
+      <div class="gallery-item">
+        <img src="images/gallery_shop_interior.png" alt="Shop Interior" loading="lazy">
+        <div class="gallery-overlay">🔍</div>
+      </div>
+      <div class="gallery-item">
+        <img src="images/gallery_happy_client.png" alt="Happy Client" loading="lazy">
+        <div class="gallery-overlay">🔍</div>
+      </div>
+      <div class="gallery-item" style="grid-column: span 2;">
+        <img src="images/gallery_barber_tools.png" alt="Barber Tools" loading="lazy" style="width:100%;height:240px;object-fit:cover;border-radius:var(--radius);">
+        <div class="gallery-overlay">🔍</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section testimonials-section">
+  <div class="container">
+    <div class="section-intro center reveal" style="margin-bottom: 48px;">
+      <div class="section-label">Client Reviews</div>
+      <h2 style="color:var(--white);">What Our Clients Say</h2>
+      <div class="gold-divider center"></div>
+      <p>Thousands of satisfied clients from Araria and beyond trust Urban Hairplaza for their grooming needs.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="card testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <blockquote>"Best haircut I've ever had in Araria! Raj Kumar is a true master. The shop has a premium vibe and the service was outstanding. Will definitely be back every month."</blockquote>
+        <div class="author">
+          <div class="avatar">R</div>
+          <div>
+            <div class="author-name">Ravi Sharma</div>
+            <div class="author-info">Regular Client · Araria</div>
+          </div>
+        </div>
+      </div>
+      <div class="card testimonial-card reveal reveal-delay-1">
+        <div class="stars">★★★★★</div>
+        <blockquote>"The home service is a game-changer! Booked Sameer for a beard trim and he arrived on time with all his professional tools. Couldn't be happier — highly recommend!"</blockquote>
+        <div class="author">
+          <div class="avatar">V</div>
+          <div>
+            <div class="author-name">Vikram Patel</div>
+            <div class="author-info">Home Service Client · Araria</div>
+          </div>
+        </div>
+      </div>
+      <div class="card testimonial-card reveal reveal-delay-2">
+        <div class="stars">★★★★★</div>
+        <blockquote>"Used the AI Visualizer before my appointment to try a fade — loved the experience! The actual cut looked exactly like the preview. Amazing technology for a local shop!"</blockquote>
+        <div class="author">
+          <div class="avatar">S</div>
+          <div>
+            <div class="author-name">Sunil Yadav</div>
+            <div class="author-info">In-Shop Client · Simraha</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA SECTION -->
+<section class="section" style="background: var(--black);">
+  <div class="container">
+    <div class="cta-banner reveal">
+      <div class="section-label" style="justify-content:center; margin-bottom: 16px;">Ready for a Fresh Look?</div>
+      <h2>Book Your Appointment Today</h2>
+      <div class="gold-divider center"></div>
+      <p>Choose in-shop or home visit — we're available Mon-Sun, 9 AM to 9 PM. Experience premium grooming at its finest.</p>
+      <div class="btn-group">
+        <a href="book.html?type=inshop" class="btn btn-primary btn-lg">Book In-Shop ✂️</a>
+        <a href="book.html?type=home" class="btn btn-outline btn-lg">Book at Home 🏠</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" style="display:flex; margin-bottom: 16px;">
+          <div class="nav-logo-icon">✂️</div>
+          <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
+        </a>
+        <p>Araria's premier barbershop offering premium grooming services in-shop and at your doorstep. Your style, your place.</p>
+        <div class="social-links" style="margin-top: 20px;">
+          <a href="#" class="social-link" title="Instagram">📷</a>
+          <a href="#" class="social-link" title="Facebook">📘</a>
+          <a href="#" class="social-link" title="WhatsApp">💬</a>
+          <a href="mailto:urbanhairplazapvtltd@gmail.com" class="social-link" title="Email">✉️</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Quick Links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="barbers.html">Our Barbers</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="visualizer.html">AI Visualizer</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+          <li><a href="book.html">Book Now</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact Us</h5>
+        <ul class="footer-contact">
+          <li>
+            <span class="icon">📍</span>
+            <span>Near Phanishwar Narh Renu Statue, Simraha, Araria – 854331, Bihar</span>
+          </li>
+          <li>
+            <span class="icon">📱</span>
+            <div>
+              <a href="tel:+916202692426">+91 6202 692 426</a><br>
+              <a href="tel:+917322056520">+91 73220 56520</a><br>
+              <a href="tel:+919241156709">+91 9241156709</a>
+            </div>
+          </li>
+          <li>
+            <span class="icon">📧</span>
+            <a href="mailto:urbanhairplazapvtltd@gmail.com">urbanhairplazapvtltd@gmail.com</a>
+          </li>
+          <li>
+            <span class="icon">🕐</span>
+            <span>Mon – Sun: 9:00 AM – 9:00 PM</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 <strong style="color:var(--gold);">URBAN HAIRPLAZA PRIVATE LIMITED</strong>. All rights reserved.</p>
+      <p>Developed with ❤️ by <a href="#">Vishwajit Yadav</a></p>
+    </div>
+  </div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close">✕</button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="Gallery image">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('hero').classList.add('loaded');
+});
+</script>
+<script src="main.js"></script>
+</body>
+</html>

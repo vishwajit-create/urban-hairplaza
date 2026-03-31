@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login – Urban Hairplaza</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gold: #C9A84C;
+  --black: #0D0D0D;
+  --dark: #111111;
+  --card: #1A1A1A;
+  --border: rgba(255,255,255,0.08);
+  --border-gold: rgba(201,168,76,0.3);
+  --text: #F0F0F0;
+  --muted: #888;
+}
+body {
+  background: var(--black);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-card {
+  background: var(--card);
+  border: 1px solid var(--border-gold);
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.brand {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.brand-icon {
+  width: 60px; height: 60px;
+  background: var(--gold);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 14px;
+}
+.brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.brand .sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.form-group { margin-bottom: 18px; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 13px 16px;
+  font-size: 15px;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.2s;
+}
+input:focus { outline: none; border-color: var(--gold); background: rgba(201,168,76,0.04); }
+input::placeholder { color: rgba(255,255,255,0.2); }
+.btn-login {
+  width: 100%;
+  background: var(--gold);
+  color: var(--black);
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.btn-login:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.35); }
+.btn-login:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+.error-msg {
+  background: rgba(201,76,76,0.12);
+  border: 1px solid rgba(201,76,76,0.3);
+  color: #E87070;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 18px;
+  display: none;
+}
+.footer-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 28px;
+}
+.footer-note a { color: var(--gold); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="brand">
+    <div class="brand-icon">✂️</div>
+    <div class="badge">🔐 Admin Access</div>
+    <h1>Urban Hairplaza</h1>
+    <div class="sub">Admin Dashboard</div>
+  </div>
+
+  <div class="error-msg" id="error-msg">
+    ❌ Invalid username or password. Please try again.
+  </div>
+
+  <form id="login-form">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="admin" autocomplete="username" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn-login" id="login-btn">Sign In →</button>
+  </form>
+
+  <div class="footer-note">
+    <a href="/">← Back to Website</a>
+  </div>
+</div>
+
+<script>
+// Redirect if already logged in
+fetch('/api/admin/me')
+  .then(r => r.json())
+  .then(d => { if (d.authenticated) window.location.href = '/admin/dashboard.html'; })
+  .catch(() => {});
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('error-msg');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      window.location.href = '/admin/dashboard.html';
+    } else {
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Sign In →';
+    }
+  } catch {
+    errEl.textContent = '❌ Server error. Make sure the server is running.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Sign In →';
+  }
+});
+document.getElementById('username').focus();
+</script>
+</body>
+</html>
