@@ -336,8 +336,9 @@ app.post('/api/create-order', async (req, res) => {
         order_id: booking.id
      });
   } catch (err) {
-     console.error('[Cashfree] Order Error:', err.response?.data || err.message);
-     res.status(500).json({ error: 'Failed to create payment order.' });
+     const cfError = err.response?.data || err.message;
+     console.error('[Cashfree] Order Error:', cfError);
+     res.status(500).json({ error: 'Failed to create payment order.', details: cfError });
   }
 });
 
