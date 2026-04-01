@@ -206,17 +206,17 @@ app.post('/api/bookings', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  // Check for double booking
+  // Check for double booking — only block exact same date + time shop-wide
+  // (multiple barbers can serve different customers at the same time)
   const bookings = readJSON(BOOKINGS_FILE);
-  const isBooked = bookings.some(b => 
-    b.date === date && 
-    b.time === time && 
-    b.barber === (barber || 'Best Available') && 
+  const isBooked = bookings.filter(b =>
+    b.date === date &&
+    b.time === time &&
     b.status !== 'cancelled'
-  );
+  ).length >= 3; // Allow up to 3 simultaneous bookings (one per barber)
 
   if (isBooked) {
-    return res.status(400).json({ error: 'This time slot is already booked for the selected barber. Please choose another.' });
+    return res.status(400).json({ error: 'All barbers are busy at this time slot. Please choose another time.' });
   }
 
   const booking = {
@@ -267,17 +267,17 @@ app.post('/api/create-order', async (req, res) => {
     return res.status(400).json({ error: 'Missing required booking fields.' });
   }
 
-  // Check for double booking
+  // Check for double booking — allow multiple barbers at same time
   const bookings = readJSON(BOOKINGS_FILE);
-  const isBooked = bookings.some(b => 
-    b.date === date && 
-    b.time === time && 
-    b.barber === (barber || 'Best Available') && 
-    b.status !== 'cancelled'
-  );
+  const isBooked = bookings.filter(b =>
+    b.date === date &&
+    b.time === time &&
+    b.status !== 'cancelled' &&
+    b.status !== 'payment_pending'
+  ).length >= 3;
 
   if (isBooked) {
-    return res.status(400).json({ error: 'This time slot is already taken. Please choose another.' });
+    return res.status(400).json({ error: 'All barbers are busy at this time slot. Please choose another.' });
   }
 
   const booking = {
@@ -383,17 +383,22 @@ app.post('/api/verify-payment', async (req, res) => {
   }
 });
 
-// GET /api/available-slots — fetch booked times for a specific date and barber
+// GET /api/available-slots — fetch fully-booked times for a date (shop-wide, not per barber)
 app.get('/api/available-slots', (req, res) => {
-  const { date, barber } = req.query;
-  if (!date || !barber) {
-    return res.status(400).json({ error: 'Date and barber are required.' });
+  const { date } = req.query;
+  if (!date) {
+    return res.status(400).json({ error: 'Date is required.' });
   }
 
   const bookings = readJSON(BOOKINGS_FILE);
-  const bookedTimes = bookings
-    .filter(b => b.date === date && b.barber === barber && b.status !== 'cancelled' && b.status !== 'payment_pending')
-    .map(b => b.time);
+  // Count bookings per time slot for this date (excluding cancelled/payment_pending)
+  const timeCounts = {};
+  bookings
+    .filter(b => b.date === date && b.status !== 'cancelled' && b.status !== 'payment_pending')
+    .forEach(b => { timeCounts[b.time] = (timeCounts[b.time] || 0) + 1; });
+
+  // A slot is "booked" only when all 3 barbers are occupied
+  const bookedTimes = Object.keys(timeCounts).filter(t => timeCounts[t] >= 3);
 
   res.json({ bookedTimes });
 });

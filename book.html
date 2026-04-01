@@ -420,7 +420,7 @@ async function showTimeSlots() {
 
   let bookedTimes = [];
   try {
-    const res = await fetch(`/api/available-slots?date=${booking.date}&barber=${encodeURIComponent(booking.barber)}`);
+    const res = await fetch(`/api/available-slots?date=${booking.date}`);
     if (res.ok) {
       const data = await res.json();
       bookedTimes = data.bookedTimes || [];
