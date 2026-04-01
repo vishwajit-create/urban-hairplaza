@@ -14,6 +14,7 @@ const fs         = require('fs');
 
 const app  = express();
 const PORT = process.env.PORT || 7890;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // ── DATA DIRECTORY ─────────────────────────────────────────────────────────
 const DATA_DIR = path.join(__dirname, 'data');
@@ -88,7 +89,7 @@ function bookingWhatsAppMsg(b) {
     `${b.notes ? '📝 *Notes:* ' + b.notes + '\n' : ''}` +
     `━━━━━━━━━━━━━━━━━━━━━\n` +
     `📌 Booking ID: ${b.id}\n` +
-    `Visit admin panel to confirm: http://localhost:${PORT}/admin/`
+    `Visit admin panel to confirm: ${BASE_URL}/admin/`
   );
 }
 
@@ -102,7 +103,7 @@ function enquiryWhatsAppMsg(e) {
     `📌 *Subject:* ${e.subject || 'General Inquiry'}\n` +
     `💬 *Message:*\n${e.message}\n` +
     `━━━━━━━━━━━━━━━━━━━━━\n` +
-    `Visit admin panel: http://localhost:${PORT}/admin/`
+    `Visit admin panel: ${BASE_URL}/admin/`
   );
 }
 
@@ -582,8 +583,8 @@ app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║   Urban Hairplaza Server Running      ║
-║   http://localhost:${PORT}               ║
-║   Admin: http://localhost:${PORT}/admin/ ║
+║   ${BASE_URL}               ║
+║   Admin: ${BASE_URL}/admin/ ║
 ╚════════════════════════════════════════╝
   `);
   if (!process.env.WHATSAPP_APIKEY) {
