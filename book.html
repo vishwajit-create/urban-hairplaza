@@ -209,6 +209,10 @@
           <h2 style="color:var(--white);">Pick Date & Time</h2>
           <p>Available every day from 9:00 AM to 9:00 PM.</p>
         </div>
+        <div style="background:rgba(201,168,76,0.07); border:1px solid var(--border-gold); border-radius:8px; padding:12px 16px; margin-bottom:18px; font-size:13px;">
+          📅 <strong style="color:var(--gold);">Booking Policy:</strong>
+          <span style="color:var(--text-muted);"> Same-day slots can be booked freely. For <strong style="color:var(--white);">tomorrow or future dates</strong>, an advance payment is <strong style="color:#f0b429;">mandatory</strong> to confirm your slot.</span>
+        </div>
         <div class="form-group">
           <label class="form-label">Select Date</label>
           <input type="date" class="form-input" id="booking-date" onchange="showTimeSlots()">
@@ -258,9 +262,9 @@
         </div>
 
         <div class="form-group" style="background: rgba(201,168,76,0.06); border: 1px solid var(--border-gold); padding: 16px; border-radius: 8px;">
-          <label class="form-label" style="color: var(--white); margin-bottom: 12px;">Advance Payment 💳 (Optional)</label>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">Would you like to pay an advance booking amount?</p>
-          <div style="display: flex; gap: 16px; margin-bottom: 14px;">
+          <label class="form-label" style="color: var(--white); margin-bottom: 12px;">Advance Payment 💳</label>
+          <div id="advance-info-msg" style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">Would you like to pay an advance booking amount?</div>
+          <div style="display: flex; gap: 16px; margin-bottom: 14px;" id="advance-radio-group">
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="payAdvance" value="no" checked onchange="toggleAdvance(false)"> No, Pay at Shop</label>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="payAdvance" value="yes" onchange="toggleAdvance(true)"> Yes, Pay Advance</label>
           </div>
@@ -454,10 +458,19 @@ function goStep(n) {
     }
   }
   // Refresh time slots if re-entering step 4
-  if (n === 4 && document.getElementById('booking-date').value) {
-    showTimeSlots();
+  if (n === 4) {
+    // Restrict date to today and forward only
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('booking-date');
+    dateInput.min = todayStr;
+    if (dateInput.value && dateInput.value < todayStr) {
+      dateInput.value = '';
+      document.getElementById('time-section').style.display = 'none';
+      document.getElementById('next-4').disabled = true;
+    }
+    if (dateInput.value) showTimeSlots();
   }
-  // Populate summary on step 5
+  // Populate summary + apply advance payment rule on step 5
   if (n === 5) {
     document.getElementById('s-type').textContent = booking.type === 'inshop' ? '🏢 In-Shop Visit' : '🏠 Home Visit';
     document.getElementById('s-service').textContent = booking.service;
@@ -466,6 +479,7 @@ function goStep(n) {
     document.getElementById('s-datetime').textContent = d.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' }) + ' · ' + booking.time;
     document.getElementById('s-duration').textContent = booking.duration + ' minutes';
     document.getElementById('s-price').textContent = '₹' + booking.price;
+    applyAdvancePaymentRule();
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -590,6 +604,40 @@ function toggleAdvance(show) {
   document.getElementById('advance-input-container').style.display = show ? 'block' : 'none';
   const btn = document.getElementById('confirm-btn');
   btn.textContent = show ? 'Proceed to Payment →' : '✅ Confirm Booking';
+}
+
+function applyAdvancePaymentRule() {
+  if (!booking.date) return;
+  const today = new Date().toISOString().split('T')[0];
+  const isFuture = booking.date > today;
+  const infoMsg = document.getElementById('advance-info-msg');
+  const radioGroup = document.getElementById('advance-radio-group');
+  const noRadio = radioGroup ? radioGroup.querySelector('input[value="no"]') : null;
+
+  if (isFuture) {
+    // Force advance payment for future bookings
+    if (infoMsg) infoMsg.innerHTML = '⚠️ <strong style="color:#f0b429;">Advance payment is required for future date bookings.</strong>';
+    // Select 'yes' if not already
+    const yesRadio = document.querySelector('input[name="payAdvance"][value="yes"]');
+    if (yesRadio) { yesRadio.checked = true; }
+    if (noRadio) { noRadio.disabled = true; noRadio.parentElement.style.opacity = '0.4'; }
+    document.getElementById('advance-input-container').style.display = 'block';
+    const btn = document.getElementById('confirm-btn');
+    if (btn) btn.textContent = 'Proceed to Payment →';
+  } else {
+    // Today — advance is optional
+    if (infoMsg) infoMsg.innerHTML = 'Would you like to pay an advance booking amount?';
+    if (noRadio) { noRadio.disabled = false; noRadio.parentElement.style.opacity = '1'; }
+    // Reset to 'no' if was forced to 'yes' by a previous future date
+    const currentChoice = document.querySelector('input[name="payAdvance"]:checked');
+    if (!currentChoice || currentChoice.value === 'yes') {
+      const noRadioEl = document.querySelector('input[name="payAdvance"][value="no"]');
+      if (noRadioEl) { noRadioEl.checked = true; }
+      document.getElementById('advance-input-container').style.display = 'none';
+      const btn = document.getElementById('confirm-btn');
+      if (btn) btn.textContent = '✅ Confirm Booking';
+    }
+  }
 }
 
 function showPaymentSuccess(orderId, advanceAmt, name, phone) {
