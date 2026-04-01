@@ -338,7 +338,7 @@ app.post('/api/create-order', async (req, res) => {
   } catch (err) {
      const cfError = err.response?.data || err.message;
      console.error('[Cashfree] Order Error:', cfError);
-     res.status(500).json({ error: 'Failed to create payment order.', details: cfError });
+     res.status(500).json({ error: 'Failed to create payment order. Please try again.' });
   }
 });
 
