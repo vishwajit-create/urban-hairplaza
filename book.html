@@ -400,6 +400,15 @@ function selectBarberAny() {
 }
 
 async function showTimeSlots() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  // Block past dates immediately
+  if (dateInput.value && dateInput.value < todayStr) {
+    dateInput.value = '';
+    document.getElementById('time-section').style.display = 'none';
+    document.getElementById('next-4').disabled = true;
+    alert('⛔ Cannot book for a past date. Please select today or a future date.');
+    return;
+  }
   booking.date = dateInput.value;
   if (!booking.date || !booking.barber) return;
   booking.time = '';
@@ -495,9 +504,18 @@ async function confirmBooking() {
 
   const payChoice = document.querySelector('input[name="payAdvance"]:checked').value;
   const advanceAmt = document.getElementById('book-advance').value;
+
+  // Hard-block: future date MUST have advance payment
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (booking.date > todayStr && payChoice !== 'yes') {
+    alert('⚠️ Advance payment is required to book a future date slot. Please select "Yes, Pay Advance" and enter an amount.');
+    applyAdvancePaymentRule();
+    return;
+  }
+
   if (payChoice === 'yes') {
-    if (!advanceAmt || advanceAmt < 50) { alert('Minimum advance amount is ₹50'); return; }
-    if (advanceAmt > booking.price) { alert('Advance cannot be more than the total service price.'); return; }
+    if (!advanceAmt || Number(advanceAmt) < 50) { alert('Minimum advance amount is ₹50'); return; }
+    if (Number(advanceAmt) > booking.price) { alert('Advance cannot be more than the total service price.'); return; }
   }
 
   // Disable button to prevent double submit
