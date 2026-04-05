@@ -277,7 +277,7 @@ function checkEnableButton() {
   document.getElementById('viz-btn').disabled = !(uploadedImage && selectedStyle);
 }
 
-function generatePreview() {
+async function generatePreview() {
   const processing = document.getElementById('ai-processing');
   const placeholder = document.getElementById('preview-placeholder');
   const result = document.getElementById('ai-result');
@@ -288,17 +288,29 @@ function generatePreview() {
   result.style.display = 'none';
   bookCta.style.display = 'none';
   processing.classList.add('active');
-  statusEl.textContent = 'AI is processing your photo…';
+  statusEl.textContent = 'AI is processing your photo... this may take up to 20 seconds.';
 
-  // Simulate AI processing (2.5s)
-  setTimeout(() => {
+  try {
+    const res = await fetch('/api/visualize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageBase64: uploadedImage,
+        style: selectedStyle
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+
     processing.classList.remove('active');
-    // Show uploaded image as the "AI result" with a style overlay label
-    result.src = uploadedImage;
+    
+    // Display the AI-generated URL returned from OpenAI/Backend
+    result.src = data.imageUrl;
     result.style.display = 'block';
     document.getElementById('preview-box').style.position = 'relative';
 
-    // Add style label badge
+    // Add style label badge if not present
     let badge = document.getElementById('style-badge');
     if (!badge) {
       badge = document.createElement('div');
@@ -311,7 +323,14 @@ function generatePreview() {
     document.getElementById('selected-style-label').textContent = `${selectedStyle} style looks amazing on you! 🎉`;
     bookCta.style.display = 'block';
     statusEl.textContent = 'AI preview generated! Like the look?';
-  }, 2500);
+    
+  } catch (err) {
+    console.error('Visualization error:', err);
+    processing.classList.remove('active');
+    placeholder.style.display = 'flex';
+    statusEl.textContent = '❌ Failed to generate preview: ' + err.message;
+    statusEl.style.color = '#E87070';
+  }
 }
 </script>
 </body>

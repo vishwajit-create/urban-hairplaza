@@ -618,6 +618,81 @@ app.delete('/api/admin/services/:id', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// ── AI VISUALIZER ─────────────────────────────────────────────────────────
+app.post('/api/visualize', async (req, res) => {
+  const { imageBase64, style } = req.body;
+  
+  if (!imageBase64 || !style) {
+    return res.status(400).json({ error: 'Missing image or requested style.' });
+  }
+
+  // To prevent the server crashing if OPENAI_API_KEY isn't set properly
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'AI API Key is missing on the server.' });
+  }
+
+  try {
+    // 1. Analyze face with GPT-4o Vision
+    const visionRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Briefly describe ONLY the core facial features, skin tone, facial hair (if any), gender, and approximate age of the person in this photo. Do not describe the background or their current hair on top of their head. We need a clean description to recreate their exact face with a new hairstyle." },
+              { type: "image_url", image_url: { url: imageBase64 } }
+            ]
+          }
+        ],
+        max_tokens: 150
+      })
+    });
+    
+    if (!visionRes.ok) {
+      const err = await visionRes.text();
+      console.error('Vision API Error:', err);
+      return res.status(500).json({ error: 'Failed to analyze facial features.' });
+    }
+    
+    const visionData = await visionRes.json();
+    const faceDescription = visionData.choices[0].message.content;
+
+    // 2. Generate new image with DALL-E 3
+    const dalleRes = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: `A photorealistic, high-end studio portrait photograph of a person with exactly these facial features: '${faceDescription}'. They are now sporting a brand new, highly detailed '${style}' hairstyle. The lighting is premium barbershop lighting, front-facing view, perfect realism.`,
+        n: 1,
+        size: "1024x1024"
+      })
+    });
+
+    if (!dalleRes.ok) {
+      const err = await dalleRes.text();
+      console.error('DALL-E API Error:', err);
+      return res.status(500).json({ error: 'Failed to generate hairstyle preview.' });
+    }
+
+    const dalleData = await dalleRes.json();
+    res.json({ success: true, imageUrl: dalleData.data[0].url });
+
+  } catch (error) {
+    console.error('AI Processing Exception:', error);
+    res.status(500).json({ error: 'Internal AI pipeline error occurred.' });
+  }
+});
+
 // GET stats summary
 app.get('/api/admin/stats', requireAdmin, (req, res) => {
   const bookings  = readJSON(BOOKINGS_FILE);
