@@ -435,6 +435,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <span class="nav-icon">📩</span> Enquiries
       <span class="badge-count" id="unread-count" style="display:none">0</span>
     </button>
+    <button class="nav-item" id="nav-services" onclick="showSection('services')">
+      <span class="nav-icon">💈</span> Services
+    </button>
 
     <div class="nav-label" style="margin-top:16px;">Website</div>
     <button class="nav-item" onclick="window.open('/', '_blank')">
@@ -465,8 +468,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   <!-- MOBILE TABS -->
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="showSection('bookings')">📅 Bookings</button>
-    <button class="tab-btn" onclick="showSection('enquiries')">📩 Enquiries</button>
+    <button class="tab-btn active" id="tab-bookings" onclick="showSection('bookings')">📅 Bookings</button>
+    <button class="tab-btn" id="tab-enquiries" onclick="showSection('enquiries')">📩 Enquiries</button>
+    <button class="tab-btn" id="tab-services" onclick="showSection('services')">💈 Services</button>
   </div>
 
   <div class="content">
@@ -547,6 +551,35 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
     </div>
+
+    <!-- SERVICES SECTION -->
+    <div id="section-services" style="display:none;">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>All Services</h3>
+          <div style="flex: 1;"></div>
+          <button class="btn-refresh" style="background:var(--gold-dim); color:var(--gold); border-color:var(--border-gold);" onclick="openServiceEditor()">+ Add Service</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="services-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Icon</th>
+                <th>Name / Desc</th>
+                <th>Type</th>
+                <th>Duration</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="services-body">
+              <tr><td colspan="7" class="loading-row"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -564,6 +597,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 // ── STATE ──
 let allBookings  = [];
 let allEnquiries = [];
+let allServices  = [];
 let currentSection = 'bookings';
 let filteredBookings  = [];
 let filteredEnquiries = [];
@@ -585,7 +619,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAll() {
-  await Promise.all([loadStats(), loadBookings(), loadEnquiries()]);
+  await Promise.all([loadStats(), loadBookings(), loadEnquiries(), loadServices()]);
 }
 
 async function loadStats() {
@@ -626,6 +660,15 @@ async function loadEnquiries() {
     filteredEnquiries = [...allEnquiries];
     renderEnquiries(filteredEnquiries);
   } catch(e) { document.getElementById('enquiries-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load enquiries.</td></tr>`; }
+}
+
+async function loadServices() {
+  try {
+    const r = await fetch('/api/services');
+    if (!r.ok) return;
+    allServices = await r.json();
+    renderServices(allServices);
+  } catch(e) { document.getElementById('services-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load services.</td></tr>`; }
 }
 
 function renderBookings(list) {
@@ -701,15 +744,51 @@ function showSection(sec) {
   currentSection = sec;
   document.getElementById('section-bookings').style.display  = sec === 'bookings'  ? 'block' : 'none';
   document.getElementById('section-enquiries').style.display = sec === 'enquiries' ? 'block' : 'none';
-  document.getElementById('page-title').textContent = sec === 'bookings' ? '📅 Bookings' : '📩 Enquiries';
+  document.getElementById('section-services').style.display  = sec === 'services'  ? 'block' : 'none';
+  
+  const titles = { bookings: '📅 Bookings', enquiries: '📩 Enquiries', services: '💈 Services' };
+  document.getElementById('page-title').textContent = titles[sec] || '';
 
   // Update sidebar active
   document.getElementById('nav-bookings').classList.toggle('active',  sec === 'bookings');
   document.getElementById('nav-enquiries').classList.toggle('active', sec === 'enquiries');
+  document.getElementById('nav-services').classList.toggle('active',  sec === 'services');
 
-  // Update stat card display
+  // Update mobile active
+  document.getElementById('tab-bookings').classList.toggle('active',  sec === 'bookings');
+  document.getElementById('tab-enquiries').classList.toggle('active', sec === 'enquiries');
+  document.getElementById('tab-services').classList.toggle('active',  sec === 'services');
+
+  // Update stat card display (hide for services as it doesn't need these stats)
   const statsRow = document.getElementById('stats-row');
-  statsRow.style.display = 'grid';
+  statsRow.style.display = sec === 'services' ? 'none' : 'grid';
+}
+
+function renderServices(list) {
+  const tbody = document.getElementById('services-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-row">📭 No services found. Add one!</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td><code style="color:var(--gold); font-size:11px;">${s.id}</code></td>
+      <td style="font-size:20px;">${s.icon}</td>
+      <td>
+        <div style="font-weight:600; color:#fff;">${escHtml(s.name)}</div>
+        <div style="font-size:11px; color:var(--muted);">${escHtml(s.desc)}</div>
+      </td>
+      <td>${s.type === 'home' ? '<span style="color:#5CB87E; font-size:12px;">🏠 Home</span>' : '<span style="color:#5BA3D9; font-size:12px;">🏢 In-Shop</span>'}</td>
+      <td style="font-size:13px;">${s.duration} min</td>
+      <td style="font-weight:700; color:var(--gold); font-size:15px;">₹${s.price}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-action btn-view" onclick="openServiceEditor('${s.id}')">Edit</button>
+          <button class="btn-action btn-delete" onclick="deleteService('${s.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 // ── FILTERS ──
@@ -787,7 +866,96 @@ async function deleteEnquiry(id) {
   } catch { toast('❌ Error.', 'red'); }
 }
 
+async function saveService(event, id) {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {
+    type: form.type.value,
+    icon: form.icon.value,
+    name: form.name.value,
+    desc: form.desc.value,
+    price: form.price.value,
+    duration: form.duration.value
+  };
+
+  try {
+    let url = '/api/admin/services';
+    let method = 'POST';
+    if (id) {
+      url += \`/\${id}\`;
+      method = 'PUT';
+    }
+
+    const r = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (r.ok) {
+      toast(id ? '✅ Service updated.' : '✅ Service created.', 'green');
+      closeDrawer();
+      await loadServices();
+    } else {
+      toast('❌ Error saving service.', 'red');
+    }
+  } catch { toast('❌ Error.', 'red'); }
+}
+
+async function deleteService(id) {
+  if (!confirm('Delete this service permanently?')) return;
+  try {
+    await fetch(`/api/admin/services/${id}`, { method: 'DELETE' });
+    toast('🗑️ Service deleted.', 'muted');
+    await loadServices();
+  } catch { toast('❌ Error.', 'red'); }
+}
+
 // ── DETAIL DRAWERS ──
+function openServiceEditor(id) {
+  let s = { type: 'inshop', icon: '✂️', name: '', desc: '', price: 150, duration: 30 };
+  if (id) {
+    const existing = allServices.find(x => x.id === id);
+    if (existing) s = existing;
+  }
+  
+  document.getElementById('drawer-content').innerHTML = `
+    <h3 style="font-size:22px; margin-bottom:20px;">${id ? 'Edit Service' : 'Add New Service'}</h3>
+    <form onsubmit="saveService(event, '${id || ''}')" style="display:flex; flex-direction:column; gap:16px;">
+      <div class="form-group" style="margin:0;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Type</label>
+        <select name="type" class="search-box" style="width:100%;">
+          <option value="inshop" ${s.type === 'inshop' ? 'selected' : ''}>🏢 In-Shop</option>
+          <option value="home" ${s.type === 'home' ? 'selected' : ''}>🏠 Home Visit</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Icon (Emoji)</label>
+        <input name="icon" type="text" class="search-box" style="width:100%;" value="${escHtml(s.icon)}" required>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Name</label>
+        <input name="name" type="text" class="search-box" style="width:100%;" value="${escHtml(s.name)}" required>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Description</label>
+        <input name="desc" type="text" class="search-box" style="width:100%;" value="${escHtml(s.desc)}">
+      </div>
+      <div style="display:flex; gap:12px;">
+        <div class="form-group" style="margin:0; flex:1;">
+          <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Price (₹)</label>
+          <input name="price" type="number" class="search-box" style="width:100%;" value="${s.price}" required min="0">
+        </div>
+        <div class="form-group" style="margin:0; flex:1;">
+          <label style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Duration (min)</label>
+          <input name="duration" type="number" class="search-box" style="width:100%;" value="${s.duration}" required min="0">
+        </div>
+      </div>
+      <button type="submit" class="btn-refresh" style="background:var(--gold); color:var(--black); border-color:var(--gold); font-size:14px; padding:12px; justify-content:center; margin-top:10px;">💾 Save Service</button>
+    </form>
+  `;
+  openDrawer();
+}
+
 function viewBooking(id) {
   const b = allBookings.find(x => x.id === id);
   if (!b) return;

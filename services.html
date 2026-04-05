@@ -124,42 +124,8 @@
               <th></th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td><div class="svc-name-cell">✂️ Classic Haircut</div></td>
-              <td><div class="svc-desc-cell">Precision cut, any style</div></td>
-              <td><div class="dur-cell">30 min</div></td>
-              <td><div class="price-cell">₹150</div></td>
-              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">🧔 Beard Trim & Shape-Up</div></td>
-              <td><div class="svc-desc-cell">Shaping, lining & styling</div></td>
-              <td><div class="dur-cell">20 min</div></td>
-              <td><div class="price-cell">₹200</div></td>
-              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">👑 Royal Shave</div></td>
-              <td><div class="svc-desc-cell">Hot-towel straight-razor shave</div></td>
-              <td><div class="dur-cell">30 min</div></td>
-              <td><div class="price-cell">₹250</div></td>
-              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">💈 Haircut + Beard Combo</div></td>
-              <td><div class="svc-desc-cell">Full cut + beard trim package</div></td>
-              <td><div class="dur-cell">50 min</div></td>
-              <td><div class="price-cell">₹500</div></td>
-              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">🪒 Head Shave</div></td>
-              <td><div class="svc-desc-cell">Clean head shave, razor smooth</div></td>
-              <td><div class="dur-cell">30 min</div></td>
-              <td><div class="price-cell">₹400</div></td>
-              <td><a href="book.html" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
+          <tbody id="inshop-table-body">
+            <tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">Loading services...</td></tr>
           </tbody>
         </table>
       </div>
@@ -193,42 +159,8 @@
               <th></th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td><div class="svc-name-cell">✂️ Classic Haircut</div></td>
-              <td><div class="svc-desc-cell">Precision cut at your home</div></td>
-              <td><div class="dur-cell">30 min</div></td>
-              <td><div class="price-cell">₹250</div></td>
-              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">🧔 Beard Trim</div></td>
-              <td><div class="svc-desc-cell">Shaping & lining at your home</div></td>
-              <td><div class="dur-cell">20 min</div></td>
-              <td><div class="price-cell">₹350</div></td>
-              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">👑 Royal Shave</div></td>
-              <td><div class="svc-desc-cell">Hot-towel shave at your home</div></td>
-              <td><div class="dur-cell">30 min</div></td>
-              <td><div class="price-cell">₹400</div></td>
-              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">💈 Haircut + Beard Combo</div></td>
-              <td><div class="svc-desc-cell">Full home grooming package</div></td>
-              <td><div class="dur-cell">50 min</div></td>
-              <td><div class="price-cell">₹500</div></td>
-              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
-            <tr>
-              <td><div class="svc-name-cell">👦 Kids Haircut (Under 12)</div></td>
-              <td><div class="svc-desc-cell">Gentle cut for kids at home</div></td>
-              <td><div class="dur-cell">25 min</div></td>
-              <td><div class="price-cell">₹200</div></td>
-              <td><a href="book.html?type=home" class="btn btn-primary btn-sm">Book</a></td>
-            </tr>
+          <tbody id="home-table-body">
+            <tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">Loading services...</td></tr>
           </tbody>
         </table>
       </div>
@@ -300,26 +232,73 @@
 
 <script src="main.js"></script>
 <script>
+// Reveal animations
+const reveals = document.querySelectorAll('.reveal');
+function checkReveal() {
+  const wh = window.innerHeight;
+  reveals.forEach(r => {
+    const top = r.getBoundingClientRect().top;
+    if (top < wh - 50) r.classList.add('active');
+  });
+}
+window.addEventListener('scroll', checkReveal);
+window.addEventListener('load', checkReveal);
+
+// Map switch
 function showServices(type) {
-  const inshop = document.getElementById('services-inshop');
-  const home = document.getElementById('services-home');
+  document.getElementById('services-inshop').style.display = type === 'inshop' ? 'block' : 'none';
+  document.getElementById('services-home').style.display = type === 'home' ? 'block' : 'none';
+  
   const btnInshop = document.getElementById('toggle-inshop');
   const btnHome = document.getElementById('toggle-home');
-  if (type === 'inshop') {
-    inshop.style.display = 'block';
-    home.style.display = 'none';
-    btnInshop.classList.add('active');
-    btnHome.classList.remove('active');
-  } else {
-    inshop.style.display = 'none';
-    home.style.display = 'block';
-    btnHome.classList.add('active');
-    btnInshop.classList.remove('active');
+  if (btnInshop) btnInshop.classList.toggle('active', type === 'inshop');
+  if (btnHome) btnHome.classList.toggle('active', type === 'home');
+  setTimeout(checkReveal, 50);
+}
+
+// Fetch dynamic services
+async function initServices() {
+  try {
+    const res = await fetch('/api/services');
+    if (res.ok) {
+      const allServices = await res.json();
+      renderServiceTable(allServices, 'inshop', 'inshop-table-body', 'book.html');
+      renderServiceTable(allServices, 'home', 'home-table-body', 'book.html?type=home');
+    }
+  } catch (e) {
+    console.error('Failed to load services:', e);
   }
 }
-// Check URL param
-const urlType = new URLSearchParams(window.location.search).get('type');
-if (urlType === 'home') showServices('home');
+
+function renderServiceTable(services, type, blockId, bookHref) {
+  const tbody = document.getElementById(blockId);
+  const svcs = services.filter(s => s.type === type);
+  if (!svcs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">No services available.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = svcs.map(s => {
+    // Avoid syntax checker issues by securely escaping and building html
+    const icon = s.icon || '💈';
+    return `
+      <tr>
+        <td><div class="svc-name-cell">${icon} ${s.name}</div></td>
+        <td><div class="svc-desc-cell">${s.desc || ''}</div></td>
+        <td><div class="dur-cell">${s.duration} min</div></td>
+        <td><div class="price-cell">₹${s.price}</div></td>
+        <td><a href="${bookHref}" class="btn btn-primary btn-sm">Book</a></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initServices();
+  // Check URL param after DOM load
+  const urlType = new URLSearchParams(window.location.search).get('type');
+  if (urlType === 'home') showServices('home');
+});
 </script>
 </body>
 </html>

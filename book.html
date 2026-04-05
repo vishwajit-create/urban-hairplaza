@@ -102,68 +102,10 @@
           <p id="service-subtitle">Choose from our in-shop services.</p>
         </div>
         <div id="inshop-services">
-          <div class="service-option" onclick="selectService(this, 'Classic Haircut', 150, 30)">
-            <div><div class="svc-name">✂️ Classic Haircut</div><div class="svc-meta">⏱ 30 min · In-Shop</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹150</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Beard Trim & Shape-Up', 200, 20)">
-            <div><div class="svc-name">🧔 Beard Trim & Shape-Up</div><div class="svc-meta">⏱ 20 min · In-Shop</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹200</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Royal Shave', 250, 30)">
-            <div><div class="svc-name">👑 Royal Shave</div><div class="svc-meta">⏱ 30 min · In-Shop</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹250</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Haircut + Beard Combo', 500, 50)">
-            <div><div class="svc-name">💈 Haircut + Beard Combo</div><div class="svc-meta">⏱ 50 min · In-Shop</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹500</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Head Shave', 400, 30)">
-            <div><div class="svc-name">🪒 Head Shave</div><div class="svc-meta">⏱ 30 min · In-Shop</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹400</div><div class="check-circle">✓</div>
-            </div>
-          </div>
+          <div style="text-align:center; padding:20px; color:var(--muted);">Loading services...</div>
         </div>
         <div id="home-services" style="display:none;">
-          <div class="service-option" onclick="selectService(this, 'Classic Haircut (Home)', 250, 30)">
-            <div><div class="svc-name">✂️ Classic Haircut</div><div class="svc-meta">⏱ 30 min · Home Visit</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹250</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Beard Trim (Home)', 350, 20)">
-            <div><div class="svc-name">🧔 Beard Trim</div><div class="svc-meta">⏱ 20 min · Home Visit</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹350</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Royal Shave (Home)', 400, 30)">
-            <div><div class="svc-name">👑 Royal Shave</div><div class="svc-meta">⏱ 30 min · Home Visit</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹400</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Haircut + Beard Combo (Home)', 500, 50)">
-            <div><div class="svc-name">💈 Haircut + Beard Combo</div><div class="svc-meta">⏱ 50 min · Home Visit</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹500</div><div class="check-circle">✓</div>
-            </div>
-          </div>
-          <div class="service-option" onclick="selectService(this, 'Kids Haircut (Home)', 200, 25)">
-            <div><div class="svc-name">👦 Kids Haircut (Under 12)</div><div class="svc-meta">⏱ 25 min · Home Visit</div></div>
-            <div style="display:flex; align-items:center; gap:16px;">
-              <div class="svc-price">₹200</div><div class="check-circle">✓</div>
-            </div>
-          </div>
+          <div style="text-align:center; padding:20px; color:var(--muted);">Loading services...</div>
         </div>
         <div class="step-nav">
           <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
@@ -448,6 +390,50 @@ async function showTimeSlots() {
     container.appendChild(div);
   });
 }
+
+let allServices = [];
+
+async function initServices() {
+  try {
+    const res = await fetch('/api/services');
+    if (res.ok) {
+      allServices = await res.json();
+      renderServicesByType('inshop', 'inshop-services');
+      renderServicesByType('home', 'home-services');
+    }
+  } catch (e) {
+    console.error('Failed to load services:', e);
+  }
+}
+
+function renderServicesByType(type, containerId) {
+  const container = document.getElementById(containerId);
+  const svcs = allServices.filter(s => s.type === type);
+  if (!svcs.length) {
+    container.innerHTML = '<div style="text-align:center; color:var(--muted);">No services available at the moment.</div>';
+    return;
+  }
+  container.innerHTML = svcs.map(s => {
+    // Escape quotes to be safe in onclick handler
+    const safeName = (s.name || '').replace(/'/g, "\\'");
+    return `
+      <div class="service-option" onclick="selectService(this, '${safeName}', ${s.price}, ${s.duration})">
+        <div>
+          <div class="svc-name">${s.icon || '💈'} ${s.name}</div>
+          <div class="svc-meta">⏱ ${s.duration} min · ${type === 'home' ? 'Home Visit' : 'In-Shop'}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="svc-price">₹${s.price}</div><div class="check-circle">✓</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initServices();
+});
+
 
 function goStep(n) {
   document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
