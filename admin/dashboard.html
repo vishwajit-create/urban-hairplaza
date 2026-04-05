@@ -882,7 +882,7 @@ async function saveService(event, id) {
     let url = '/api/admin/services';
     let method = 'POST';
     if (id) {
-      url += \`/\${id}\`;
+      url += `/${id}`;
       method = 'PUT';
     }
 
