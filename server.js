@@ -14,7 +14,7 @@ const { Pool }   = require('pg');
 
 const app  = express();
 const PORT = process.env.PORT || 7890;
-const BASE_URL = process.env.BASE_URL || \`http://localhost:\${PORT}\`;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // POSTGRESQL CONNECTION
 const db = new Pool({
@@ -24,16 +24,16 @@ const db = new Pool({
 
 // DATABASE INITIALIZATION
 async function initDB() {
-  await db.query(\`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS users (
       id          TEXT PRIMARY KEY,
       name        TEXT NOT NULL,
       phone       TEXT NOT NULL UNIQUE,
       created_at  TIMESTAMPTZ DEFAULT NOW()
     );
-  \`);
+  `);
 
-  await db.query(\`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS services (
       id          TEXT PRIMARY KEY,
       type        TEXT NOT NULL,
@@ -43,9 +43,9 @@ async function initDB() {
       desc        TEXT DEFAULT '',
       icon        TEXT DEFAULT ''
     );
-  \`);
+  `);
 
-  await db.query(\`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS bookings (
       id              TEXT PRIMARY KEY,
       type            TEXT DEFAULT 'inshop',
@@ -64,9 +64,9 @@ async function initDB() {
       created_at      TIMESTAMPTZ DEFAULT NOW(),
       updated_at      TIMESTAMPTZ
     );
-  \`);
+  `);
 
-  await db.query(\`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS enquiries (
       id          TEXT PRIMARY KEY,
       name        TEXT NOT NULL,
@@ -78,7 +78,7 @@ async function initDB() {
       created_at  TIMESTAMPTZ DEFAULT NOW(),
       updated_at  TIMESTAMPTZ
     );
-  \`);
+  `);
 
   const { rows } = await db.query('SELECT COUNT(*) FROM services');
   if (parseInt(rows[0].count) === 0) {
@@ -106,8 +106,7 @@ async function initDB() {
   console.log('[DB] PostgreSQL connected and tables ready.');
 }
 
-initDB().catch(console.error);
+initDB().catch(err => console.error('[DB] Error:', err));
 app.use(express.json());
 app.get('/', (req, res) => res.send('Urban Hairplaza Server (Partially Restored)'));
 app.listen(PORT, () => console.log('Server running'));
-
