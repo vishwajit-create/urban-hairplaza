@@ -49,18 +49,23 @@
     }
     .otp-field {
       font-family: var(--font-mono);
-      font-size: 1.8rem;
+      font-size: 2rem;
+      font-weight: 700;
       letter-spacing: 0.35em;
       text-align: center;
-      padding: 10px 16px;
+      padding: 12px 18px;
+      width: 100%;
       max-width: 280px;
-      border: 2px solid var(--border);
+      border: 2px solid #D1D5DB;
       border-radius: var(--radius);
       outline: none;
-      transition: border-color 0.15s ease;
+      background: #FFFFFF;
+      color: #111827;
+      transition: all 0.2s ease;
     }
     .otp-field:focus {
-      border-color: var(--text-main);
+      border-color: #D4AF37;
+      box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
     }
     .profile-banner {
       background: #FFFFFF;
@@ -490,6 +495,22 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       await checkAuthStatus();
+
+      // Enter key and auto-submit handlers for smooth UX
+      document.getElementById('auth-otp')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleVerifyOtp();
+      });
+      document.getElementById('auth-phone')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSendOtp();
+      });
+      document.getElementById('auth-email')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSendOtp();
+      });
+      document.getElementById('auth-otp')?.addEventListener('input', (e) => {
+        if (e.target.value.trim().length === 6) {
+          handleVerifyOtp();
+        }
+      });
     });
 
     function switchAuthTab(type) {
@@ -562,12 +583,17 @@
         if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
 
         document.getElementById('step-send-otp').style.display = 'none';
+        document.getElementById('step-verify-otp').style.display = 'block';
         const channelsText = (data.channels && data.channels.length > 0) ? ` via ${data.channels.join(' & ')}` : '';
         document.getElementById('otp-sent-to-label').textContent = 
           `We sent a 6-digit verification code to ${authState.tab === 'phone' ? `+91 ${identifier}` : identifier}${channelsText}.`;
 
         showAlert(data.message || 'Verification code sent.', 'success');
-        document.getElementById('auth-otp').focus();
+        const otpInput = document.getElementById('auth-otp');
+        if (otpInput) {
+          otpInput.value = '';
+          setTimeout(() => otpInput.focus(), 150);
+        }
       } catch (err) {
         showAlert(err.message, 'danger');
       } finally {
