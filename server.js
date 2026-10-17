@@ -161,6 +161,178 @@ for (const [route, filePath] of Object.entries(STATIC_PAGES)) {
   });
 }
 
+// ── NOTIFICATION DISPATCHERS (SMS, EMAIL & WHATSAPP) ─────────────────────────
+
+// Nodemailer optional import (falls back gracefully if not available)
+let nodemailer = null;
+try {
+  nodemailer = require('nodemailer');
+} catch (e) {
+  console.warn('[Email] nodemailer module not loaded, SMTP fallback disabled.');
+}
+
+// ── REAL SMS DISPATCHER (Fast2SMS / Twilio / 2Factor) ─────────────────────────
+async function sendRealSmsOtp(phone, otp) {
+  // 1. Fast2SMS (India Quick OTP API - fastest & easiest for Indian numbers)
+  if (process.env.FAST2SMS_API_KEY) {
+    try {
+      const response = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
+        params: {
+          authorization: process.env.FAST2SMS_API_KEY.trim(),
+          variables_values: otp,
+          route: 'otp',
+          numbers: phone
+        },
+        timeout: 7000
+      });
+      console.log(`[SMS-Fast2SMS] Sent to ${phone}:`, response.data);
+      return true;
+    } catch (err) {
+      console.warn('[SMS-Fast2SMS] Error:', err.response?.data || err.message);
+    }
+  }
+
+  // 2. Twilio SMS (Global SMS)
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+  const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+  if (twilioSid && twilioToken && twilioFrom) {
+    try {
+      const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+      const auth = Buffer.from(`${twilioSid.trim()}:${twilioToken.trim()}`).toString('base64');
+      const params = new URLSearchParams({
+        To: formattedPhone,
+        From: twilioFrom.trim(),
+        Body: `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes.`
+      });
+      await axios.post(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid.trim()}/Messages.json`, params.toString(), {
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        timeout: 7000
+      });
+      console.log(`[SMS-Twilio] Sent to ${formattedPhone}`);
+      return true;
+    } catch (err) {
+      console.warn('[SMS-Twilio] Error:', err.response?.data || err.message);
+    }
+  }
+
+  // 3. 2Factor.in SMS (India)
+  if (process.env.TWOFACTOR_API_KEY) {
+    try {
+      await axios.get(`https://2factor.in/v1/${process.env.TWOFACTOR_API_KEY.trim()}/SMS/${phone}/${otp}/AUTOGEN`, { timeout: 7000 });
+      console.log(`[SMS-2Factor] Sent to ${phone}`);
+      return true;
+    } catch (err) {
+      console.warn('[SMS-2Factor] Error:', err.response?.data || err.message);
+    }
+  }
+
+  return false;
+}
+
+// ── REAL EMAIL DISPATCHER (Resend / Gmail SMTP / Brevo) ───────────────────────
+async function sendRealEmailOtp(email, otp) {
+  const htmlTemplate = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="background: linear-gradient(135deg, #1c1d22 0%, #121316 100%); padding: 30px 24px; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2);">
+        <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">✂️ URBAN HAIRPLAZA</h1>
+        <p style="color: #8e8e93; margin: 8px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Luxury Grooming Lounge</p>
+      </div>
+      <div style="padding: 32px 24px; text-align: center;">
+        <p style="font-size: 15px; color: #cfcfd4; margin: 0 0 16px 0;">Use the verification code below to securely sign in and view your appointments:</p>
+        <div style="display: inline-block; background: rgba(212,175,55,0.12); border: 2px dashed #d4af37; border-radius: 12px; padding: 14px 28px; margin: 12px 0 20px 0;">
+          <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #e6c65b; font-family: monospace;">${otp}</span>
+        </div>
+        <p style="font-size: 13px; color: #8e8e93; margin: 0;">⏱️ This code expires in <strong>10 minutes</strong>. Never share your OTP with anyone.</p>
+      </div>
+      <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+        <p style="font-size: 12px; color: #636366; margin: 0;">📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar · +91 6202 692 426</p>
+      </div>
+    </div>
+  `;
+
+  // 1. Resend API (Recommended - fast, high deliverability, zero spam)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const fromEmail = process.env.RESEND_FROM || 'Urban Hairplaza <onboarding@resend.dev>';
+      const res = await axios.post('https://api.resend.com/emails', {
+        from: fromEmail,
+        to: email,
+        subject: `Your Urban Hairplaza Verification Code: ${otp}`,
+        html: htmlTemplate
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 8000
+      });
+      console.log(`[Email-Resend] Sent to ${email}:`, res.data?.id);
+      return true;
+    } catch (err) {
+      console.warn('[Email-Resend] Error:', err.response?.data || err.message);
+    }
+  }
+
+  // 2. Gmail SMTP / Custom SMTP via Nodemailer
+  const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
+  const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+  if (nodemailer && smtpUser && smtpPass) {
+    try {
+      const isGmail = Boolean(process.env.GMAIL_USER || (smtpUser && smtpUser.includes('@gmail.com')));
+      const transporter = nodemailer.createTransport(
+        isGmail ? {
+          service: 'gmail',
+          auth: { user: smtpUser.trim(), pass: smtpPass.trim() }
+        } : {
+          host: (process.env.SMTP_HOST || 'smtp.gmail.com').trim(),
+          port: parseInt(process.env.SMTP_PORT || '465', 10),
+          secure: (process.env.SMTP_PORT || '465') === '465',
+          auth: { user: smtpUser.trim(), pass: smtpPass.trim() }
+        }
+      );
+
+      await transporter.sendMail({
+        from: `"Urban Hairplaza" <${smtpUser.trim()}>`,
+        to: email,
+        subject: `✂️ Your Urban Hairplaza Verification Code: ${otp}`,
+        html: htmlTemplate
+      });
+      console.log(`[Email-SMTP] Sent to ${email} via ${smtpUser}`);
+      return true;
+    } catch (err) {
+      console.warn('[Email-SMTP] Error:', err.message);
+    }
+  }
+
+  // 3. Brevo (Sendinblue) API
+  if (process.env.BREVO_API_KEY) {
+    try {
+      await axios.post('https://api.brevo.com/v3/smtp/email', {
+        sender: { name: 'Urban Hairplaza', email: process.env.BREVO_SENDER || 'urbanhairplaza@gmail.com' },
+        to: [{ email }],
+        subject: `✂️ Your Urban Hairplaza Verification Code: ${otp}`,
+        htmlContent: htmlTemplate
+      }, {
+        headers: {
+          'api-key': process.env.BREVO_API_KEY.trim(),
+          'Content-Type': 'application/json'
+        },
+        timeout: 8000
+      });
+      console.log(`[Email-Brevo] Sent to ${email}`);
+      return true;
+    } catch (err) {
+      console.warn('[Email-Brevo] Error:', err.response?.data || err.message);
+    }
+  }
+
+  return false;
+}
+
 // ── WHATSAPP HELPER ──────────────────────────────────────────────────────────
 async function sendWhatsAppNotification(message, customPhone) {
   const phone = customPhone || process.env.WHATSAPP_PHONE || process.env.CALLMEBOT_PHONE;
@@ -243,19 +415,32 @@ app.post('/api/auth/send-otp', rateLimit({ windowMs: 60000, max: 10, message: 'T
     // Store in DB / JSON
     await db.saveOtp(target, otp, type);
 
-    // If mobile, attempt WhatsApp delivery
+    const deliveryChannels = [];
+
     if (isPhone) {
+      // 1. Send Real SMS if configured (Fast2SMS / Twilio / 2Factor)
+      const smsSent = await sendRealSmsOtp(cleanPhone, otp).catch(() => false);
+      if (smsSent) deliveryChannels.push('SMS');
+
+      // 2. Also send via WhatsApp
       const msg = `✂️ *Urban Hairplaza Verification*\nYour OTP is: *${otp}*\nValid for 10 minutes. Do not share this code.`;
-      await sendWhatsAppNotification(msg, `91${cleanPhone}`).catch(() => {});
+      const waSent = await sendWhatsAppNotification(msg, `91${cleanPhone}`).then(() => true).catch(() => false);
+      if (waSent) deliveryChannels.push('WhatsApp');
+    } else {
+      // Send Real Email if configured (Resend / Gmail SMTP / Brevo)
+      const emailSent = await sendRealEmailOtp(target, otp).catch(() => false);
+      if (emailSent) deliveryChannels.push('Email');
     }
 
-    console.log(`[AUTH-OTP] Sent OTP to ${target} (${type}): ${otp}`);
+    const channelSummary = deliveryChannels.length > 0 ? deliveryChannels.join(' & ') : 'Preview Demo';
+    console.log(`[AUTH-OTP] OTP for ${target} (${type}): ${otp} [Delivered via: ${channelSummary}]`);
 
     res.json({
       success: true,
-      message: `Verification code sent to ${isPhone ? `+91 ${cleanPhone}` : target}.`,
+      message: `Verification code sent to ${isPhone ? `+91 ${cleanPhone}` : target} via ${channelSummary}.`,
       type,
       target,
+      channels: deliveryChannels,
       // Provide preview OTP in response for instant testing & zero lockout
       previewOtp: otp
     });

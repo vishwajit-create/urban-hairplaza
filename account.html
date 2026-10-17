@@ -566,9 +566,9 @@
         if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
 
         document.getElementById('step-send-otp').style.display = 'none';
-        document.getElementById('step-verify-otp').style.display = 'block';
+        const channelsText = (data.channels && data.channels.length > 0) ? ` via ${data.channels.join(' & ')}` : '';
         document.getElementById('otp-sent-to-label').textContent = 
-          `We sent a 6-digit verification code to ${authState.tab === 'phone' ? `+91 ${identifier}` : identifier}`;
+          `We sent a 6-digit verification code to ${authState.tab === 'phone' ? `+91 ${identifier}` : identifier}${channelsText}.`;
 
         if (data.previewOtp) {
           authState.previewOtp = data.previewOtp;
