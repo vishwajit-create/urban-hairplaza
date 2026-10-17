@@ -32,6 +32,29 @@ const app = express();
 const PORT = process.env.PORT || 7890;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
+function getPublicBaseUrl(req) {
+  if (process.env.PUBLIC_APP_URL && process.env.PUBLIC_APP_URL.startsWith('https://')) {
+    return process.env.PUBLIC_APP_URL.replace(/\/$/, '');
+  }
+  if (process.env.BASE_URL && process.env.BASE_URL.startsWith('https://')) {
+    return process.env.BASE_URL.replace(/\/$/, '');
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (req && req.get) {
+    const host = req.get('host');
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      return `${proto}://${host}`;
+    }
+  }
+  return 'https://salonbooking-rho.vercel.app';
+}
+
 // ── OPERATING TIME SLOTS (9:00 AM – 9:00 PM) ──────────────────────────────
 const OPERATING_SLOTS = [
   '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
@@ -255,6 +278,7 @@ app.get('/api/slots', async (req, res) => {
 
 // POST /api/create-payment-order — Initiate Cashfree advance payment order
 app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, message: 'Too many booking attempts. Please wait a moment.' }), async (req, res) => {
+  let createdBookingId = null;
   try {
     const { advanceAmount, bookingDetails } = req.body;
     if (!bookingDetails) {
@@ -270,14 +294,25 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
       return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
     }
 
+    const cleanReqPhone = phone.replace(/\D/g, '').slice(-10);
+
     // Verify slot is still free
     const bookings = await db.getBookings();
-    const bookingsAtSlot = bookings.filter(b =>
-      b.date === date &&
-      b.time === time &&
-      b.status !== 'cancelled' &&
-      !(b.status === 'payment_pending' && (Date.now() - new Date(b.createdAt).getTime()) > 15 * 60000)
-    );
+    const bookingsAtSlot = bookings.filter(b => {
+      if (b.date !== date || b.time !== time) return false;
+      if (b.status === 'cancelled') return false;
+      if (b.status === 'payment_pending') {
+        const ageMinutes = (Date.now() - new Date(b.createdAt).getTime()) / 60000;
+        if (ageMinutes > 15) return false;
+
+        // If the same client phone number is retrying their uncompleted booking, allow them through
+        const bPhone = (b.phone || '').replace(/\D/g, '').slice(-10);
+        if (bPhone && cleanReqPhone && bPhone === cleanReqPhone) {
+          return false;
+        }
+      }
+      return true;
+    });
 
     const chosenBarber = (barber && barber !== 'Any' && barber !== 'Any Barber') ? barber.trim() : 'Any Barber';
 
@@ -310,6 +345,7 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
     const advance = 50; // Strictly enforce standard ₹50 deposit on server
 
     const orderId = `UHP-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+    createdBookingId = orderId;
 
     const newBooking = {
       id: orderId,
@@ -331,45 +367,49 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
       createdAt: new Date().toISOString()
     };
 
-    // Save pending booking & client profile
-    await db.saveBooking(newBooking);
-
     const appId = process.env.CASHFREE_APP_ID;
     const secretKey = process.env.CASHFREE_SECRET_KEY;
     const env = (process.env.CASHFREE_ENVIRONMENT || 'sandbox').toLowerCase();
     const isConfigured = Boolean(appId && secretKey && appId.trim().length > 3);
+
+    const publicBase = getPublicBaseUrl(req);
 
     if (isConfigured) {
       const cashfreeUrl = env === 'production'
         ? 'https://api.cashfree.com/pg/orders'
         : 'https://sandbox.cashfree.com/pg/orders';
 
+      const customerPhone = cleanReqPhone.length === 10 ? cleanReqPhone : '9876543210';
+
       const cfPayload = {
         order_id: orderId,
         order_amount: advance,
         order_currency: 'INR',
         customer_details: {
-          customer_id: `cust_${phone.replace(/\D/g, '') || uuidv4().slice(0, 8)}`,
+          customer_id: `cust_${customerPhone}`,
           customer_name: name.trim(),
-          customer_phone: phone.replace(/\D/g, '').slice(-10),
+          customer_phone: customerPhone,
           customer_email: (email && email.includes('@')) ? email.trim() : 'client@urbanhairplaza.com'
         },
         order_meta: {
-          return_url: `${BASE_URL}/book.html?order_id={order_id}`,
-          notify_url: `${BASE_URL}/api/cashfree-webhook`
+          return_url: `${publicBase}/book.html?order_id={order_id}`,
+          notify_url: `${publicBase}/api/cashfree-webhook`
         },
-        order_note: `Urban Hairplaza Advance Booking for ${service}`
+        order_note: `Urban Hairplaza Advance Booking for ${newBooking.service}`
       };
 
       const cfRes = await axios.post(cashfreeUrl, cfPayload, {
         headers: {
           'Content-Type': 'application/json',
-          'x-client-id': appId,
-          'x-client-secret': secretKey,
+          'x-client-id': appId.trim(),
+          'x-client-secret': secretKey.trim(),
           'x-api-version': '2023-08-01'
         },
         timeout: 10000
       });
+
+      // ONLY save pending booking to DB after Cashfree order creation successfully succeeds!
+      await db.saveBooking(newBooking);
 
       return res.json({
         success: true,
@@ -380,6 +420,9 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
         is_simulation: false
       });
     } else {
+      // Simulation mode
+      await db.saveBooking(newBooking);
+
       return res.json({
         success: true,
         order_id: orderId,
@@ -394,9 +437,16 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
   } catch (err) {
     const errDetails = err.response?.data || err.message;
     console.error('[Cashfree] Order Creation Error:', errDetails);
+
+    // Ensure any partially saved booking is deleted if gateway order creation failed
+    if (createdBookingId) {
+      await db.deleteBooking(createdBookingId).catch(() => {});
+    }
+
+    const message = err.response?.data?.message || err.message || 'Failed to initiate advance payment order.';
     res.status(500).json({
       error: 'Failed to initiate advance payment order.',
-      details: err.response?.data?.message || err.message
+      details: message
     });
   }
 });

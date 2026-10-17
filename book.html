@@ -851,25 +851,38 @@
         });
 
         const orderData = await res.json();
-        if (!res.ok) throw new Error(orderData.error || 'Failed to create payment order');
+        if (!res.ok) {
+          throw new Error(orderData.details || orderData.error || 'Failed to create payment order');
+        }
 
         const orderId = orderData.order_id;
 
-        if (orderData.payment_session_id && !orderData.is_simulation && cashfree) {
-          cashfree.checkout({
-            paymentSessionId: orderData.payment_session_id,
-            redirectTarget: '_modal'
-          }).then(async (result) => {
-            if (result.error) {
-              showAlert(result.error.message || 'Payment cancelled.', 'warning');
-              resetPayButton();
-              return;
+        if (orderData.payment_session_id && !orderData.is_simulation) {
+          try {
+            if (typeof Cashfree !== 'undefined') {
+              cashfree = Cashfree({ mode: orderData.environment || 'sandbox' });
             }
-            await verifyBackendPayment(orderId, false);
-          }).catch(err => {
-            showAlert('Gateway modal closed: ' + err.message, 'warning');
-            resetPayButton();
-          });
+          } catch (e) {}
+
+          if (cashfree) {
+            cashfree.checkout({
+              paymentSessionId: orderData.payment_session_id,
+              redirectTarget: '_modal'
+            }).then(async (result) => {
+              if (result.error) {
+                showAlert(result.error.message || 'Payment cancelled. Your chair was not reserved yet.', 'warning');
+                resetPayButton();
+                return;
+              }
+              await verifyBackendPayment(orderId, false);
+            }).catch(err => {
+              showAlert('Gateway modal closed: ' + err.message, 'warning');
+              resetPayButton();
+            });
+          } else {
+            payBtn.innerHTML = '<span class="loading-spinner"></span> Confirming Reservation...';
+            await verifyBackendPayment(orderId, true);
+          }
         } else {
           payBtn.innerHTML = '<span class="loading-spinner"></span> Confirming Reservation...';
           await verifyBackendPayment(orderId, true);
