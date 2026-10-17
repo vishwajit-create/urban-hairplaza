@@ -136,6 +136,8 @@ async function initDB() {
             message TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
+
+          ALTER TABLE services ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'inshop';
         `);
         console.log('[DB] PostgreSQL schema verified successfully.');
       } finally {
@@ -532,23 +534,48 @@ async function getServices() {
     try {
       const res = await pgPool.query('SELECT * FROM services ORDER BY price ASC');
       if (res.rows.length > 0) {
-        return res.rows.map(r => ({
-          id: r.id,
-          name: r.name,
-          category: r.category,
-          duration: r.duration,
-          price: Number(r.price) || 0,
-          desc: r.description,
-          description: r.description,
-          badge: r.badge,
-          icon: '✂️'
-        }));
+        const services = res.rows.map(r => {
+          const isHome = (r.type === 'home') || 
+                         (r.category && r.category.toLowerCase().includes('home')) || 
+                         (r.name && r.name.toLowerCase().includes('home'));
+          return {
+            id: r.id,
+            name: r.name,
+            category: r.category,
+            duration: r.duration,
+            price: Number(r.price) || 0,
+            desc: r.description,
+            description: r.description,
+            badge: r.badge,
+            icon: isHome ? '🏠' : '✂️',
+            type: isHome ? 'home' : 'inshop'
+          };
+        });
+
+        // Ensure home services exist if not in database
+        const hasHome = services.some(s => s.type === 'home');
+        if (!hasHome) {
+          services.push(
+            { id: 'home-haircut', name: 'Home Visit – Signature Haircut', category: 'Home Visit', duration: '45 min', price: 250, desc: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', description: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', badge: 'Doorstep', icon: '🏠', type: 'home' },
+            { id: 'home-combo', name: 'Home Visit – Complete Grooming Combo', category: 'Home Visit', duration: '90 min', price: 500, desc: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', description: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', badge: 'Doorstep', icon: '🏠', type: 'home' }
+          );
+        }
+
+        return services;
       }
     } catch (e) {
       console.error('[DB] Postgres getServices error:', e.message);
     }
   }
-  return readJSON(FILES.services);
+  return readJSON(FILES.services).map(s => {
+    const isHome = (s.type === 'home') || 
+                   (s.category && s.category.toLowerCase().includes('home')) || 
+                   (s.name && s.name.toLowerCase().includes('home'));
+    return {
+      ...s,
+      type: isHome ? 'home' : 'inshop'
+    };
+  });
 }
 
 async function saveService(service) {

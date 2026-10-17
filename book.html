@@ -231,31 +231,52 @@
         <!-- ── STEP 2: BARBER ─────────────────────────────── -->
         <div class="step-panel" id="step-panel-2">
           <h3 style="margin-bottom: 4px;">2. Select Barber</h3>
-          <p style="font-size: 0.9rem; color:var(--text-muted); margin-bottom: 20px;">Pick your preferred barber or choose 'Any Available Barber' for more time slots.</p>
+          <p style="font-size: 0.9rem; color:var(--text-muted); margin-bottom: 18px;">Pick your preferred barber or choose 'Any Available Barber' for more time slots.</p>
+
+          <!-- Dropdown selector: Select Barber -- -->
+          <div style="background-color: #F9FAFB; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 22px;">
+            <label for="barber-select" style="display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; color: var(--text-main);">
+              Select Barber --
+            </label>
+            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+              <select id="barber-select" class="form-control" onchange="onBarberSelectDropdown(this.value)" style="max-width: 380px; font-weight: 600; font-size: 0.95rem; cursor: pointer; padding: 10px 14px;">
+                <option value="Any Barber" selected>💈 Any Available Barber (Fastest Availability)</option>
+                <option value="Raj Kumar">✂️ Raj Kumar – Master Barber (12+ yrs exp)</option>
+                <option value="Sameer Khan">🪒 Sameer Khan – Senior Stylist (8+ yrs exp)</option>
+                <option value="Amit Sharma">💆 Amit Sharma – Grooming Expert (6+ yrs exp)</option>
+              </select>
+              <span id="selected-barber-badge" style="font-size: 0.85rem; color: var(--accent-amber); font-weight: 600;">
+                ✓ Fastest Availability selected
+              </span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+              You can also click on any barber profile card below to choose:
+            </div>
+          </div>
 
           <div class="barber-pick-grid">
-            <div class="barber-pick-card selected" onclick="selectBarber('Any Barber', this)">
+            <div class="barber-pick-card selected" data-barber="Any Barber" onclick="selectBarber('Any Barber', this)">
               <div class="barber-avatar-img" style="display:flex; align-items:center; justify-content:center; font-size:1.5rem;">💈</div>
               <div style="font-weight: 600; color: var(--text-main);">Any Available Barber</div>
               <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Fastest Availability</div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">First available chair</div>
             </div>
 
-            <div class="barber-pick-card" onclick="selectBarber('Raj Kumar', this)">
+            <div class="barber-pick-card" data-barber="Raj Kumar" onclick="selectBarber('Raj Kumar', this)">
               <img src="images/barber_raj.png" alt="Raj Kumar" class="barber-avatar-img">
               <div style="font-weight: 600; color: var(--text-main);">Raj Kumar</div>
               <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Master Barber</div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">12+ yrs · Fades & Scissor</div>
             </div>
 
-            <div class="barber-pick-card" onclick="selectBarber('Sameer Khan', this)">
+            <div class="barber-pick-card" data-barber="Sameer Khan" onclick="selectBarber('Sameer Khan', this)">
               <img src="images/barber_sameer.png" alt="Sameer Khan" class="barber-avatar-img">
               <div style="font-weight: 600; color: var(--text-main);">Sameer Khan</div>
               <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Senior Stylist</div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">8+ yrs · Beard & Shave</div>
             </div>
 
-            <div class="barber-pick-card" onclick="selectBarber('Amit Sharma', this)">
+            <div class="barber-pick-card" data-barber="Amit Sharma" onclick="selectBarber('Amit Sharma', this)">
               <img src="images/barber_amit.png" alt="Amit Sharma" class="barber-avatar-img">
               <div style="font-weight: 600; color: var(--text-main);">Amit Sharma</div>
               <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Grooming Expert</div>
@@ -544,11 +565,12 @@
       await loadServices(preService);
 
       if (preBarber) {
-        document.querySelectorAll('.barber-pick-card').forEach(card => {
-          if (card.textContent.includes(preBarber)) {
-            selectBarber(preBarber, card);
-          }
-        });
+        const decoded = decodeURIComponent(preBarber).trim();
+        const validBarbers = ['Any Barber', 'Raj Kumar', 'Sameer Khan', 'Amit Sharma'];
+        const matched = validBarbers.find(b => b.toLowerCase() === decoded.toLowerCase() || decoded.toLowerCase().includes(b.toLowerCase().split(' ')[0]));
+        if (matched) {
+          updateBarberUI(matched);
+        }
       }
     });
 
@@ -560,15 +582,23 @@
 
       if (!state.services || state.services.length === 0) {
         state.services = [
-          { id: 'SRV-01', category: 'Haircut', type: 'inshop', name: 'Classic Tailored Haircut', desc: 'Precision cut tailored to your head shape.', price: 150, duration: 30 },
-          { id: 'SRV-02', category: 'Haircut', type: 'inshop', name: 'Fade & Taper Styling', desc: 'Skin fade, low fade, or taper cut with clean temple lines.', price: 200, duration: 35 },
-          { id: 'SRV-03', category: 'Beard', type: 'inshop', name: 'Beard Trim & Shape-Up', desc: 'Beard length trimming, cheek razor lining, and conditioning.', price: 100, duration: 20 },
-          { id: 'SRV-04', category: 'Shave', type: 'inshop', name: 'Royal Hot Towel Shave', desc: 'Steamed towels and straight razor shave.', price: 150, duration: 25 },
-          { id: 'SRV-07', category: 'Combos', type: 'inshop', name: 'Full Grooming Package', desc: 'Haircut + Beard sculpting + Head massage + Face cleanup.', price: 450, duration: 75 },
-          { id: 'SRV-08', category: 'Home Visit', type: 'home', name: 'Home Visit – Haircut', desc: 'Barber visits your home in Simraha / Araria.', price: 250, duration: 45 },
-          { id: 'SRV-09', category: 'Home Visit', type: 'home', name: 'Home Visit – Full Combo', desc: 'Full haircut, beard styling, and scalp massage at home.', price: 500, duration: 90 },
+          { id: 'classic-haircut', category: 'Haircut', type: 'inshop', name: 'Classic Tailored Haircut', desc: 'Precision cut tailored to your head shape.', price: 150, duration: 30 },
+          { id: 'fade-taper', category: 'Haircut', type: 'inshop', name: 'Fade & Taper Styling', desc: 'Skin fade, low fade, or taper cut with clean temple lines.', price: 200, duration: 35 },
+          { id: 'beard-trim', category: 'Beard', type: 'inshop', name: 'Beard Trim & Shape-Up', desc: 'Beard length trimming, cheek razor lining, and conditioning.', price: 100, duration: 20 },
+          { id: 'hot-towel-shave', category: 'Shave', type: 'inshop', name: 'Royal Hot Towel Shave', desc: 'Steamed towels and straight razor shave.', price: 150, duration: 25 },
+          { id: 'haircut-beard-combo', category: 'Combos', type: 'inshop', name: 'Full Grooming Package', desc: 'Haircut + Beard sculpting + Head massage + Face cleanup.', price: 450, duration: 75 },
+          { id: 'home-haircut', category: 'Home Visit', type: 'home', name: 'Home Visit – Signature Haircut', desc: 'Barber visits your home in Simraha / Araria.', price: 250, duration: 45 },
+          { id: 'home-combo', category: 'Home Visit', type: 'home', name: 'Home Visit – Complete Grooming Combo', desc: 'Full haircut, beard styling, and scalp massage at home.', price: 500, duration: 90 },
         ];
       }
+
+      // Ensure every service has a normalized type
+      state.services.forEach(s => {
+        if (!s.type) {
+          const isHome = (s.category && s.category.toLowerCase().includes('home')) || (s.name && s.name.toLowerCase().includes('home'));
+          s.type = isHome ? 'home' : 'inshop';
+        }
+      });
 
       renderServices(preSelectedId);
     }
@@ -583,35 +613,98 @@
 
     function renderServices(autoSelectId) {
       const container = document.getElementById('services-list-container');
-      const filtered = state.services.filter(s => s.type === state.mode);
+      const filtered = state.services.filter(s => {
+        const itemType = s.type || ((s.category && s.category.toLowerCase().includes('home')) || (s.name && s.name.toLowerCase().includes('home')) ? 'home' : 'inshop');
+        return itemType === state.mode;
+      });
 
-      container.innerHTML = filtered.map(s => `
-        <div class="option-card ${state.selectedService?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
-          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-            <span style="font-weight:600; color:var(--text-main); font-size:1rem;">${s.name}</span>
-            <span style="font-weight:700; color:var(--text-main); font-size:1.15rem;">₹${s.price}</span>
+      const listToRender = (filtered.length > 0) ? filtered : state.services;
+
+      if (!listToRender || listToRender.length === 0) {
+        container.innerHTML = '<div class="alert alert-info" style="grid-column:1/-1;">No services found. Please reload or contact the salon.</div>';
+        return;
+      }
+
+      container.innerHTML = listToRender.map(s => {
+        const isSelected = (state.selectedService && state.selectedService.id === s.id);
+        return `
+          <div class="option-card ${isSelected ? 'selected' : ''}" data-service-id="${s.id}" onclick="selectService('${s.id}')">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+              <span style="font-weight:600; color:var(--text-main); font-size:1rem;">${s.name}</span>
+              <span style="font-weight:700; color:var(--text-main); font-size:1.15rem;">₹${s.price}</span>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">${s.desc || s.description || ''}</div>
+            <div style="font-size:0.775rem; color:var(--text-light); margin-top:10px;">⏱ ${s.duration || '30 min'}</div>
           </div>
-          <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">${s.desc}</div>
-          <div style="font-size:0.775rem; color:var(--text-light); margin-top:10px;">⏱ ${s.duration} mins</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
-      if (autoSelectId) selectService(autoSelectId);
+      if (autoSelectId) {
+        selectService(autoSelectId);
+      } else if (!state.selectedService && listToRender.length > 0) {
+        selectService(listToRender[0].id);
+      } else if (state.selectedService) {
+        document.getElementById('btn-next-step-1').disabled = false;
+      }
     }
 
     function selectService(id) {
-      const s = state.services.find(item => item.id === id);
+      let s = state.services.find(item => item.id === id);
+      if (!s && id) {
+        s = state.services.find(item => item.id.toLowerCase() === id.toLowerCase() || item.name.toLowerCase().includes(id.toLowerCase()));
+      }
       if (!s) return;
       state.selectedService = s;
-      renderServices();
+
+      document.querySelectorAll('#services-list-container .option-card').forEach(card => {
+        if (card.getAttribute('data-service-id') === s.id || card.textContent.includes(s.name)) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      });
+
       document.getElementById('btn-next-step-1').disabled = false;
     }
 
+    function onBarberSelectDropdown(val) {
+      const barber = (val && val.trim()) ? val.trim() : 'Any Barber';
+      updateBarberUI(barber);
+    }
+
     function selectBarber(name, el) {
-      state.selectedBarber = name;
-      document.querySelectorAll('.barber-pick-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      document.getElementById('lbl-selected-barber').textContent = name;
+      const barber = (name && name.trim()) ? name.trim() : 'Any Barber';
+      updateBarberUI(barber);
+    }
+
+    function updateBarberUI(name) {
+      const barberName = name || 'Any Barber';
+      state.selectedBarber = barberName;
+      document.getElementById('lbl-selected-barber').textContent = barberName;
+
+      // Synchronize dropdown
+      const dropdown = document.getElementById('barber-select');
+      if (dropdown) {
+        dropdown.value = barberName;
+      }
+
+      // Synchronize visual cards
+      document.querySelectorAll('.barber-pick-card').forEach(c => {
+        const cardBarber = c.getAttribute('data-barber') || '';
+        if (cardBarber === barberName) {
+          c.classList.add('selected');
+        } else {
+          c.classList.remove('selected');
+        }
+      });
+
+      // Synchronize helper status badge
+      const badge = document.getElementById('selected-barber-badge');
+      if (badge) {
+        badge.textContent = (barberName === 'Any Barber') 
+          ? '✓ Fastest Availability selected' 
+          : `✓ Selected: ${barberName}`;
+      }
     }
 
     function setQuickDate(offsetDays, btn) {

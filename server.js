@@ -174,6 +174,16 @@ app.get('/api/services', async (req, res) => {
   }
 });
 
+// GET /api/barbers — List active barbers
+app.get('/api/barbers', (req, res) => {
+  res.json([
+    { id: 'any', name: 'Any Barber', title: 'Any Available Barber', role: 'Fastest Availability', exp: 'First available chair', avatar: '' },
+    { id: 'raj', name: 'Raj Kumar', title: 'Raj Kumar', role: 'Master Barber', exp: '12+ yrs · Fades & Scissor', avatar: 'images/barber_raj.png' },
+    { id: 'sameer', name: 'Sameer Khan', title: 'Sameer Khan', role: 'Senior Stylist', exp: '8+ yrs · Beard & Shave', avatar: 'images/barber_sameer.png' },
+    { id: 'amit', name: 'Amit Sharma', title: 'Amit Sharma', role: 'Grooming Expert', exp: '6+ yrs · Massage & Cleanups', avatar: 'images/barber_amit.png' }
+  ]);
+});
+
 // GET /api/slots — Check availability per barber and per date
 app.get('/api/slots', async (req, res) => {
   const { date, barber } = req.query;
