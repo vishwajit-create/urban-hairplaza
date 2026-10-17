@@ -340,10 +340,7 @@
             We sent a verification code to your number.
           </p>
 
-          <!-- Test Helper Badge -->
-          <div id="preview-otp-badge" style="display:none; background:var(--accent-amber-light); border:1px solid var(--accent-amber); color:var(--accent-amber); padding:8px 12px; border-radius:var(--radius-sm); font-size:0.85rem; margin-bottom:16px; cursor:pointer;" onclick="autoFillOtp()">
-            ⚡ <strong>Test OTP: <span id="preview-otp-code"></span></strong> (Click to auto-fill)
-          </div>
+
 
           <div class="otp-input-wrap">
             <input type="text" class="otp-field" id="auth-otp" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
@@ -486,7 +483,6 @@
     const authState = {
       tab: 'phone',
       currentIdentifier: '',
-      previewOtp: '',
       user: null,
       bookings: [],
       currentFilter: 'all'
@@ -570,25 +566,13 @@
         document.getElementById('otp-sent-to-label').textContent = 
           `We sent a 6-digit verification code to ${authState.tab === 'phone' ? `+91 ${identifier}` : identifier}${channelsText}.`;
 
-        if (data.previewOtp) {
-          authState.previewOtp = data.previewOtp;
-          document.getElementById('preview-otp-code').textContent = data.previewOtp;
-          document.getElementById('preview-otp-badge').style.display = 'inline-block';
-        }
-
-        showAlert(data.message, 'success');
+        showAlert(data.message || 'Verification code sent.', 'success');
         document.getElementById('auth-otp').focus();
       } catch (err) {
         showAlert(err.message, 'danger');
       } finally {
         btn.disabled = false;
         btn.textContent = 'Send Verification Code →';
-      }
-    }
-
-    function autoFillOtp() {
-      if (authState.previewOtp) {
-        document.getElementById('auth-otp').value = authState.previewOtp;
       }
     }
 

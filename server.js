@@ -437,12 +437,10 @@ app.post('/api/auth/send-otp', rateLimit({ windowMs: 60000, max: 10, message: 'T
 
     res.json({
       success: true,
-      message: `Verification code sent to ${isPhone ? `+91 ${cleanPhone}` : target} via ${channelSummary}.`,
+      message: `Verification code sent to ${isPhone ? `+91 ${cleanPhone}` : target}${deliveryChannels.length > 0 ? ` via ${deliveryChannels.join(' & ')}` : ''}.`,
       type,
       target,
-      channels: deliveryChannels,
-      // Provide preview OTP in response for instant testing & zero lockout
-      previewOtp: otp
+      channels: deliveryChannels
     });
   } catch (err) {
     console.error('[AUTH-OTP] Error:', err);
@@ -482,12 +480,14 @@ app.post('/api/auth/verify-otp', rateLimit({ windowMs: 60000, max: 20, message: 
       spent: 0
     });
 
+    const fallbackId = userPhone ? `USR-${userPhone}` : `USR-${Date.now()}`;
+
     // Establish session
     req.session.user = {
-      id: user.id || (userPhone ? `USR-${userPhone}` : `USR-${Date.now()}`),
-      name: user.name || userName,
-      phone: user.phone || userPhone,
-      email: user.email || userEmail
+      id: (user && user.id) || fallbackId,
+      name: (user && user.name) || userName,
+      phone: (user && user.phone) || userPhone,
+      email: (user && user.email) || userEmail
     };
 
     res.json({

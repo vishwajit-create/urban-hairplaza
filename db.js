@@ -461,26 +461,34 @@ async function getTransactions() {
 }
 
 // ── USERS / CLIENT PROFILES METHODS ─────────────────────────────────────────
-async function upsertUser({ name, phone, email, spent = 0 }) {
-  if (!phone) return null;
-  const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-  if (!cleanPhone) return null;
+async function upsertUser({ name, phone = '', email = '', spent = 0 }) {
+  const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+  const cleanEmail = email ? String(email).trim().toLowerCase() : '';
+
+  if (!cleanPhone && !cleanEmail) return null;
 
   const users = readJSON(FILES.users);
-  let user = users.find(u => u.phone.replace(/\D/g, '').slice(-10) === cleanPhone);
+  let user = users.find(u => {
+    if (cleanPhone && (u.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone) return true;
+    if (cleanEmail && (u.email || '').trim().toLowerCase() === cleanEmail) return true;
+    return false;
+  });
+
+  const userId = user ? user.id : (cleanPhone ? `USR-${cleanPhone}` : `USR-${Date.now()}`);
 
   if (user) {
     if (name && name.trim()) user.name = name.trim();
-    if (email && email.trim()) user.email = email.trim();
+    if (cleanPhone && !user.phone) user.phone = cleanPhone;
+    if (cleanEmail && !user.email) user.email = cleanEmail;
     user.lastVisit = new Date().toISOString();
     user.totalBookings = (user.totalBookings || 1) + 1;
     user.totalSpent = (Number(user.totalSpent) || 0) + Number(spent);
   } else {
     user = {
-      id: `USR-${cleanPhone}`,
+      id: userId,
       name: (name || 'Valued Client').trim(),
-      phone: phone.trim(),
-      email: (email || '').trim(),
+      phone: cleanPhone,
+      email: cleanEmail,
       firstVisit: new Date().toISOString(),
       lastVisit: new Date().toISOString(),
       totalBookings: 1,
@@ -492,23 +500,38 @@ async function upsertUser({ name, phone, email, spent = 0 }) {
 
   if (pgPool) {
     try {
-      const query = `
-        INSERT INTO users (id, name, phone, email, first_visit, last_visit, total_bookings, total_spent)
-        VALUES ($1, $2, $3, $4, NOW(), NOW(), 1, $5)
-        ON CONFLICT (phone) DO UPDATE SET
-          name = COALESCE(NULLIF(EXCLUDED.name, ''), users.name),
-          email = COALESCE(NULLIF(EXCLUDED.email, ''), users.email),
-          last_visit = NOW(),
-          total_bookings = users.total_bookings + 1,
-          total_spent = users.total_spent + EXCLUDED.total_spent;
-      `;
-      await pgPool.query(query, [
-        `USR-${cleanPhone}`,
-        name || 'Valued Client',
-        phone.trim(),
-        email || '',
-        Number(spent) || 0
-      ]);
+      if (cleanPhone) {
+        const query = `
+          INSERT INTO users (id, name, phone, email, first_visit, last_visit, total_bookings, total_spent)
+          VALUES ($1, $2, $3, $4, NOW(), NOW(), 1, $5)
+          ON CONFLICT (phone) DO UPDATE SET
+            name = COALESCE(NULLIF(EXCLUDED.name, ''), users.name),
+            email = COALESCE(NULLIF(EXCLUDED.email, ''), users.email),
+            last_visit = NOW(),
+            total_bookings = users.total_bookings + 1,
+            total_spent = users.total_spent + EXCLUDED.total_spent;
+        `;
+        await pgPool.query(query, [
+          userId,
+          name || 'Valued Client',
+          cleanPhone,
+          cleanEmail || '',
+          Number(spent) || 0
+        ]);
+      } else if (cleanEmail) {
+        const existRes = await pgPool.query('SELECT * FROM users WHERE LOWER(email) = $1 LIMIT 1', [cleanEmail]);
+        if (existRes.rows.length > 0) {
+          await pgPool.query(
+            `UPDATE users SET name = COALESCE(NULLIF($1, ''), name), last_visit = NOW(), total_bookings = total_bookings + 1, total_spent = total_spent + $2 WHERE id = $3`,
+            [name || '', Number(spent) || 0, existRes.rows[0].id]
+          );
+        } else {
+          await pgPool.query(
+            `INSERT INTO users (id, name, phone, email, first_visit, last_visit, total_bookings, total_spent) VALUES ($1, $2, NULL, $3, NOW(), NOW(), 1, $4)`,
+            [userId, name || 'Valued Client', cleanEmail, Number(spent) || 0]
+          );
+        }
+      }
     } catch (e) {
       console.error('[DB] Postgres upsertUser error:', e.message);
     }
