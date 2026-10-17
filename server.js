@@ -13,11 +13,11 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const uuidv4 = () => crypto.randomUUID();
 const db = require('./db');
 
 function safeCompare(a, b) {
