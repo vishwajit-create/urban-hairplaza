@@ -1,139 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photo Gallery – Urban Hairplaza</title>
-<meta name="description" content="Browse our gallery of haircuts, barbershop interior, and happy clients at Urban Hairplaza, Araria.">
-<link rel="stylesheet" href="styles.css">
-<style>
-.gallery-masonry {
-  columns: 3;
-  column-gap: 14px;
-}
-.gallery-masonry .gallery-item {
-  break-inside: avoid;
-  margin-bottom: 14px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  position: relative;
-}
-.gallery-masonry img { width: 100%; display: block; border-radius: var(--radius); }
-@media(max-width: 768px) { .gallery-masonry { columns: 2; } }
-@media(max-width: 480px) { .gallery-masonry { columns: 1; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery – Urban Hairplaza | Simraha, Araria</title>
+  <meta name="description" content="View photos of Urban Hairplaza barbershop in Simraha, Araria. Salon interior, haircut styles, and professional grooming equipment.">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<nav id="navbar">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo">
-      <div class="nav-logo-icon">✂️</div>
-      <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
-    </a>
-    <div class="nav-links">
-      <a href="index.html">Home</a><a href="services.html">Services</a>
-      <a href="barbers.html">Our Barbers</a><a href="gallery.html" class="active">Gallery</a>
-      <a href="visualizer.html">AI Visualizer</a><a href="about.html">About Us</a>
-      <a href="contact.html">Contact Us</a>
-    </div>
-    <div class="nav-actions"><a href="book.html" class="btn btn-primary btn-sm">Book Now</a></div>
-    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
-  </div>
-</nav>
-<div id="mobile-menu">
-  <a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a>
-  <a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a>
-  <a href="about.html">About Us</a><a href="contact.html">Contact Us</a>
-  <a href="book.html" class="btn btn-primary">Book Now</a>
-</div>
-
-<section class="page-hero">
-  <div class="container">
-    <div class="breadcrumb"><a href="index.html">Home</a> <span>›</span> Gallery</div>
-    <div class="section-label" style="justify-content:center;">Our Craft</div>
-    <h1 style="font-size:clamp(32px,5vw,60px);">Photo <span class="text-gold">Gallery</span></h1>
-    <p>A glimpse into our world — haircuts, happy clients, barber tools, and the atmosphere of Urban Hairplaza.</p>
-  </div>
-</section>
-
-<section class="section" style="background:var(--black);">
-  <div class="container">
-    <div class="gallery-masonry reveal">
-      <div class="gallery-item">
-        <img src="images/real_shop_team1.jpg" alt="Urban Hairplaza Team" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar</span>
+        <span>🕐 Mon – Sun: 9:00 AM – 9:00 PM</span>
       </div>
-      <div class="gallery-item">
-        <img src="images/real_shop_interior.jpg" alt="Urban Hairplaza Shop Interior" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item">
-        <img src="images/real_shop_event2.jpg" alt="Urban Hairplaza Celebration" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item">
-        <img src="images/real_shop_team2.jpg" alt="Urban Hairplaza Staff" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item">
-        <img src="images/real_shop_event1.jpg" alt="Guests at Urban Hairplaza" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-    </div>
-
-    <div class="cta-banner reveal" style="margin-top: 60px;">
-      <h2>Like What You See?</h2>
-      <div class="gold-divider center"></div>
-      <p>Book your appointment today and let our expert barbers create your perfect look.</p>
-      <div class="btn-group">
-        <a href="book.html" class="btn btn-primary btn-lg">Book Now 📅</a>
-        <a href="visualizer.html" class="btn btn-outline btn-lg">Try AI Visualizer 🤖</a>
+      <div class="topbar-info">
+        <span>📞 <a href="tel:+916202692426">+91 6202 692 426</a></span>
+        <span><a href="admin/login.html" style="color:var(--text-muted);">Admin Portal</a></span>
       </div>
     </div>
   </div>
-</section>
 
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightbox-close">✕</button>
-  <img class="lightbox-img" id="lightbox-img" src="" alt="Gallery image">
-</div>
+  <!-- NAVIGATION -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">✂️</div>
+        <div>
+          <div class="nav-brand-title">Urban Hairplaza</div>
+          <div class="nav-brand-sub">Simraha · Araria</div>
+        </div>
+      </a>
 
-<footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <a href="index.html" class="nav-logo" style="display:flex; margin-bottom: 16px;">
-          <div class="nav-logo-icon">✂️</div>
-          <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
-        </a>
-        <p>Araria's premier barbershop offering premium grooming in-shop and at your doorstep.</p>
-        <div class="social-links" style="margin-top: 20px;">
-          <a href="#" class="social-link">📷</a><a href="#" class="social-link">📘</a>
-          <a href="#" class="social-link">💬</a><a href="mailto:urbanhairplazapvtltd@gmail.com" class="social-link">✉️</a>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services & Pricing</a>
+        <a href="barbers.html" class="nav-link">Our Barbers</a>
+        <a href="gallery.html" class="nav-link active">Gallery</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="book.html" class="btn btn-primary btn-sm">Book Appointment</a>
+        <button class="hamburger" id="hamburger" aria-label="Open mobile menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="services.html" class="nav-link">Services & Pricing</a>
+    <a href="barbers.html" class="nav-link">Our Barbers</a>
+    <a href="gallery.html" class="nav-link active">Gallery</a>
+    <a href="about.html" class="nav-link">About Us</a>
+    <a href="contact.html" class="nav-link">Contact</a>
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <a href="book.html" class="btn btn-primary btn-block">Book Appointment</a>
+      <a href="tel:+916202692426" class="btn btn-secondary btn-block">📞 Call Salon</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="section-sm" style="background-color: #FFFFFF; border-bottom: 1px solid var(--border);">
+    <div class="container text-center">
+      <span class="mono-tag">Photo Gallery</span>
+      <h1 class="hero-title" style="margin-top: 6px;">Inside Our Barbershop</h1>
+      <p class="section-subtitle">A look at our clean chairs, styling stations, tools, and recent haircuts.</p>
+    </div>
+  </section>
+
+  <!-- GALLERY SECTION -->
+  <section class="section">
+    <div class="container">
+      <div class="gallery-grid">
+        <div class="gallery-item">
+          <img src="images/gallery_shop_interior.png" alt="Barbershop Chairs & Mirrors" loading="lazy">
+          <div class="gallery-caption">Barber Chairs & Styling Mirrors</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="images/gallery_fade_haircut.png" alt="Skin Fade Haircut" loading="lazy">
+          <div class="gallery-caption">Precision Mid Fade & Beard Line</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="images/gallery_happy_client.png" alt="Happy Client in Barber Chair" loading="lazy">
+          <div class="gallery-caption">Client at Urban Hairplaza</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="images/gallery_barber_tools.png" alt="Clean Barber Tools & Equipment" loading="lazy">
+          <div class="gallery-caption">Sanitized Shears, Clippers & Razors</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="images/hero_barbershop.png" alt="Shop Ambience" loading="lazy">
+          <div class="gallery-caption">Shop Ambience in Simraha</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="images/service_beard.png" alt="Beard Trimming & Lineup" loading="lazy">
+          <div class="gallery-caption">Beard Sculpting & Razor Work</div>
         </div>
       </div>
-      <div class="footer-col"><h5>Quick Links</h5><ul>
-        <li><a href="index.html">Home</a></li><li><a href="services.html">Services</a></li>
-        <li><a href="barbers.html">Our Barbers</a></li><li><a href="gallery.html">Gallery</a></li>
-      </ul></div>
-      <div class="footer-col"><h5>Company</h5><ul>
-        <li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact Us</a></li>
-        <li><a href="book.html">Book Now</a></li>
-      </ul></div>
-      <div class="footer-col"><h5>Contact Us</h5><ul class="footer-contact">
-        <li><span class="icon">📍</span><span>Simraha, Araria – 854331, Bihar</span></li>
-        <li><span class="icon">📱</span><a href="tel:+916202692426">+91 6202 692 426</a></li>
-        <li><span class="icon">🕐</span><span>Mon – Sun: 9 AM – 9 PM</span></li>
-      </ul></div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2025 <strong style="color:var(--gold);">URBAN HAIRPLAZA PRIVATE LIMITED</strong>. All rights reserved.</p>
-      <p>Developed with ❤️ by <a href="#">Vishwajit Yadav</a></p>
-    </div>
-  </div>
-</footer>
 
-<script src="main.js"></script>
+      <div style="text-align: center; margin-top: 48px;">
+        <a href="book.html" class="btn btn-primary btn-lg">Book an Appointment</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="nav-brand-title" style="margin-bottom: 8px;">Urban Hairplaza</div>
+          <p style="font-size: 0.875rem; color: var(--text-muted); max-width: 280px;">
+            Men's barbershop offering haircuts, beard grooming, and doorstep home services in Simraha, Araria.
+          </p>
+        </div>
+        <div>
+          <h4 class="footer-title">Pages</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="services.html">Services & Pricing</a></li>
+            <li><a href="barbers.html">Our Barbers</a></li>
+            <li><a href="gallery.html">Gallery</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Booking</h4>
+          <ul class="footer-links">
+            <li><a href="book.html">In-Shop Appointment</a></li>
+            <li><a href="book.html?type=home">Doorstep Home Visit</a></li>
+            <li><a href="admin/login.html">Admin Login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Contact</h4>
+          <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+            <div>📍 Simraha, Araria – 854331, Bihar</div>
+            <div style="margin: 6px 0;">📞 <a href="tel:+916202692426" style="color:var(--text-main); font-weight:600;">+91 6202 692 426</a></div>
+            <div>🕐 9:00 AM – 9:00 PM (Daily)</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Urban Hairplaza Private Limited. All rights reserved.</span>
+        <span>Simraha, Araria, Bihar</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close">✕</button>
+    <img class="lightbox-img" id="lightbox-img" src="" alt="Gallery Preview">
+  </div>
+
+  <script src="main.js"></script>
 </body>
 </html>

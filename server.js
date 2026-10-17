@@ -1,108 +1,496 @@
 /**
- * Urban Hairplaza – Backend Server
- * Node.js + Express
- * Features: REST API, JSON flat-file storage, Session auth, WhatsApp (CallMeBot) + SMS (Twilio) notifications
+ * Urban Hairplaza – Production Backend Server
+ * Technology: Node.js + Express + Neon PostgreSQL / JSON Fallback
+ * Features:
+ *   - Per-barber & general slot availability engine
+ *   - Cashfree Payment Gateway (PG v3 API) with dev simulation mode
+ *   - Full transaction logging & persistent client profiles
+ *   - WhatsApp notification helpers & click-to-chat generator
+ *   - Admin session authentication & full CRUD APIs
+ *   - Neon PostgreSQL cloud storage with local JSON fallback
  */
 
-
 require('dotenv').config();
-const express    = require('express');
-const session    = require('express-session');
+const express = require('express');
+const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
-const axios      = require('axios');
-const path       = require('path');
-const fs         = require('fs');
+const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
+const db = require('./db');
 
-
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 7890;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
+// ── OPERATING TIME SLOTS (9:00 AM – 9:00 PM) ──────────────────────────────
+const OPERATING_SLOTS = [
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+  '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
+  '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
+  '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM'
+];
 
-// ── DATA DIRECTORY ──────────────────────────────────────────────────────────
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-const FILES = {
-  services:  path.join(DATA_DIR, 'services.json'),
-  bookings:  path.join(DATA_DIR, 'bookings.json'),
-  enquiries: path.join(DATA_DIR, 'enquiries.json'),
-};
-
-function readJSON(file) {
-  try {
-    if (!fs.existsSync(file)) return [];
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch { return []; }
-}
-
-function writeJSON(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
-}
-
-
-// ── SEED DEFAULT SERVICES ────────────────────────────────────────────────────
-function initDB() {
-  if (!fs.existsSync(FILES.services) || readJSON(FILES.services).length === 0) {
-    writeJSON(FILES.services, [
-      { id: uuidv4(), type: 'inshop', icon: '✂️',  name: 'Classic Haircut',      desc: 'Precision cut tailored to your style',          price: 150, duration: 30 },
-      { id: uuidv4(), type: 'inshop', icon: '🪒',  name: 'Beard Trim & Shape',   desc: 'Clean lines and sharp beard styling',           price: 100, duration: 20 },
-      { id: uuidv4(), type: 'inshop', icon: '💆',  name: 'Head Massage',          desc: 'Relaxing scalp and head massage',               price: 120, duration: 25 },
-      { id: uuidv4(), type: 'inshop', icon: '🧴',  name: 'Hair Wash & Style',    desc: 'Shampoo, condition, and blow-dry',              price: 200, duration: 40 },
-      { id: uuidv4(), type: 'inshop', icon: '🪮',  name: 'Full Grooming Package', desc: 'Haircut + beard + massage combo',              price: 350, duration: 75 },
-      { id: uuidv4(), type: 'home',   icon: '🏠',  name: 'Home Visit – Haircut', desc: 'Professional haircut at your doorstep',         price: 250, duration: 45 },
-      { id: uuidv4(), type: 'home',   icon: '🏠',  name: 'Home Visit – Grooming', desc: 'Full grooming package at your home',          price: 500, duration: 90 },
-    ]);
-  }
-  if (!fs.existsSync(FILES.bookings))  writeJSON(FILES.bookings,  []);
-  if (!fs.existsSync(FILES.enquiries)) writeJSON(FILES.enquiries, []);
-}
-
+const VALID_BARBERS = ['Raj Kumar', 'Sameer Khan', 'Amit Sharma'];
 
 // ── MIDDLEWARE ───────────────────────────────────────────────────────────────
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 app.use(session({
-  secret:            process.env.SESSION_SECRET || 'urban-hairplaza-secret-2025',
-  resave:            false,
+  secret: process.env.SESSION_SECRET || 'urban-hairplaza-secret-2026',
+  resave: false,
   saveUninitialized: false,
-  cookie:            { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Serve static files
+// Static files
 app.use(express.static(path.join(__dirname)));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
+const STATIC_PAGES = {
+  '/': path.join(__dirname, 'index.html'),
+  '/index.html': path.join(__dirname, 'index.html'),
+  '/book': path.join(__dirname, 'book.html'),
+  '/book.html': path.join(__dirname, 'book.html'),
+  '/services': path.join(__dirname, 'services.html'),
+  '/services.html': path.join(__dirname, 'services.html'),
+  '/barbers': path.join(__dirname, 'barbers.html'),
+  '/barbers.html': path.join(__dirname, 'barbers.html'),
+  '/gallery': path.join(__dirname, 'gallery.html'),
+  '/gallery.html': path.join(__dirname, 'gallery.html'),
+  '/about': path.join(__dirname, 'about.html'),
+  '/about.html': path.join(__dirname, 'about.html'),
+  '/contact': path.join(__dirname, 'contact.html'),
+  '/contact.html': path.join(__dirname, 'contact.html'),
+  '/lookbook': path.join(__dirname, 'lookbook.html'),
+  '/lookbook.html': path.join(__dirname, 'lookbook.html'),
+  '/styles.css': path.join(__dirname, 'styles.css'),
+  '/main.js': path.join(__dirname, 'main.js')
+};
 
-// ── NOTIFICATION HELPERS ─────────────────────────────────────────────────────
-async function sendWhatsApp(message) {
-  const phone  = process.env.CALLMEBOT_PHONE;
-  const apiKey = process.env.CALLMEBOT_APIKEY;
+for (const [route, filePath] of Object.entries(STATIC_PAGES)) {
+  app.get(route, (req, res) => {
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('Page not found');
+    }
+  });
+}
+
+// ── WHATSAPP HELPER ──────────────────────────────────────────────────────────
+async function sendWhatsAppNotification(message) {
+  const phone = process.env.WHATSAPP_PHONE || process.env.CALLMEBOT_PHONE;
+  const apiKey = process.env.WHATSAPP_APIKEY || process.env.CALLMEBOT_APIKEY;
   if (!phone || !apiKey) return;
   try {
     await axios.get('https://api.callmebot.com/whatsapp.php', {
-      params: { phone, apikey: apiKey, text: message }
+      params: { phone, apikey: apiKey, text: message },
+      timeout: 5000
     });
   } catch (err) {
-    console.error('WhatsApp notification failed:', err.message);
+    console.warn('[WhatsApp] Notification failed:', err.message);
   }
 }
 
+function buildWhatsAppMessage(booking) {
+  return `✂️ *Urban Hairplaza Booking Confirmation*\n` +
+    `--------------------------------\n` +
+    `*Booking ID:* #${booking.id}\n` +
+    `*Client:* ${booking.name} (${booking.phone})\n` +
+    `*Service:* ${booking.service}\n` +
+    `*Barber:* ${booking.barber || 'Assigned Stylist'}\n` +
+    `*Date & Time:* ${booking.date} at ${booking.time}\n` +
+    `*Mode:* ${booking.type === 'home' ? '🏠 Home Visit' : '🏢 In-Shop'}\n` +
+    `*Total Fee:* ₹${booking.price}\n` +
+    `*Advance Paid:* ₹${booking.advancePaid || 0}\n` +
+    `*Balance Due:* ₹${Math.max(0, (booking.price || 0) - (booking.advancePaid || 0))}\n` +
+    `*Status:* Confirmed ✅\n` +
+    `--------------------------------\n` +
+    `📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar`;
+}
 
-// ── PUBLIC ROUTES ────────────────────────────────────────────────────────────
+// ── PUBLIC API ROUTES ────────────────────────────────────────────────────────
 
-// GET /api/services — list all services
-app.get('/api/services', (req, res) => {
+// GET /api/services — List active services
+app.get('/api/services', async (req, res) => {
   try {
-    const services = readJSON(FILES.services);
+    const services = await db.getServices();
     res.json(services);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load services' });
   }
 });
 
+// GET /api/slots — Check availability per barber and per date
+app.get('/api/slots', async (req, res) => {
+  const { date, barber } = req.query;
+  if (!date) {
+    return res.status(400).json({ error: 'Query parameter date (YYYY-MM-DD) is required' });
+  }
 
-// POST /api/enquiries — submit contact form
+  try {
+    const bookings = await db.getBookings();
+    // Active bookings on this date (not cancelled and not expired payment_pending)
+    const activeBookings = bookings.filter(b => {
+      if (b.date !== date) return false;
+      if (b.status === 'cancelled') return false;
+      if (b.status === 'payment_pending') {
+        const ageMinutes = (Date.now() - new Date(b.createdAt).getTime()) / 60000;
+        return ageMinutes <= 15;
+      }
+      return true;
+    });
+
+    // Check past time if date is today (normalize to IST UTC+5.5)
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const todayStr = istNow.toISOString().split('T')[0];
+    const currentHours = istNow.getUTCHours();
+    const currentMins = istNow.getUTCMinutes();
+
+    const isToday = (date === todayStr);
+    const bookedSlots = [];
+
+    OPERATING_SLOTS.forEach(slot => {
+      if (isToday) {
+        const [timePart, meridiem] = slot.split(' ');
+        let [h, m] = timePart.split(':').map(Number);
+        if (meridiem === 'PM' && h !== 12) h += 12;
+        if (meridiem === 'AM' && h === 12) h = 0;
+
+        if (h < currentHours || (h === currentHours && m <= currentMins)) {
+          bookedSlots.push(slot);
+          return;
+        }
+      }
+
+      const bookingsAtSlot = activeBookings.filter(b => b.time === slot);
+
+      if (barber && barber !== 'Any' && barber !== 'Any Barber') {
+        const isBarberBusy = bookingsAtSlot.some(b => b.barber === barber);
+        if (isBarberBusy) bookedSlots.push(slot);
+      } else {
+        if (bookingsAtSlot.length >= 3) bookedSlots.push(slot);
+      }
+    });
+
+    const availableSlots = OPERATING_SLOTS.filter(s => !bookedSlots.includes(s));
+
+    res.json({
+      date,
+      barber: barber || 'Any',
+      allSlots: OPERATING_SLOTS,
+      bookedSlots,
+      availableSlots
+    });
+  } catch (err) {
+    console.error('Slots error:', err);
+    res.status(500).json({ error: 'Failed to compute slot availability' });
+  }
+});
+
+// POST /api/create-payment-order — Initiate Cashfree advance payment order
+app.post('/api/create-payment-order', async (req, res) => {
+  try {
+    const { advanceAmount, bookingDetails } = req.body;
+    if (!bookingDetails) {
+      return res.status(400).json({ error: 'Missing booking details' });
+    }
+
+    const {
+      name, phone, email, service, barber, date, time,
+      type, address, notes, price, duration
+    } = bookingDetails;
+
+    if (!name || !phone || !service || !date || !time) {
+      return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
+    }
+
+    // Verify slot is still free
+    const bookings = await db.getBookings();
+    const bookingsAtSlot = bookings.filter(b =>
+      b.date === date &&
+      b.time === time &&
+      b.status !== 'cancelled' &&
+      !(b.status === 'payment_pending' && (Date.now() - new Date(b.createdAt).getTime()) > 15 * 60000)
+    );
+
+    const chosenBarber = (barber && barber !== 'Any' && barber !== 'Any Barber') ? barber.trim() : 'Any Barber';
+
+    if (chosenBarber !== 'Any Barber') {
+      const barberBusy = bookingsAtSlot.some(b => b.barber === chosenBarber);
+      if (barberBusy) {
+        return res.status(400).json({ error: `${chosenBarber} is already booked at ${time} on ${date}. Please select another time slot or barber.` });
+      }
+    } else {
+      if (bookingsAtSlot.length >= 3) {
+        return res.status(400).json({ error: `All barbers are currently booked at ${time}. Please select another time.` });
+      }
+    }
+
+    // Assign specific barber if "Any" chosen
+    let assignedBarber = chosenBarber;
+    if (chosenBarber === 'Any Barber') {
+      const busyBarbers = bookingsAtSlot.map(b => b.barber);
+      const freeBarber = VALID_BARBERS.find(b => !busyBarbers.includes(b));
+      assignedBarber = freeBarber || VALID_BARBERS[0];
+    }
+
+    const orderId = `UHP-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+    const advance = Number(advanceAmount) || 50;
+
+    const newBooking = {
+      id: orderId,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim(),
+      service: service.trim(),
+      barber: assignedBarber,
+      date: date.trim(),
+      time: time.trim(),
+      type: type || 'inshop',
+      address: (address || '').trim(),
+      notes: (notes || '').trim(),
+      price: Number(price) || 0,
+      duration: Number(duration) || 30,
+      advancePaid: 0,
+      advanceRequired: advance,
+      status: 'payment_pending',
+      createdAt: new Date().toISOString()
+    };
+
+    // Save pending booking & client profile
+    await db.saveBooking(newBooking);
+
+    const appId = process.env.CASHFREE_APP_ID;
+    const secretKey = process.env.CASHFREE_SECRET_KEY;
+    const env = (process.env.CASHFREE_ENVIRONMENT || 'sandbox').toLowerCase();
+    const isConfigured = Boolean(appId && secretKey && appId.trim().length > 3);
+
+    if (isConfigured) {
+      const cashfreeUrl = env === 'production'
+        ? 'https://api.cashfree.com/pg/orders'
+        : 'https://sandbox.cashfree.com/pg/orders';
+
+      const cfPayload = {
+        order_id: orderId,
+        order_amount: advance,
+        order_currency: 'INR',
+        customer_details: {
+          customer_id: `cust_${phone.replace(/\D/g, '') || uuidv4().slice(0, 8)}`,
+          customer_name: name.trim(),
+          customer_phone: phone.replace(/\D/g, '').slice(-10),
+          customer_email: (email && email.includes('@')) ? email.trim() : 'client@urbanhairplaza.com'
+        },
+        order_meta: {
+          return_url: `${BASE_URL}/book.html?order_id={order_id}`,
+          notify_url: `${BASE_URL}/api/cashfree-webhook`
+        },
+        order_note: `Urban Hairplaza Advance Booking for ${service}`
+      };
+
+      const cfRes = await axios.post(cashfreeUrl, cfPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': appId,
+          'x-client-secret': secretKey,
+          'x-api-version': '2023-08-01'
+        },
+        timeout: 10000
+      });
+
+      return res.json({
+        success: true,
+        order_id: orderId,
+        payment_session_id: cfRes.data.payment_session_id,
+        environment: env,
+        advanceAmount: advance,
+        is_simulation: false
+      });
+    } else {
+      return res.json({
+        success: true,
+        order_id: orderId,
+        payment_session_id: `sim_session_${orderId}`,
+        environment: 'sandbox',
+        advanceAmount: advance,
+        is_simulation: true,
+        message: 'Cashfree test simulation mode active. You can test advance verification directly.'
+      });
+    }
+
+  } catch (err) {
+    const errDetails = err.response?.data || err.message;
+    console.error('[Cashfree] Order Creation Error:', errDetails);
+    res.status(500).json({
+      error: 'Failed to initiate advance payment order.',
+      details: err.response?.data?.message || err.message
+    });
+  }
+});
+
+// POST /api/verify-payment — Verify Cashfree payment completion & log transaction
+app.post('/api/verify-payment', async (req, res) => {
+  try {
+    const { order_id, is_simulation } = req.body;
+    if (!order_id) {
+      return res.status(400).json({ error: 'Order ID is required.' });
+    }
+
+    const booking = await db.getBookingById(order_id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking order not found.' });
+    }
+
+    const appId = process.env.CASHFREE_APP_ID;
+    const secretKey = process.env.CASHFREE_SECRET_KEY;
+    const env = (process.env.CASHFREE_ENVIRONMENT || 'sandbox').toLowerCase();
+    const isConfigured = Boolean(appId && secretKey && appId.trim().length > 3);
+
+    let isPaid = false;
+    let paidAmount = booking.advanceRequired || 50;
+    let gatewayData = null;
+
+    if (isConfigured && !is_simulation) {
+      const cashfreeUrl = env === 'production'
+        ? `https://api.cashfree.com/pg/orders/${order_id}`
+        : `https://sandbox.cashfree.com/pg/orders/${order_id}`;
+
+      const cfRes = await axios.get(cashfreeUrl, {
+        headers: {
+          'x-client-id': appId,
+          'x-client-secret': secretKey,
+          'x-api-version': '2023-08-01'
+        },
+        timeout: 10000
+      });
+
+      gatewayData = cfRes.data;
+
+      if (cfRes.data && (cfRes.data.order_status === 'PAID' || cfRes.data.order_status === 'SUCCESS')) {
+        isPaid = true;
+        paidAmount = Number(cfRes.data.order_amount) || paidAmount;
+      } else {
+        return res.status(400).json({
+          error: `Payment is not completed. Current status: ${cfRes.data?.order_status || 'UNKNOWN'}`
+        });
+      }
+    } else {
+      isPaid = true;
+      gatewayData = { mode: 'sandbox_simulation', verified_at: new Date().toISOString() };
+    }
+
+    if (isPaid) {
+      const updatedBooking = await db.updateBooking(booking.id, {
+        status: 'confirmed',
+        advancePaid: paidAmount,
+        paymentVerifiedAt: new Date().toISOString()
+      });
+
+      // Save persistent transaction record
+      await db.saveTransaction({
+        orderId: booking.id,
+        bookingId: booking.id,
+        amount: paidAmount,
+        currency: 'INR',
+        status: 'PAID',
+        paymentMethod: isConfigured && !is_simulation ? 'CASHFREE' : 'SANDBOX_SIMULATION',
+        customerName: booking.name,
+        customerPhone: booking.phone,
+        customerEmail: booking.email,
+        gatewayResponse: gatewayData
+      });
+
+      // WhatsApp notification
+      const waMsg = buildWhatsAppMessage(updatedBooking || booking);
+      sendWhatsAppNotification(waMsg).catch(() => {});
+
+      const businessNumber = process.env.BUSINESS_WHATSAPP || '916202692426';
+      const encodedMsg = encodeURIComponent(waMsg);
+      const whatsappClientLink = `https://wa.me/${businessNumber}?text=${encodedMsg}`;
+
+      return res.json({
+        success: true,
+        order_id: booking.id,
+        booking: updatedBooking || booking,
+        whatsapp_link: whatsappClientLink
+      });
+    }
+
+  } catch (err) {
+    console.error('Verify payment error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Payment verification failed. Please contact us.' });
+  }
+});
+
+// POST /api/bookings — Direct reservation (for walk-in, admin, or pay at shop)
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const { name, phone, email, service, barber, date, time, type, address, notes, price, duration, advancePaid } = req.body;
+    if (!name || !phone || !service || !date || !time) {
+      return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
+    }
+
+    const booking = {
+      id: `DIR-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim(),
+      service: service.trim(),
+      barber: barber || 'Any Barber',
+      date: date.trim(),
+      time: time.trim(),
+      type: type || 'inshop',
+      address: (address || '').trim(),
+      notes: (notes || '').trim(),
+      price: Number(price) || 0,
+      duration: Number(duration) || 30,
+      advancePaid: Number(advancePaid) || 0,
+      status: 'confirmed',
+      createdAt: new Date().toISOString()
+    };
+
+    await db.saveBooking(booking);
+
+    if (booking.advancePaid > 0) {
+      await db.saveTransaction({
+        orderId: booking.id,
+        bookingId: booking.id,
+        amount: booking.advancePaid,
+        currency: 'INR',
+        status: 'PAID',
+        paymentMethod: 'CASH / DIRECT',
+        customerName: booking.name,
+        customerPhone: booking.phone,
+        customerEmail: booking.email
+      });
+    }
+
+    const waMsg = buildWhatsAppMessage(booking);
+    sendWhatsAppNotification(waMsg).catch(() => {});
+
+    const businessNumber = process.env.BUSINESS_WHATSAPP || '916202692426';
+    const whatsappClientLink = `https://wa.me/${businessNumber}?text=${encodeURIComponent(waMsg)}`;
+
+    res.json({
+      success: true,
+      id: booking.id,
+      booking,
+      whatsapp_link: whatsappClientLink
+    });
+  } catch (err) {
+    console.error('Direct booking error:', err);
+    res.status(500).json({ error: 'Failed to record booking.' });
+  }
+});
+
+// POST /api/enquiries — Submit contact message
 app.post('/api/enquiries', async (req, res) => {
   try {
     const { name, phone, email, subject, message } = req.body;
@@ -111,99 +499,51 @@ app.post('/api/enquiries', async (req, res) => {
     }
 
     const enquiry = {
-      id:        uuidv4().slice(0, 8).toUpperCase(),
-      name:      name.trim(),
-      phone:     phone.trim(),
-      email:     (email || '').trim(),
-      subject:   (subject || 'General').trim(),
-      message:   message.trim(),
-      status:    'unread',
-      createdAt: new Date().toISOString(),
+      id: `ENQ-${Date.now().toString(36).toUpperCase()}`,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim(),
+      subject: (subject || 'General Inquiry').trim(),
+      message: message.trim(),
+      status: 'unread',
+      createdAt: new Date().toISOString()
     };
 
-    const enquiries = readJSON(FILES.enquiries);
-    enquiries.unshift(enquiry);
-    writeJSON(FILES.enquiries, enquiries);
+    await db.saveEnquiry(enquiry);
 
-    // WhatsApp notification
-    await sendWhatsApp(
-      `📩 New Enquiry – Urban Hairplaza\nFrom: ${enquiry.name} (${enquiry.phone})\nSubject: ${enquiry.subject}\nMessage: ${enquiry.message}`
-    );
+    sendWhatsAppNotification(
+      `📩 *New Enquiry – Urban Hairplaza*\nFrom: ${enquiry.name} (${enquiry.phone})\nSubject: ${enquiry.subject}\nMessage: ${enquiry.message}`
+    ).catch(() => {});
 
     res.json({ success: true, id: enquiry.id });
   } catch (err) {
     console.error('Enquiry error:', err);
-    res.status(500).json({ error: 'Failed to save enquiry.' });
+    res.status(500).json({ error: 'Failed to submit enquiry.' });
   }
 });
 
-
-// POST /api/bookings — create a new booking
-app.post('/api/bookings', async (req, res) => {
-  try {
-    const { name, phone, service, barber, date, time, type, address, notes, price, duration } = req.body;
-    if (!name || !phone || !service || !date || !time) {
-      return res.status(400).json({ error: 'Missing required booking fields.' });
-    }
-
-    const booking = {
-      id:        uuidv4().slice(0, 8).toUpperCase(),
-      name:      name.trim(),
-      phone:     phone.trim(),
-      service:   service.trim(),
-      barber:    (barber || 'Any').trim(),
-      date:      date.trim(),
-      time:      time.trim(),
-      type:      type || 'inshop',
-      address:   (address || '').trim(),
-      notes:     (notes || '').trim(),
-      price:     price || 0,
-      duration:  duration || 30,
-      status:    'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    const bookings = readJSON(FILES.bookings);
-    bookings.unshift(booking);
-    writeJSON(FILES.bookings, bookings);
-
-    // WhatsApp notification
-    await sendWhatsApp(
-      `📅 New Booking – Urban Hairplaza\nClient: ${booking.name} (${booking.phone})\nService: ${booking.service} with ${booking.barber}\nDate: ${booking.date} at ${booking.time}\nType: ${booking.type === 'home' ? 'Home Visit' : 'In-Shop'}\nPrice: ₹${booking.price}`
-    );
-
-    res.json({ success: true, id: booking.id });
-  } catch (err) {
-    console.error('Booking error:', err);
-    res.status(500).json({ error: 'Failed to save booking.' });
-  }
-});
-
-
-// ── ADMIN AUTH MIDDLEWARE ────────────────────────────────────────────────────
+// ── ADMIN AUTHENTICATION MIDDLEWARE ─────────────────────────────────────────
 function requireAdmin(req, res, next) {
-  if (req.session && req.session.isAdmin) return next();
-  res.status(401).json({ error: 'Unauthorized' });
+  if (req.session && req.session.isAdmin) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Admin login required.' });
 }
 
-
 // ── ADMIN AUTH ROUTES ────────────────────────────────────────────────────────
-
-// POST /api/admin/login
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
-  const adminUser = process.env.ADMIN_USER || 'admin';
-  const adminPass = process.env.ADMIN_PASS || 'urban@hairplaza2025';
+  const adminUser = process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin';
+  const adminPass = process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025';
 
   if (username === adminUser && password === adminPass) {
     req.session.isAdmin = true;
-    req.session.user    = username;
-    return res.json({ success: true });
+    req.session.user = username;
+    return res.json({ success: true, user: username });
   }
-  res.status(401).json({ success: false, error: 'Invalid credentials' });
+  res.status(401).json({ success: false, error: 'Invalid username or password.' });
 });
 
-// GET /api/admin/me
 app.get('/api/admin/me', (req, res) => {
   if (req.session && req.session.isAdmin) {
     return res.json({ authenticated: true, user: req.session.user || 'Admin' });
@@ -211,188 +551,219 @@ app.get('/api/admin/me', (req, res) => {
   res.status(401).json({ authenticated: false });
 });
 
-// POST /api/admin/logout
 app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy(() => {});
-  res.json({ success: true });
+  req.session.destroy(() => {
+    res.json({ success: true });
+  });
 });
 
-
-// ── ADMIN DATA ROUTES ────────────────────────────────────────────────────────
+// ── ADMIN DATA MANAGEMENT ───────────────────────────────────────────────────
 
 // GET /api/admin/stats
-app.get('/api/admin/stats', requireAdmin, (req, res) => {
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
   try {
-    const bookings  = readJSON(FILES.bookings);
-    const enquiries = readJSON(FILES.enquiries);
+    const [bookings, enquiries, transactions, users] = await Promise.all([
+      db.getBookings(),
+      db.getEnquiries(),
+      db.getTransactions(),
+      db.getUsers()
+    ]);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayBookings = bookings.filter(b => b.date === todayStr && b.status !== 'cancelled');
+
+    const totalAdvance = transactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+    const totalRevenueEst = bookings.reduce((sum, b) => {
+      return sum + (b.status === 'confirmed' || b.status === 'completed' ? (Number(b.price) || 0) : 0);
+    }, 0);
+
     res.json({
       bookings: {
-        total:     bookings.length,
-        pending:   bookings.filter(b => b.status === 'pending').length,
+        total: bookings.length,
+        today: todayBookings.length,
+        pending: bookings.filter(b => b.status === 'pending' || b.status === 'payment_pending').length,
         confirmed: bookings.filter(b => b.status === 'confirmed').length,
+        completed: bookings.filter(b => b.status === 'completed').length,
         cancelled: bookings.filter(b => b.status === 'cancelled').length,
       },
+      revenue: {
+        totalAdvance,
+        totalRevenueEst
+      },
+      transactions: {
+        totalCount: transactions.length,
+        totalVolume: totalAdvance
+      },
+      clients: {
+        totalClients: users.length
+      },
       enquiries: {
-        total:  enquiries.length,
+        total: enquiries.length,
         unread: enquiries.filter(e => e.status === 'unread').length,
-        read:   enquiries.filter(e => e.status === 'read').length,
+        read: enquiries.filter(e => e.status === 'read').length,
         replied: enquiries.filter(e => e.status === 'replied').length,
       }
     });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load stats' });
+    res.status(500).json({ error: 'Failed to calculate stats' });
   }
 });
 
 // GET /api/admin/bookings
-app.get('/api/admin/bookings', requireAdmin, (req, res) => {
+app.get('/api/admin/bookings', requireAdmin, async (req, res) => {
   try {
-    res.json(readJSON(FILES.bookings));
+    const bookings = await db.getBookings();
+    res.json(bookings);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load bookings' });
+    res.status(500).json({ error: 'Failed to fetch bookings' });
   }
 });
 
 // PATCH /api/admin/bookings/:id
-app.patch('/api/admin/bookings/:id', requireAdmin, (req, res) => {
+app.patch('/api/admin/bookings/:id', requireAdmin, async (req, res) => {
   try {
-    const { id }     = req.params;
-    const { status } = req.body;
-    const bookings   = readJSON(FILES.bookings);
-    const idx        = bookings.findIndex(b => b.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'Booking not found' });
-    bookings[idx].status = status;
-    writeJSON(FILES.bookings, bookings);
-    res.json({ success: true, booking: bookings[idx] });
+    const { id } = req.params;
+    const updated = await db.updateBooking(id, req.body);
+    res.json({ success: true, booking: updated });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update booking' });
   }
 });
 
 // DELETE /api/admin/bookings/:id
-app.delete('/api/admin/bookings/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/bookings/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const bookings = readJSON(FILES.bookings).filter(b => b.id !== id);
-    writeJSON(FILES.bookings, bookings);
+    await db.deleteBooking(id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete booking' });
   }
 });
 
-// GET /api/admin/enquiries
-app.get('/api/admin/enquiries', requireAdmin, (req, res) => {
+// GET /api/admin/transactions — View all payments
+app.get('/api/admin/transactions', requireAdmin, async (req, res) => {
   try {
-    res.json(readJSON(FILES.enquiries));
+    const transactions = await db.getTransactions();
+    res.json(transactions);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load enquiries' });
+    res.status(500).json({ error: 'Failed to fetch transactions' });
   }
 });
 
-// PATCH /api/admin/enquiries/:id
-app.patch('/api/admin/enquiries/:id', requireAdmin, (req, res) => {
+// GET /api/admin/users — View all registered client profiles
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
-    const { id }     = req.params;
-    const { status } = req.body;
-    const enquiries  = readJSON(FILES.enquiries);
-    const idx        = enquiries.findIndex(e => e.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'Enquiry not found' });
-    enquiries[idx].status = status;
-    writeJSON(FILES.enquiries, enquiries);
-    res.json({ success: true, enquiry: enquiries[idx] });
+    const users = await db.getUsers();
+    res.json(users);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update enquiry' });
+    res.status(500).json({ error: 'Failed to fetch clients' });
+  }
+});
+
+// GET /api/admin/enquiries
+app.get('/api/admin/enquiries', requireAdmin, async (req, res) => {
+  try {
+    const enquiries = await db.getEnquiries();
+    res.json(enquiries);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch enquiries' });
   }
 });
 
 // DELETE /api/admin/enquiries/:id
-app.delete('/api/admin/enquiries/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/enquiries/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const enquiries = readJSON(FILES.enquiries).filter(e => e.id !== id);
-    writeJSON(FILES.enquiries, enquiries);
+    await db.deleteEnquiry(id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete enquiry' });
   }
 });
 
-// GET /api/admin/services (admin view — same as public but auth-gated)
-app.get('/api/admin/services', requireAdmin, (req, res) => {
+// GET /api/admin/services
+app.get('/api/admin/services', requireAdmin, async (req, res) => {
   try {
-    res.json(readJSON(FILES.services));
+    const services = await db.getServices();
+    res.json(services);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load services' });
+    res.status(500).json({ error: 'Failed to fetch services' });
   }
 });
 
 // POST /api/admin/services
-app.post('/api/admin/services', requireAdmin, (req, res) => {
+app.post('/api/admin/services', requireAdmin, async (req, res) => {
   try {
-    const { type, icon, name, desc, price, duration } = req.body;
-    if (!name || !price) return res.status(400).json({ error: 'Name and price are required.' });
-    const service = {
-      id:       uuidv4().slice(0, 8).toUpperCase(),
-      type:     type || 'inshop',
-      icon:     icon || '✂️',
-      name:     name.trim(),
-      desc:     (desc || '').trim(),
-      price:    Number(price),
+    const { category, type, icon, name, desc, price, duration, badge } = req.body;
+    if (!name || !price) return res.status(400).json({ error: 'Service name and price are required.' });
+
+    const newService = {
+      id: `SRV-${Date.now().toString(36).toUpperCase()}`,
+      category: category || 'Haircut',
+      type: type || 'inshop',
+      icon: icon || '✂️',
+      name: name.trim(),
+      desc: (desc || '').trim(),
+      price: Number(price) || 0,
       duration: Number(duration) || 30,
+      badge: badge || ''
     };
-    const services = readJSON(FILES.services);
-    services.push(service);
-    writeJSON(FILES.services, services);
-    res.json({ success: true, service });
+
+    await db.saveService(newService);
+    res.json({ success: true, service: newService });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create service' });
   }
 });
 
 // PUT /api/admin/services/:id
-app.put('/api/admin/services/:id', requireAdmin, (req, res) => {
+app.put('/api/admin/services/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, icon, name, desc, price, duration } = req.body;
-    const services = readJSON(FILES.services);
-    const idx      = services.findIndex(s => s.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'Service not found' });
-    services[idx] = { ...services[idx], type, icon, name, desc, price: Number(price), duration: Number(duration) };
-    writeJSON(FILES.services, services);
-    res.json({ success: true, service: services[idx] });
+    const updated = await db.updateService(id, req.body);
+    res.json({ success: true, service: updated });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update service' });
   }
 });
 
 // DELETE /api/admin/services/:id
-app.delete('/api/admin/services/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/services/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const services = readJSON(FILES.services).filter(s => s.id !== id);
-    writeJSON(FILES.services, services);
+    await db.deleteService(id);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete service' });
   }
 });
 
-
-// ── SPA / HTML FALLBACKS ─────────────────────────────────────────────────────
-app.get('/admin', (req, res) => {
+// ── ADMIN PAGE REDIRECTS ────────────────────────────────────────────────────
+app.get(['/admin', '/admin/'], (req, res) => {
+  if (req.session && req.session.isAdmin) {
+    return res.redirect('/admin/dashboard.html');
+  }
   res.redirect('/admin/login.html');
 });
-app.get('/admin/', (req, res) => {
-  res.redirect('/admin/login.html');
-});
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
 
+// ── INITIALIZATION & SERVER START ───────────────────────────────────────────
+db.initDB().catch(err => console.error('[Init DB Error]', err));
 
-// ── START ────────────────────────────────────────────────────────────────────
-initDB();
-app.listen(PORT, () => {
-  console.log(`✅ Urban Hairplaza server running on http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║               URBAN HAIRPLAZA WEB APP READY                  ║
+║                                                              ║
+║  🌐 Web App:    http://localhost:${PORT}                        ║
+║  🔑 Admin:      http://localhost:${PORT}/admin/                 ║
+║  💈 Location:   Simraha, Araria, Bihar                       ║
+║  📞 Phone:      +91 6202 692 426                             ║
+╚══════════════════════════════════════════════════════════════╝
+    `);
+  });
+}
+
+module.exports = app;

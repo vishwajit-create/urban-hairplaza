@@ -1,44 +1,69 @@
-/* Urban Hairplaza — Main JS */
+/**
+ * Urban Hairplaza — Client Utilities
+ * Clean, lightweight, reliable JavaScript
+ */
 
+document.addEventListener('DOMContentLoaded', () => {
+  // ── MOBILE MENU TOGGLE ───────────────────────────────────────────────────
+  const hamburger = document.getElementById('hamburger');
+  const mobileDrawer = document.getElementById('mobile-drawer');
 
-// ── NAVBAR ──────────────────────────────────────────────
-const navbar = document.getElementById('navbar');
-const hamburger = document.getElementById('hamburger');
-const mobileMenu = document.getElementById('mobile-menu');
+  if (hamburger && mobileDrawer) {
+    hamburger.addEventListener('click', () => {
+      const isOpen = mobileDrawer.classList.toggle('open');
+      hamburger.classList.toggle('open');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
 
+    mobileDrawer.querySelectorAll('.nav-link, .btn').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileDrawer.classList.remove('open');
+        hamburger.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    });
+  }
 
-if (navbar) {
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 20) navbar.classList.add('scrolled');
-    else navbar.classList.remove('scrolled');
+  // ── ACTIVE NAVIGATION LINK ───────────────────────────────────────────────
+  const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+      link.classList.add('active');
+    }
   });
-}
 
+  // ── LIGHTBOX GALLERY ─────────────────────────────────────────────────────
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
 
-hamburger?.addEventListener('click', () => {
-  hamburger.classList.toggle('open');
-  mobileMenu.classList.toggle('open');
-  document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+  if (lightbox && lightboxImg) {
+    document.querySelectorAll('.gallery-item img').forEach(img => {
+      img.addEventListener('click', () => {
+        lightboxImg.src = img.src;
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    function closeLightbox() {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    if (lightboxClose) {
+      lightboxClose.addEventListener('click', closeLightbox);
+    }
+
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+        closeLightbox();
+      }
+    });
+  }
 });
-
-
-// Close mobile menu on link click
-mobileMenu?.querySelectorAll('a').forEach(a => {
-  a.addEventListener('click', () => {
-    hamburger.classList.remove('open');
-    mobileMenu.classList.remove('open');
-    document.body.style.overflow = '';
-  });
-});
-
-
-// ── ACTIVE NAV LINK ─────────────────────────────────────
-const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-document.querySelectorAll('.nav-links a, #mobile-menu a').forEach(a => {
-  if (a.getAttribute('href') === currentPage) a.classList.add('active');
-});
-
-
-// ── SCROLL REVEAL ────────────────────────────────────────
-const reveals = document.querySelectorAll('.reveal');
-const revealObserver = new IntersectionObserver((entries) => {

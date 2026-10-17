@@ -1,38 +1,883 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Book Appointment – Urban Hairplaza</title>
-<meta name="description" content="Book your grooming appointment at Urban Hairplaza — in-shop or home visit. Easy 5-step booking.">
-<link rel="stylesheet" href="styles.css">
-<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Appointment – Urban Hairplaza</title>
+  <meta name="description" content="Book your haircut, beard trim, or grooming package with barbers at Urban Hairplaza in Simraha, Araria. Instant slot reservation.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Cashfree Checkout SDK v3 -->
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <style>
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .wizard-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .date-quick-btns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .quick-date-btn {
+      padding: 7px 14px;
+      background-color: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .quick-date-btn:hover, .quick-date-btn.active {
+      border-color: var(--text-main);
+      color: var(--text-main);
+      background-color: #F3F4F6;
+      font-weight: 600;
+    }
+    .barber-pick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin: 16px 0 24px;
+    }
+    .barber-pick-card {
+      background-color: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .barber-pick-card:hover {
+      border-color: #9CA3AF;
+    }
+    .barber-pick-card.selected {
+      border-color: var(--text-main);
+      background-color: #F9FAFB;
+      box-shadow: 0 0 0 1px var(--text-main);
+    }
+    .barber-avatar-img {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 0 auto 10px;
+      border: 1px solid var(--border);
+      background-color: #F3F4F6;
+    }
+    .mode-toggle {
+      display: inline-flex;
+      background-color: #F3F4F6;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3px;
+      margin-bottom: 20px;
+    }
+    .mode-btn {
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-body);
+      cursor: pointer;
+    }
+    .mode-btn.active {
+      background-color: #FFFFFF;
+      color: var(--text-main);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
 
-
-<nav id="navbar">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo">
-      <div class="nav-logo-icon">✂️</div>
-      <div class="nav-logo-text">Urban Hairplaza<span>Premium Barbershop</span></div>
-    </a>
-    <div class="nav-links">
-      <a href="index.html">Home</a><a href="services.html">Services</a>
-      <a href="barbers.html">Our Barbers</a><a href="gallery.html">Gallery</a>
-      <a href="visualizer.html">AI Visualizer</a>
-      <a href="about.html">About Us</a><a href="contact.html">Contact Us</a>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar</span>
+        <span>🕐 Mon – Sun: 9:00 AM – 9:00 PM</span>
+      </div>
+      <div class="topbar-info">
+        <span>📞 <a href="tel:+916202692426">+91 6202 692 426</a></span>
+        <span><a href="admin/login.html" style="color:var(--text-muted);">Admin Portal</a></span>
+      </div>
     </div>
-    <div class="nav-actions"><a href="book.html" class="btn btn-primary btn-sm">Book Now</a></div>
-    <button class="hamburger" id="hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
   </div>
-</nav>
-<div id="mobile-menu">
-  <a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a>
-  <a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a>
-  <a href="about.html">About Us</a><a href="contact.html">Contact Us</a>
-  <a href="book.html" class="btn btn-primary">Book Now</a>
-</div>
 
+  <!-- NAVIGATION -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">✂️</div>
+        <div>
+          <div class="nav-brand-title">Urban Hairplaza</div>
+          <div class="nav-brand-sub">Simraha · Araria</div>
+        </div>
+      </a>
 
-<section class="page-hero">
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services & Pricing</a>
+        <a href="barbers.html" class="nav-link">Our Barbers</a>
+        <a href="gallery.html" class="nav-link">Gallery</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="tel:+916202692426" class="btn btn-secondary btn-sm">📞 +91 6202 692 426</a>
+        <button class="hamburger" id="hamburger" aria-label="Open mobile menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="services.html" class="nav-link">Services & Pricing</a>
+    <a href="barbers.html" class="nav-link">Our Barbers</a>
+    <a href="gallery.html" class="nav-link">Gallery</a>
+    <a href="about.html" class="nav-link">About Us</a>
+    <a href="contact.html" class="nav-link">Contact</a>
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <a href="tel:+916202692426" class="btn btn-secondary btn-block">📞 Call Salon</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="section-sm" style="background-color: #FFFFFF; border-bottom: 1px solid var(--border);">
+    <div class="container text-center">
+      <span class="mono-tag">Booking Engine</span>
+      <h1 class="hero-title" style="margin-top: 6px;">Book an Appointment</h1>
+      <p class="section-subtitle">Pick your service, select a barber, choose your time slot, and reserve your chair.</p>
+    </div>
+  </section>
+
+  <!-- WIZARD -->
+  <section class="section">
+    <div class="container">
+      <div class="wizard-box">
+
+        <!-- Stepper -->
+        <div class="wizard-steps" id="stepper">
+          <div class="wizard-step active" data-step="1">
+            <span class="wizard-step-num">1</span>
+            <span>Service</span>
+          </div>
+          <div class="wizard-step" data-step="2">
+            <span class="wizard-step-num">2</span>
+            <span>Barber</span>
+          </div>
+          <div class="wizard-step" data-step="3">
+            <span class="wizard-step-num">3</span>
+            <span>Date & Time</span>
+          </div>
+          <div class="wizard-step" data-step="4">
+            <span class="wizard-step-num">4</span>
+            <span>Details</span>
+          </div>
+          <div class="wizard-step" data-step="5">
+            <span class="wizard-step-num">5</span>
+            <span>Confirmation</span>
+          </div>
+        </div>
+
+        <div id="booking-alert-box"></div>
+
+        <!-- ── STEP 1: SERVICE ────────────────────────────── -->
+        <div class="step-panel active" id="step-panel-1">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom: 16px;">
+            <div>
+              <h3 style="margin-bottom: 4px;">1. Choose Service</h3>
+              <p style="font-size: 0.9rem; color:var(--text-muted);">Select in-shop salon haircut or doorstep home visit.</p>
+            </div>
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="mode-inshop" onclick="switchMode('inshop')">In-Shop Appointment</button>
+              <button class="mode-btn" id="mode-home" onclick="switchMode('home')">Home Doorstep Visit</button>
+            </div>
+          </div>
+
+          <div class="option-cards" id="services-list-container">
+            <!-- Services populated by JS -->
+          </div>
+
+          <div class="wizard-nav" style="justify-content: flex-end;">
+            <button class="btn btn-primary" id="btn-next-step-1" onclick="goToStep(2)" disabled>
+              Next: Select Barber →
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: BARBER ─────────────────────────────── -->
+        <div class="step-panel" id="step-panel-2">
+          <h3 style="margin-bottom: 4px;">2. Select Barber</h3>
+          <p style="font-size: 0.9rem; color:var(--text-muted); margin-bottom: 20px;">Pick your preferred barber or choose 'Any Available Barber' for more time slots.</p>
+
+          <div class="barber-pick-grid">
+            <div class="barber-pick-card selected" onclick="selectBarber('Any Barber', this)">
+              <div class="barber-avatar-img" style="display:flex; align-items:center; justify-content:center; font-size:1.5rem;">💈</div>
+              <div style="font-weight: 600; color: var(--text-main);">Any Available Barber</div>
+              <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Fastest Availability</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">First available chair</div>
+            </div>
+
+            <div class="barber-pick-card" onclick="selectBarber('Raj Kumar', this)">
+              <img src="images/barber_raj.png" alt="Raj Kumar" class="barber-avatar-img">
+              <div style="font-weight: 600; color: var(--text-main);">Raj Kumar</div>
+              <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Master Barber</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">12+ yrs · Fades & Scissor</div>
+            </div>
+
+            <div class="barber-pick-card" onclick="selectBarber('Sameer Khan', this)">
+              <img src="images/barber_sameer.png" alt="Sameer Khan" class="barber-avatar-img">
+              <div style="font-weight: 600; color: var(--text-main);">Sameer Khan</div>
+              <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Senior Stylist</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">8+ yrs · Beard & Shave</div>
+            </div>
+
+            <div class="barber-pick-card" onclick="selectBarber('Amit Sharma', this)">
+              <img src="images/barber_amit.png" alt="Amit Sharma" class="barber-avatar-img">
+              <div style="font-weight: 600; color: var(--text-main);">Amit Sharma</div>
+              <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">Grooming Expert</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">6+ yrs · Massage & Cleanups</div>
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <button class="btn btn-secondary" onclick="goToStep(1)">← Back to Service</button>
+            <button class="btn btn-primary" onclick="goToStep(3)">Next: Select Date & Time →</button>
+          </div>
+        </div>
+
+        <!-- ── STEP 3: DATE & TIME ────────────────────────── -->
+        <div class="step-panel" id="step-panel-3">
+          <h3 style="margin-bottom: 4px;">3. Date & Time</h3>
+          <p style="font-size: 0.9rem; color:var(--text-muted); margin-bottom: 16px;">
+            Selected Barber: <strong id="lbl-selected-barber" style="color:var(--text-main);">Any Available Barber</strong>
+          </p>
+
+          <div class="date-quick-btns">
+            <button type="button" class="quick-date-btn active" onclick="setQuickDate(0, this)">Today</button>
+            <button type="button" class="quick-date-btn" onclick="setQuickDate(1, this)">Tomorrow</button>
+            <button type="button" class="quick-date-btn" onclick="setQuickDate(2, this)">In 2 Days</button>
+          </div>
+
+          <div class="form-group" style="max-width: 280px;">
+            <label class="form-label" for="booking-date">Appointment Date</label>
+            <input type="date" class="form-control" id="booking-date" onchange="onDateChanged()">
+          </div>
+
+          <div style="margin: 24px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h4 style="font-size: 0.95rem;">Select Time Slot (9:00 AM – 8:30 PM)</h4>
+              <span id="slots-status" style="font-size:0.8rem; color:var(--text-muted);">Checking slots...</span>
+            </div>
+
+            <div id="slots-render-area">
+              <!-- Rendered slots -->
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <button class="btn btn-secondary" onclick="goToStep(2)">← Back to Barber</button>
+            <button class="btn btn-primary" id="btn-next-step-3" onclick="goToStep(4)" disabled>
+              Next: Enter Details →
+            </button>
+          </div>
+        </div>
+
+        <!-- ── STEP 4: CONTACT DETAILS ───────────────────── -->
+        <div class="step-panel" id="step-panel-4">
+          <h3 style="margin-bottom: 4px;">4. Contact Information</h3>
+          <p style="font-size: 0.9rem; color:var(--text-muted); margin-bottom: 20px;">We need your name and phone number for the booking confirmation.</p>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="client-name">Full Name <span style="color:#B91C1C;">*</span></label>
+              <input type="text" class="form-control" id="client-name" placeholder="e.g. Rahul Kumar" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-phone">10-Digit Mobile Number <span style="color:#B91C1C;">*</span></label>
+              <input type="tel" class="form-control" id="client-phone" placeholder="e.g. 9876543210" maxlength="10" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="client-email">Email Address <span style="font-weight:normal; color:var(--text-muted);">(Optional)</span></label>
+            <input type="email" class="form-control" id="client-email" placeholder="name@example.com">
+          </div>
+
+          <div class="form-group" id="home-address-group" style="display:none;">
+            <label class="form-label" for="client-address">Home Visit Address / Landmark in Simraha / Araria <span style="color:#B91C1C;">*</span></label>
+            <textarea class="form-control" id="client-address" placeholder="House number, landmark, area"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="client-notes">Special Requests <span style="font-weight:normal; color:var(--text-muted);">(Optional)</span></label>
+            <textarea class="form-control" id="client-notes" placeholder="e.g. skin fade preference, etc." style="min-height:70px;"></textarea>
+          </div>
+
+          <div class="wizard-nav">
+            <button class="btn btn-secondary" onclick="goToStep(3)">← Back to Time</button>
+            <button class="btn btn-primary" onclick="validateStep4AndProceed()">Next: Review & Confirm →</button>
+          </div>
+        </div>
+
+        <!-- ── STEP 5: SUMMARY & CONFIRMATION ────────────── -->
+        <div class="step-panel" id="step-panel-5">
+          <h3 style="margin-bottom: 4px;">5. Review & Confirm Appointment</h3>
+          <p style="font-size: 0.9rem; color:var(--text-muted); margin-bottom: 20px;">Review your appointment summary and lock your chair with a ₹50 advance.</p>
+
+          <div class="summary-box">
+            <div class="summary-row">
+              <span style="color:var(--text-muted);">Service</span>
+              <span style="font-weight:600;" id="sum-service">Classic Tailored Haircut</span>
+            </div>
+            <div class="summary-row">
+              <span style="color:var(--text-muted);">Barber</span>
+              <span style="font-weight:600;" id="sum-barber">Any Available Barber</span>
+            </div>
+            <div class="summary-row">
+              <span style="color:var(--text-muted);">Date & Time</span>
+              <span style="font-weight:600;" id="sum-time">Today at 11:00 AM</span>
+            </div>
+            <div class="summary-row">
+              <span style="color:var(--text-muted);">Type</span>
+              <span style="font-weight:600;" id="sum-type">In-Shop Appointment</span>
+            </div>
+            <div class="summary-row">
+              <span style="color:var(--text-muted);">Client</span>
+              <span style="font-weight:600;" id="sum-client">Rahul (+91 9876543210)</span>
+            </div>
+            <div class="summary-row">
+              <span style="color:var(--text-muted);">Service Total</span>
+              <span style="font-weight:600;" id="sum-total-price">₹150</span>
+            </div>
+            <div class="summary-row" style="background-color:#EEF2F6; margin: 6px -16px; padding: 10px 16px; border-radius:4px;">
+              <span style="font-weight:600;">Advance Booking Deposit</span>
+              <span style="font-weight:700;">₹50</span>
+            </div>
+            <div class="summary-row total">
+              <span>Balance Due at Salon</span>
+              <span id="sum-balance-due">₹100</span>
+            </div>
+          </div>
+
+          <div class="alert alert-warning">
+            ℹ️ A ₹50 advance reserves your time slot so our barber holds your chair. The remaining balance is paid after your service.
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-primary btn-lg btn-block" id="btn-pay-advance" onclick="initiateCashfreePayment()">
+              Pay ₹50 Advance & Confirm Booking
+            </button>
+            <button class="btn btn-secondary btn-block" onclick="goToStep(4)">
+              ← Back to Details
+            </button>
+          </div>
+        </div>
+
+        <!-- ── CONFIRMATION SUCCESS ──────────────────────── -->
+        <div class="step-panel" id="step-panel-success">
+          <div style="text-align: center; padding: 20px 0;">
+            <div style="width:54px; height:54px; background-color:var(--success-bg); color:var(--success); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; margin:0 auto 16px; font-weight:700;">✓</div>
+            <h2 style="margin-bottom: 8px;">Booking Confirmed!</h2>
+            <p style="color:var(--text-muted); margin-bottom: 16px;">Your appointment has been successfully scheduled.</p>
+            <div style="display:inline-block; font-family:var(--font-mono); font-weight:700; background:#F3F4F6; border:1px solid var(--border); padding:6px 16px; border-radius:var(--radius-sm); margin-bottom:24px;" id="confirmed-booking-id">#UHP-000000</div>
+
+            <div class="summary-box" style="text-align: left; max-width: 520px; margin: 0 auto 24px;">
+              <div class="summary-row">
+                <span style="color:var(--text-muted);">Client</span>
+                <span style="font-weight:600;" id="conf-name">-</span>
+              </div>
+              <div class="summary-row">
+                <span style="color:var(--text-muted);">Service</span>
+                <span style="font-weight:600;" id="conf-service">-</span>
+              </div>
+              <div class="summary-row">
+                <span style="color:var(--text-muted);">Barber</span>
+                <span style="font-weight:600;" id="conf-barber">-</span>
+              </div>
+              <div class="summary-row">
+                <span style="color:var(--text-muted);">Date & Time</span>
+                <span style="font-weight:600;" id="conf-datetime">-</span>
+              </div>
+              <div class="summary-row">
+                <span style="color:var(--text-muted);">Advance Paid</span>
+                <span style="font-weight:600; color:var(--success);">₹50 (Paid)</span>
+              </div>
+              <div class="summary-row total">
+                <span>Balance at Salon</span>
+                <span id="conf-balance">₹0</span>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; max-width:440px; margin:0 auto;">
+              <a href="#" id="conf-whatsapp-btn" target="_blank" class="btn btn-whatsapp btn-lg btn-block">
+                💬 Open WhatsApp Confirmation
+              </a>
+              <a href="#" id="conf-calendar-btn" target="_blank" class="btn btn-secondary btn-block">
+                📅 Add to Google Calendar
+              </a>
+              <button class="btn btn-outline btn-block" onclick="window.print()">
+                🖨️ Print Receipt
+              </button>
+              <a href="index.html" class="btn btn-secondary btn-block">
+                Return to Homepage
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="nav-brand-title" style="margin-bottom: 8px;">Urban Hairplaza</div>
+          <p style="font-size: 0.875rem; color: var(--text-muted); max-width: 280px;">
+            Men's barbershop offering haircuts, beard grooming, and doorstep home services in Simraha, Araria.
+          </p>
+        </div>
+        <div>
+          <h4 class="footer-title">Pages</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="services.html">Services & Pricing</a></li>
+            <li><a href="barbers.html">Our Barbers</a></li>
+            <li><a href="gallery.html">Gallery</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Booking</h4>
+          <ul class="footer-links">
+            <li><a href="book.html">In-Shop Appointment</a></li>
+            <li><a href="book.html?type=home">Doorstep Home Visit</a></li>
+            <li><a href="admin/login.html">Admin Login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Contact</h4>
+          <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+            <div>📍 Simraha, Araria – 854331, Bihar</div>
+            <div style="margin: 6px 0;">📞 <a href="tel:+916202692426" style="color:var(--text-main); font-weight:600;">+91 6202 692 426</a></div>
+            <div>🕐 9:00 AM – 9:00 PM (Daily)</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Urban Hairplaza Private Limited. All rights reserved.</span>
+        <span>Simraha, Araria, Bihar</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    const state = {
+      mode: 'inshop',
+      services: [],
+      selectedService: null,
+      selectedBarber: 'Any Barber',
+      selectedDate: '',
+      selectedTime: '',
+      clientName: '',
+      clientPhone: '',
+      clientEmail: '',
+      clientAddress: '',
+      clientNotes: '',
+      advanceAmount: 50,
+      currentStep: 1,
+      bookedOrder: null
+    };
+
+    let cashfree = null;
+    try {
+      if (typeof Cashfree !== 'undefined') {
+        cashfree = Cashfree({ mode: 'sandbox' });
+      }
+    } catch (e) {}
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('booking-date');
+      dateInput.min = today;
+      dateInput.value = today;
+      state.selectedDate = today;
+
+      const params = new URLSearchParams(window.location.search);
+      const preService = params.get('service');
+      const preBarber = params.get('barber');
+      const preType = params.get('type');
+
+      if (preType === 'home') {
+        switchMode('home');
+      }
+
+      await loadServices(preService);
+
+      if (preBarber) {
+        document.querySelectorAll('.barber-pick-card').forEach(card => {
+          if (card.textContent.includes(preBarber)) {
+            selectBarber(preBarber, card);
+          }
+        });
+      }
+    });
+
+    async function loadServices(preSelectedId) {
+      try {
+        const res = await fetch('/api/services');
+        if (res.ok) state.services = await res.json();
+      } catch (e) {}
+
+      if (!state.services || state.services.length === 0) {
+        state.services = [
+          { id: 'SRV-01', category: 'Haircut', type: 'inshop', name: 'Classic Tailored Haircut', desc: 'Precision cut tailored to your head shape.', price: 150, duration: 30 },
+          { id: 'SRV-02', category: 'Haircut', type: 'inshop', name: 'Fade & Taper Styling', desc: 'Skin fade, low fade, or taper cut with clean temple lines.', price: 200, duration: 35 },
+          { id: 'SRV-03', category: 'Beard', type: 'inshop', name: 'Beard Trim & Shape-Up', desc: 'Beard length trimming, cheek razor lining, and conditioning.', price: 100, duration: 20 },
+          { id: 'SRV-04', category: 'Shave', type: 'inshop', name: 'Royal Hot Towel Shave', desc: 'Steamed towels and straight razor shave.', price: 150, duration: 25 },
+          { id: 'SRV-07', category: 'Combos', type: 'inshop', name: 'Full Grooming Package', desc: 'Haircut + Beard sculpting + Head massage + Face cleanup.', price: 450, duration: 75 },
+          { id: 'SRV-08', category: 'Home Visit', type: 'home', name: 'Home Visit – Haircut', desc: 'Barber visits your home in Simraha / Araria.', price: 250, duration: 45 },
+          { id: 'SRV-09', category: 'Home Visit', type: 'home', name: 'Home Visit – Full Combo', desc: 'Full haircut, beard styling, and scalp massage at home.', price: 500, duration: 90 },
+        ];
+      }
+
+      renderServices(preSelectedId);
+    }
+
+    function switchMode(mode) {
+      state.mode = mode;
+      document.getElementById('mode-inshop').classList.toggle('active', mode === 'inshop');
+      document.getElementById('mode-home').classList.toggle('active', mode === 'home');
+      document.getElementById('home-address-group').style.display = (mode === 'home') ? 'block' : 'none';
+      renderServices();
+    }
+
+    function renderServices(autoSelectId) {
+      const container = document.getElementById('services-list-container');
+      const filtered = state.services.filter(s => s.type === state.mode);
+
+      container.innerHTML = filtered.map(s => `
+        <div class="option-card ${state.selectedService?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+            <span style="font-weight:600; color:var(--text-main); font-size:1rem;">${s.name}</span>
+            <span style="font-weight:700; color:var(--text-main); font-size:1.15rem;">₹${s.price}</span>
+          </div>
+          <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">${s.desc}</div>
+          <div style="font-size:0.775rem; color:var(--text-light); margin-top:10px;">⏱ ${s.duration} mins</div>
+        </div>
+      `).join('');
+
+      if (autoSelectId) selectService(autoSelectId);
+    }
+
+    function selectService(id) {
+      const s = state.services.find(item => item.id === id);
+      if (!s) return;
+      state.selectedService = s;
+      renderServices();
+      document.getElementById('btn-next-step-1').disabled = false;
+    }
+
+    function selectBarber(name, el) {
+      state.selectedBarber = name;
+      document.querySelectorAll('.barber-pick-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('lbl-selected-barber').textContent = name;
+    }
+
+    function setQuickDate(offsetDays, btn) {
+      document.querySelectorAll('.quick-date-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      const iso = d.toISOString().split('T')[0];
+      document.getElementById('booking-date').value = iso;
+      state.selectedDate = iso;
+      fetchSlots();
+    }
+
+    function onDateChanged() {
+      state.selectedDate = document.getElementById('booking-date').value;
+      document.querySelectorAll('.quick-date-btn').forEach(b => b.classList.remove('active'));
+      fetchSlots();
+    }
+
+    async function fetchSlots() {
+      const statusEl = document.getElementById('slots-status');
+      const renderArea = document.getElementById('slots-render-area');
+      const nextBtn = document.getElementById('btn-next-step-3');
+      nextBtn.disabled = true;
+      state.selectedTime = '';
+
+      statusEl.textContent = 'Checking availability...';
+      renderArea.innerHTML = '<div style="padding:16px; color:var(--text-muted);">Loading slots...</div>';
+
+      try {
+        const url = `/api/slots?date=${encodeURIComponent(state.selectedDate)}&barber=${encodeURIComponent(state.selectedBarber)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to query slots');
+        const data = await res.json();
+
+        statusEl.textContent = `${data.availableSlots.length} slots available`;
+        renderSlotsGrid(data.allSlots, data.bookedSlots);
+      } catch (err) {
+        statusEl.textContent = 'Could not load slots';
+        renderArea.innerHTML = '<div class="alert alert-danger">Failed to fetch slots. Please check connection.</div>';
+      }
+    }
+
+    function renderSlotsGrid(allSlots, bookedSlots) {
+      const renderArea = document.getElementById('slots-render-area');
+      renderArea.innerHTML = `
+        <div class="slots-grid">
+          ${allSlots.map(s => {
+            const isBooked = bookedSlots.includes(s);
+            const isSelected = (state.selectedTime === s);
+            return `
+              <button type="button" class="slot-btn ${isSelected ? 'selected' : ''}" 
+                ${isBooked ? 'disabled' : ''} 
+                onclick="selectSlot('${s}', this)">
+                ${s}
+              </button>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function selectSlot(slot, btn) {
+      state.selectedTime = slot;
+      document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('btn-next-step-3').disabled = false;
+    }
+
+    function validateStep4AndProceed() {
+      const name = document.getElementById('client-name').value.trim();
+      const phone = document.getElementById('client-phone').value.trim().replace(/\D/g, '');
+      const email = document.getElementById('client-email').value.trim();
+      const address = document.getElementById('client-address').value.trim();
+      const notes = document.getElementById('client-notes').value.trim();
+
+      if (!name) {
+        showAlert('Please enter your full name.', 'danger');
+        document.getElementById('client-name').focus();
+        return;
+      }
+
+      if (phone.length < 10) {
+        showAlert('Please enter a valid 10-digit mobile number.', 'danger');
+        document.getElementById('client-phone').focus();
+        return;
+      }
+
+      if (state.mode === 'home' && !address) {
+        showAlert('Please enter your home address for the visit.', 'danger');
+        document.getElementById('client-address').focus();
+        return;
+      }
+
+      state.clientName = name;
+      state.clientPhone = phone;
+      state.clientEmail = email;
+      state.clientAddress = address;
+      state.clientNotes = notes;
+
+      document.getElementById('sum-service').textContent = state.selectedService.name;
+      document.getElementById('sum-barber').textContent = state.selectedBarber;
+      document.getElementById('sum-time').textContent = `${formatDisplayDate(state.selectedDate)} at ${state.selectedTime}`;
+      document.getElementById('sum-type').textContent = (state.mode === 'home') ? 'Home Visit' : 'In-Shop';
+      document.getElementById('sum-client').textContent = `${state.clientName} (+91 ${state.clientPhone})`;
+      document.getElementById('sum-total-price').textContent = `₹${state.selectedService.price}`;
+      
+      const balance = Math.max(0, state.selectedService.price - state.advanceAmount);
+      document.getElementById('sum-balance-due').textContent = `₹${balance}`;
+
+      clearAlert();
+      goToStep(5);
+    }
+
+    async function initiateCashfreePayment() {
+      const payBtn = document.getElementById('btn-pay-advance');
+      payBtn.disabled = true;
+      payBtn.innerHTML = '<span class="loading-spinner"></span> Connecting to Gateway...';
+
+      try {
+        const payload = {
+          advanceAmount: state.advanceAmount,
+          bookingDetails: {
+            name: state.clientName,
+            phone: state.clientPhone,
+            email: state.clientEmail,
+            service: state.selectedService.name,
+            barber: state.selectedBarber,
+            date: state.selectedDate,
+            time: state.selectedTime,
+            type: state.mode,
+            address: state.clientAddress,
+            notes: state.clientNotes,
+            price: state.selectedService.price,
+            duration: state.selectedService.duration
+          }
+        };
+
+        const res = await fetch('/api/create-payment-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const orderData = await res.json();
+        if (!res.ok) throw new Error(orderData.error || 'Failed to create payment order');
+
+        const orderId = orderData.order_id;
+
+        if (orderData.payment_session_id && !orderData.is_simulation && cashfree) {
+          cashfree.checkout({
+            paymentSessionId: orderData.payment_session_id,
+            redirectTarget: '_modal'
+          }).then(async (result) => {
+            if (result.error) {
+              showAlert(result.error.message || 'Payment cancelled.', 'warning');
+              resetPayButton();
+              return;
+            }
+            await verifyBackendPayment(orderId, false);
+          }).catch(err => {
+            showAlert('Gateway modal closed: ' + err.message, 'warning');
+            resetPayButton();
+          });
+        } else {
+          payBtn.innerHTML = '<span class="loading-spinner"></span> Confirming Reservation...';
+          await verifyBackendPayment(orderId, true);
+        }
+
+      } catch (err) {
+        showAlert('Booking Error: ' + err.message, 'danger');
+        resetPayButton();
+      }
+    }
+
+    async function verifyBackendPayment(orderId, isSimulation) {
+      try {
+        const vRes = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId, is_simulation: isSimulation })
+        });
+
+        const vData = await vRes.json();
+        if (!vRes.ok) throw new Error(vData.error || 'Payment verification failed');
+
+        state.bookedOrder = vData.booking;
+        showConfirmationSuccess(vData.booking, vData.whatsapp_link);
+      } catch (err) {
+        showAlert('Verification Error: ' + err.message, 'danger');
+        resetPayButton();
+      }
+    }
+
+    function resetPayButton() {
+      const payBtn = document.getElementById('btn-pay-advance');
+      payBtn.disabled = false;
+      payBtn.textContent = 'Pay ₹50 Advance & Confirm Booking';
+    }
+
+    function showConfirmationSuccess(booking, whatsappLink) {
+      document.getElementById('stepper').style.display = 'none';
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('step-panel-success').classList.add('active');
+
+      document.getElementById('confirmed-booking-id').textContent = `#${booking.id}`;
+      document.getElementById('conf-name').textContent = `${booking.name} (+91 ${booking.phone})`;
+      document.getElementById('conf-service').textContent = booking.service;
+      document.getElementById('conf-barber').textContent = booking.barber;
+      document.getElementById('conf-datetime').textContent = `${formatDisplayDate(booking.date)} at ${booking.time}`;
+
+      const balance = Math.max(0, booking.price - booking.advancePaid);
+      document.getElementById('conf-balance').textContent = `₹${balance}`;
+
+      const waBtn = document.getElementById('conf-whatsapp-btn');
+      if (whatsappLink) {
+        waBtn.href = whatsappLink;
+      } else {
+        const text = encodeURIComponent(`Hello Urban Hairplaza, I have confirmed booking #${booking.id} for ${booking.service} on ${booking.date} at ${booking.time}.`);
+        waBtn.href = `https://wa.me/916202692426?text=${text}`;
+      }
+
+      const title = encodeURIComponent(`Urban Hairplaza – ${booking.service}`);
+      const details = encodeURIComponent(`Barbershop appointment #${booking.id} with ${booking.barber}.\nSimraha, Araria, Bihar.`);
+      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${encodeURIComponent('Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar')}`;
+      document.getElementById('conf-calendar-btn').href = calUrl;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToStep(step) {
+      clearAlert();
+
+      document.querySelectorAll('.wizard-step').forEach(s => {
+        const num = parseInt(s.dataset.step);
+        s.classList.remove('active', 'completed');
+        if (num === step) s.classList.add('active');
+        if (num < step) s.classList.add('completed');
+      });
+
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(`step-panel-${step}`);
+      if (target) target.classList.add('active');
+
+      state.currentStep = step;
+      if (step === 3) fetchSlots();
+      window.scrollTo({ top: 140, behavior: 'smooth' });
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById('booking-alert-box');
+      box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    function clearAlert() {
+      document.getElementById('booking-alert-box').innerHTML = '';
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      const dt = new Date(y, m - 1, d);
+      return dt.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  </script>
+</body>
+</html>

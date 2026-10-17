@@ -431,6 +431,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <span class="nav-icon">📅</span> Bookings
       <span class="badge-count" id="pending-count" style="display:none">0</span>
     </button>
+    <button class="nav-item" id="nav-transactions" onclick="showSection('transactions')">
+      <span class="nav-icon">💳</span> Transactions
+    </button>
+    <button class="nav-item" id="nav-clients" onclick="showSection('clients')">
+      <span class="nav-icon">👥</span> Clients Directory
+    </button>
     <button class="nav-item" id="nav-enquiries" onclick="showSection('enquiries')">
       <span class="nav-icon">📩</span> Enquiries
       <span class="badge-count" id="unread-count" style="display:none">0</span>
@@ -469,6 +475,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <!-- MOBILE TABS -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-bookings" onclick="showSection('bookings')">📅 Bookings</button>
+    <button class="tab-btn" id="tab-transactions" onclick="showSection('transactions')">💳 Payments</button>
+    <button class="tab-btn" id="tab-clients" onclick="showSection('clients')">👥 Clients</button>
     <button class="tab-btn" id="tab-enquiries" onclick="showSection('enquiries')">📩 Enquiries</button>
     <button class="tab-btn" id="tab-services" onclick="showSection('services')">💈 Services</button>
   </div>
@@ -477,8 +485,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- STATS -->
     <div class="stats-row" id="stats-row">
       <div class="stat-card gold"><div class="s-label">Total Bookings</div><div class="s-val" id="st-total">—</div><div class="s-sub">All time</div></div>
-      <div class="stat-card orange"><div class="s-label">Pending</div><div class="s-val" id="st-pending">—</div><div class="s-sub">Awaiting confirmation</div></div>
-      <div class="stat-card green"><div class="s-label">Confirmed</div><div class="s-val" id="st-confirmed">—</div><div class="s-sub">Ready to go</div></div>
+      <div class="stat-card green"><div class="s-label">Advance Collected</div><div class="s-val" id="st-revenue">—</div><div class="s-sub" id="st-revenue-sub">Verified payments</div></div>
+      <div class="stat-card orange"><div class="s-label">Active Clients</div><div class="s-val" id="st-clients">—</div><div class="s-sub">Registered profiles</div></div>
       <div class="stat-card blue"><div class="s-label">Enquiries</div><div class="s-val" id="st-enquiries">—</div><div class="s-sub" id="st-enq-sub">Unread</div></div>
     </div>
 
@@ -580,6 +588,65 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
     </div>
+
+    <!-- TRANSACTIONS SECTION -->
+    <div id="section-transactions" style="display:none;">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>💳 Payment Transactions Log</h3>
+          <input type="search" class="search-box" placeholder="🔍 Search order ID, client, phone…" oninput="filterTransactions(this.value)" id="search-transactions">
+          <button class="btn-refresh" onclick="loadTransactions()">↻ Refresh Payments</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="transactions-table">
+            <thead>
+              <tr>
+                <th>Txn ID</th>
+                <th>Order / Booking ID</th>
+                <th>Client Name</th>
+                <th>Phone</th>
+                <th>Amount</th>
+                <th>Gateway / Method</th>
+                <th>Date & Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="transactions-body">
+              <tr><td colspan="8" class="loading-row"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTS DIRECTORY SECTION -->
+    <div id="section-clients" style="display:none;">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>👥 Client Directory & Profiles</h3>
+          <input type="search" class="search-box" placeholder="🔍 Search client name, phone…" oninput="filterClients(this.value)" id="search-clients">
+          <button class="btn-refresh" onclick="loadUsers()">↻ Refresh Directory</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="clients-table">
+            <thead>
+              <tr>
+                <th>Client Name</th>
+                <th>Phone Number</th>
+                <th>Email Address</th>
+                <th>Total Bookings</th>
+                <th>Lifetime Spent</th>
+                <th>First Visit</th>
+                <th>Last Active</th>
+              </tr>
+            </thead>
+            <tbody id="clients-body">
+              <tr><td colspan="7" class="loading-row"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -595,22 +662,26 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <script>
 // ── STATE ──
-let allBookings  = [];
-let allEnquiries = [];
-let allServices  = [];
-let currentSection = 'bookings';
-let filteredBookings  = [];
-let filteredEnquiries = [];
+let allBookings     = [];
+let allTransactions = [];
+let allUsers        = [];
+let allEnquiries    = [];
+let allServices     = [];
+let currentSection  = 'bookings';
+let filteredBookings     = [];
+let filteredTransactions = [];
+let filteredUsers        = [];
+let filteredEnquiries    = [];
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', async () => {
   // Auth check
   try {
     const r = await fetch('/api/admin/me');
-    if (!r.ok) { window.location.href = '/admin/'; return; }
+    if (!r.ok) { window.location.href = '/admin/login.html'; return; }
     const d = await r.json();
     document.getElementById('admin-name').textContent = d.user || 'Admin';
-  } catch { window.location.href = '/admin/'; return; }
+  } catch { window.location.href = '/admin/login.html'; return; }
 
   // Date
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
@@ -619,18 +690,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAll() {
-  await Promise.all([loadStats(), loadBookings(), loadEnquiries(), loadServices()]);
+  await Promise.all([loadStats(), loadBookings(), loadTransactions(), loadUsers(), loadEnquiries(), loadServices()]);
 }
 
 async function loadStats() {
   try {
     const r = await fetch('/api/admin/stats');
     const d = await r.json();
-    document.getElementById('st-total').textContent     = d.bookings.total;
-    document.getElementById('st-pending').textContent   = d.bookings.pending;
-    document.getElementById('st-confirmed').textContent = d.bookings.confirmed;
-    document.getElementById('st-enquiries').textContent = d.enquiries.unread;
-    document.getElementById('st-enq-sub').textContent   = `${d.enquiries.unread} unread of ${d.enquiries.total}`;
+    document.getElementById('st-total').textContent       = d.bookings.total;
+    if (document.getElementById('st-revenue')) {
+      document.getElementById('st-revenue').textContent     = `₹${d.revenue?.totalAdvance || 0}`;
+      document.getElementById('st-revenue-sub').textContent = `${d.transactions?.totalCount || 0} payments`;
+    }
+    if (document.getElementById('st-clients')) {
+      document.getElementById('st-clients').textContent     = d.clients?.totalClients || 0;
+    }
+    if (document.getElementById('st-pending')) document.getElementById('st-pending').textContent = d.bookings.pending;
+    if (document.getElementById('st-confirmed')) document.getElementById('st-confirmed').textContent = d.bookings.confirmed;
+    document.getElementById('st-enquiries').textContent   = d.enquiries.unread;
+    document.getElementById('st-enq-sub').textContent     = `${d.enquiries.unread} unread of ${d.enquiries.total}`;
 
     // Badge counts
     const pb = document.getElementById('pending-count');
@@ -742,26 +820,119 @@ function renderEnquiries(list) {
 // ── SECTION SWITCHING ──
 function showSection(sec) {
   currentSection = sec;
-  document.getElementById('section-bookings').style.display  = sec === 'bookings'  ? 'block' : 'none';
-  document.getElementById('section-enquiries').style.display = sec === 'enquiries' ? 'block' : 'none';
-  document.getElementById('section-services').style.display  = sec === 'services'  ? 'block' : 'none';
-  
-  const titles = { bookings: '📅 Bookings', enquiries: '📩 Enquiries', services: '💈 Services' };
+  document.getElementById('section-bookings').style.display     = sec === 'bookings'     ? 'block' : 'none';
+  document.getElementById('section-transactions').style.display = sec === 'transactions' ? 'block' : 'none';
+  document.getElementById('section-clients').style.display      = sec === 'clients'      ? 'block' : 'none';
+  document.getElementById('section-enquiries').style.display    = sec === 'enquiries'    ? 'block' : 'none';
+  document.getElementById('section-services').style.display     = sec === 'services'     ? 'block' : 'none';
+
+  const titles = {
+    bookings: '📅 Bookings',
+    transactions: '💳 Payment Transactions Log',
+    clients: '👥 Clients Directory & Profiles',
+    enquiries: '📩 Enquiries',
+    services: '💈 Services'
+  };
   document.getElementById('page-title').textContent = titles[sec] || '';
 
   // Update sidebar active
-  document.getElementById('nav-bookings').classList.toggle('active',  sec === 'bookings');
-  document.getElementById('nav-enquiries').classList.toggle('active', sec === 'enquiries');
-  document.getElementById('nav-services').classList.toggle('active',  sec === 'services');
+  document.getElementById('nav-bookings').classList.toggle('active',     sec === 'bookings');
+  document.getElementById('nav-transactions').classList.toggle('active', sec === 'transactions');
+  document.getElementById('nav-clients').classList.toggle('active',      sec === 'clients');
+  document.getElementById('nav-enquiries').classList.toggle('active',    sec === 'enquiries');
+  document.getElementById('nav-services').classList.toggle('active',     sec === 'services');
 
   // Update mobile active
-  document.getElementById('tab-bookings').classList.toggle('active',  sec === 'bookings');
-  document.getElementById('tab-enquiries').classList.toggle('active', sec === 'enquiries');
-  document.getElementById('tab-services').classList.toggle('active',  sec === 'services');
+  document.getElementById('tab-bookings').classList.toggle('active',     sec === 'bookings');
+  document.getElementById('tab-transactions').classList.toggle('active', sec === 'transactions');
+  document.getElementById('tab-clients').classList.toggle('active',      sec === 'clients');
+  document.getElementById('tab-enquiries').classList.toggle('active',    sec === 'enquiries');
+  document.getElementById('tab-services').classList.toggle('active',     sec === 'services');
 
-  // Update stat card display (hide for services as it doesn't need these stats)
+  // Update stat card display
   const statsRow = document.getElementById('stats-row');
-  statsRow.style.display = sec === 'services' ? 'none' : 'grid';
+  statsRow.style.display = (sec === 'services') ? 'none' : 'grid';
+}
+
+// ── TRANSACTIONS HANDLERS ──
+async function loadTransactions() {
+  try {
+    const r = await fetch('/api/admin/transactions');
+    if (r.ok) {
+      allTransactions = await r.json();
+      filteredTransactions = [...allTransactions];
+      renderTransactions(filteredTransactions);
+    }
+  } catch(e) {
+    document.getElementById('transactions-body').innerHTML = `<tr><td colspan="8" class="empty-row">⚠️ Failed to load transactions.</td></tr>`;
+  }
+}
+
+function renderTransactions(list) {
+  const tbody = document.getElementById('transactions-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-row">💳 No transactions recorded yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(t => `
+    <tr>
+      <td><code style="color:var(--gold); font-size:11px;">${escHtml(t.id)}</code></td>
+      <td><code style="color:#fff; font-size:11px;">${escHtml(t.orderId || t.bookingId)}</code></td>
+      <td><div style="font-weight:600; color:#fff;">${escHtml(t.customerName || 'Client')}</div></td>
+      <td><a href="tel:${escHtml(t.customerPhone)}" style="color:var(--gold); text-decoration:none;">${escHtml(t.customerPhone || '—')}</a></td>
+      <td style="font-weight:700; color:var(--green); font-size:15px;">₹${t.amount}</td>
+      <td><span style="font-size:12px; color:var(--muted);">${escHtml(t.paymentMethod || 'Cashfree')}</span></td>
+      <td style="font-size:12px; color:var(--muted); white-space:nowrap;">${fmtDateTime(t.createdAt)}</td>
+      <td><span class="badge badge-confirmed">✅ ${escHtml(t.status || 'PAID')}</span></td>
+    </tr>
+  `).join('');
+}
+
+function filterTransactions(q) {
+  filteredTransactions = allTransactions.filter(t =>
+    !q || [t.id, t.orderId, t.bookingId, t.customerName, t.customerPhone].join(' ').toLowerCase().includes(q.toLowerCase())
+  );
+  renderTransactions(filteredTransactions);
+}
+
+// ── CLIENTS HANDLERS ──
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/admin/users');
+    if (r.ok) {
+      allUsers = await r.json();
+      filteredUsers = [...allUsers];
+      renderUsers(filteredUsers);
+    }
+  } catch(e) {
+    document.getElementById('clients-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load client directory.</td></tr>`;
+  }
+}
+
+function renderUsers(list) {
+  const tbody = document.getElementById('clients-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-row">👥 No clients recorded yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(u => `
+    <tr>
+      <td><div style="font-weight:600; color:#fff;">${escHtml(u.name || 'Valued Client')}</div></td>
+      <td><a href="tel:${escHtml(u.phone)}" style="color:var(--gold); text-decoration:none;">${escHtml(u.phone)}</a></td>
+      <td style="font-size:12px; color:var(--muted);">${escHtml(u.email || '—')}</td>
+      <td style="font-weight:700; color:#fff;">${u.totalBookings || 1} appointment${(u.totalBookings || 1) > 1 ? 's' : ''}</td>
+      <td style="font-weight:700; color:var(--gold); font-size:15px;">₹${u.totalSpent || 0}</td>
+      <td style="font-size:12px; color:var(--muted); white-space:nowrap;">${fmtDate(u.firstVisit)}</td>
+      <td style="font-size:12px; color:var(--muted); white-space:nowrap;">${fmtDate(u.lastVisit)}</td>
+    </tr>
+  `).join('');
+}
+
+function filterClients(q) {
+  filteredUsers = allUsers.filter(u =>
+    !q || [u.name, u.phone, u.email].join(' ').toLowerCase().includes(q.toLowerCase())
+  );
+  renderUsers(filteredUsers);
 }
 
 function renderServices(list) {
