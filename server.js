@@ -17,7 +17,16 @@ const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const db = require('./db');
+
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 const app = express();
 const PORT = process.env.PORT || 7890;
@@ -35,15 +44,54 @@ const OPERATING_SLOTS = [
 
 const VALID_BARBERS = ['Raj Kumar', 'Sameer Khan', 'Amit Sharma'];
 
+// ── SECURITY HEADERS & DEFENSES ──────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Lightweight in-memory rate limiter for abuse prevention
+const rateLimitStore = new Map();
+function rateLimit({ windowMs = 60000, max = 20, message = 'Too many requests. Please slow down.' }) {
+  return (req, res, next) => {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const key = `${req.baseUrl || req.path}:${ip}`;
+    const now = Date.now();
+    const record = rateLimitStore.get(key) || { count: 0, resetAt: now + windowMs };
+
+    if (now > record.resetAt) {
+      record.count = 1;
+      record.resetAt = now + windowMs;
+    } else {
+      record.count++;
+    }
+
+    rateLimitStore.set(key, record);
+
+    if (record.count > max) {
+      return res.status(429).json({ error: message });
+    }
+    next();
+  };
+}
+
 // ── MIDDLEWARE ───────────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'urban-hairplaza-secret-2026',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+  }
 }));
 
 // Static files
@@ -196,7 +244,7 @@ app.get('/api/slots', async (req, res) => {
 });
 
 // POST /api/create-payment-order — Initiate Cashfree advance payment order
-app.post('/api/create-payment-order', async (req, res) => {
+app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, message: 'Too many booking attempts. Please wait a moment.' }), async (req, res) => {
   try {
     const { advanceAmount, bookingDetails } = req.body;
     if (!bookingDetails) {
@@ -242,23 +290,31 @@ app.post('/api/create-payment-order', async (req, res) => {
       assignedBarber = freeBarber || VALID_BARBERS[0];
     }
 
+    // Server-side service verification against database (prevents client price tampering)
+    const allServices = await db.getServices();
+    const matchedService = allServices.find(s =>
+      s.name.toLowerCase() === service.trim().toLowerCase() || s.id === service.trim()
+    );
+    const verifiedPrice = matchedService ? Number(matchedService.price) : (Number(price) || 150);
+    const verifiedDuration = matchedService ? (parseInt(matchedService.duration) || 30) : (Number(duration) || 30);
+    const advance = 50; // Strictly enforce standard ₹50 deposit on server
+
     const orderId = `UHP-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
-    const advance = Number(advanceAmount) || 50;
 
     const newBooking = {
       id: orderId,
       name: name.trim(),
       phone: phone.trim(),
       email: (email || '').trim(),
-      service: service.trim(),
+      service: matchedService ? matchedService.name : service.trim(),
       barber: assignedBarber,
       date: date.trim(),
       time: time.trim(),
       type: type || 'inshop',
       address: (address || '').trim(),
       notes: (notes || '').trim(),
-      price: Number(price) || 0,
-      duration: Number(duration) || 30,
+      price: verifiedPrice,
+      duration: verifiedDuration,
       advancePaid: 0,
       advanceRequired: advance,
       status: 'payment_pending',
@@ -357,7 +413,8 @@ app.post('/api/verify-payment', async (req, res) => {
     let paidAmount = booking.advanceRequired || 50;
     let gatewayData = null;
 
-    if (isConfigured && !is_simulation) {
+    if (isConfigured) {
+      // Live / Sandbox Cashfree Gateway is configured: ALWAYS verify against Cashfree API
       const cashfreeUrl = env === 'production'
         ? `https://api.cashfree.com/pg/orders/${order_id}`
         : `https://sandbox.cashfree.com/pg/orders/${order_id}`;
@@ -381,9 +438,12 @@ app.post('/api/verify-payment', async (req, res) => {
           error: `Payment is not completed. Current status: ${cfRes.data?.order_status || 'UNKNOWN'}`
         });
       }
-    } else {
+    } else if (process.env.NODE_ENV !== 'production') {
+      // ONLY allow local dev simulation when Cashfree API keys are not provided in environment
       isPaid = true;
-      gatewayData = { mode: 'sandbox_simulation', verified_at: new Date().toISOString() };
+      gatewayData = { mode: 'sandbox_simulation_dev_only', verified_at: new Date().toISOString() };
+    } else {
+      return res.status(500).json({ error: 'Payment gateway configuration is missing on server.' });
     }
 
     if (isPaid) {
@@ -430,29 +490,41 @@ app.post('/api/verify-payment', async (req, res) => {
 });
 
 // POST /api/bookings — Direct reservation (for walk-in, admin, or pay at shop)
-app.post('/api/bookings', async (req, res) => {
+app.post('/api/bookings', rateLimit({ windowMs: 60000, max: 10, message: 'Too many booking requests. Please wait a moment.' }), async (req, res) => {
   try {
     const { name, phone, email, service, barber, date, time, type, address, notes, price, duration, advancePaid } = req.body;
     if (!name || !phone || !service || !date || !time) {
       return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
     }
 
+    const isAdmin = Boolean(req.session && req.session.isAdmin);
+
+    // Verify service price against DB (prevents tampering)
+    const allServices = await db.getServices();
+    const matched = allServices.find(s => s.name.toLowerCase() === service.trim().toLowerCase() || s.id === service.trim());
+    const verifiedPrice = matched ? Number(matched.price) : (Number(price) || 150);
+    const verifiedDuration = matched ? (parseInt(matched.duration) || 30) : (Number(duration) || 30);
+
+    // Security check: Only authenticated admins can mark an appointment confirmed or log paid advance directly
+    const finalAdvance = isAdmin ? (Number(advancePaid) || 0) : 0;
+    const finalStatus = isAdmin ? (req.body.status || 'confirmed') : 'pending_confirmation';
+
     const booking = {
       id: `DIR-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
       name: name.trim(),
       phone: phone.trim(),
       email: (email || '').trim(),
-      service: service.trim(),
+      service: matched ? matched.name : service.trim(),
       barber: barber || 'Any Barber',
       date: date.trim(),
       time: time.trim(),
       type: type || 'inshop',
       address: (address || '').trim(),
       notes: (notes || '').trim(),
-      price: Number(price) || 0,
-      duration: Number(duration) || 30,
-      advancePaid: Number(advancePaid) || 0,
-      status: 'confirmed',
+      price: verifiedPrice,
+      duration: verifiedDuration,
+      advancePaid: finalAdvance,
+      status: finalStatus,
       createdAt: new Date().toISOString()
     };
 
@@ -490,8 +562,8 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-// POST /api/enquiries — Submit contact message
-app.post('/api/enquiries', async (req, res) => {
+// POST /api/enquiries — Submit contact message (with anti-spam rate limiting)
+app.post('/api/enquiries', rateLimit({ windowMs: 60000, max: 5, message: 'Please wait before sending another enquiry.' }), async (req, res) => {
   try {
     const { name, phone, email, subject, message } = req.body;
     if (!name || !phone || !message) {
@@ -531,12 +603,13 @@ function requireAdmin(req, res, next) {
 }
 
 // ── ADMIN AUTH ROUTES ────────────────────────────────────────────────────────
-app.post('/api/admin/login', (req, res) => {
+// Protected with brute-force rate limiter (max 8 attempts per 15 min per IP) and timing-safe comparison
+app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 8, message: 'Too many login attempts. Please wait 15 minutes.' }), (req, res) => {
   const { username, password } = req.body;
   const adminUser = process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin';
   const adminPass = process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025';
 
-  if (username === adminUser && password === adminPass) {
+  if (safeCompare(username, adminUser) && safeCompare(password, adminPass)) {
     req.session.isAdmin = true;
     req.session.user = username;
     return res.json({ success: true, user: username });
