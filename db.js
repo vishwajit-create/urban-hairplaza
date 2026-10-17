@@ -18,7 +18,8 @@ const FILES = {
   bookings:     path.join(DATA_DIR, 'bookings.json'),
   enquiries:    path.join(DATA_DIR, 'enquiries.json'),
   transactions: path.join(DATA_DIR, 'transactions.json'),
-  users:        path.join(DATA_DIR, 'users.json')
+  users:        path.join(DATA_DIR, 'users.json'),
+  otps:         path.join(DATA_DIR, 'otps.json')
 };
 
 // ── JSON FILE HELPERS ────────────────────────────────────────────────────────
@@ -137,6 +138,14 @@ async function initDB() {
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
 
+          CREATE TABLE IF NOT EXISTS otp_codes (
+            identifier VARCHAR(255) PRIMARY KEY,
+            otp VARCHAR(10) NOT NULL,
+            type VARCHAR(20) DEFAULT 'phone',
+            expires_at TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
           ALTER TABLE services ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'inshop';
         `);
         console.log('[DB] PostgreSQL schema verified successfully.');
@@ -167,6 +176,7 @@ async function initDB() {
   if (!fs.existsSync(FILES.enquiries)) writeJSON(FILES.enquiries, []);
   if (!fs.existsSync(FILES.transactions)) writeJSON(FILES.transactions, []);
   if (!fs.existsSync(FILES.users)) writeJSON(FILES.users, []);
+  if (!fs.existsSync(FILES.otps)) writeJSON(FILES.otps, []);
 }
 
 // ── BOOKINGS METHODS ────────────────────────────────────────────────────────
@@ -720,6 +730,97 @@ async function deleteEnquiry(id) {
   return true;
 }
 
+// ── OTP AUTH & USER BOOKINGS ────────────────────────────────────────────────
+async function saveOtp(identifier, otp, type = 'phone') {
+  const cleanId = identifier.trim().toLowerCase();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  // JSON fallback
+  const otps = readJSON(FILES.otps);
+  const idx = otps.findIndex(o => o.identifier === cleanId);
+  const record = { identifier: cleanId, otp, type, expiresAt, createdAt: new Date().toISOString() };
+  if (idx >= 0) otps[idx] = record;
+  else otps.push(record);
+  writeJSON(FILES.otps, otps);
+
+  // PostgreSQL
+  if (pgPool) {
+    try {
+      await pgPool.query(`
+        INSERT INTO otp_codes (identifier, otp, type, expires_at, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (identifier) DO UPDATE SET
+          otp = EXCLUDED.otp,
+          type = EXCLUDED.type,
+          expires_at = EXCLUDED.expires_at,
+          created_at = NOW();
+      `, [cleanId, otp, type, new Date(Date.now() + 10 * 60 * 1000)]);
+    } catch (e) {
+      console.error('[DB] Postgres saveOtp error:', e.message);
+    }
+  }
+  return record;
+}
+
+async function verifyOtp(identifier, inputOtp) {
+  const cleanId = identifier.trim().toLowerCase();
+  const cleanOtp = String(inputOtp).trim();
+
+  // PostgreSQL check
+  if (pgPool) {
+    try {
+      const res = await pgPool.query(
+        'SELECT * FROM otp_codes WHERE identifier = $1 AND otp = $2 AND expires_at > NOW() LIMIT 1',
+        [cleanId, cleanOtp]
+      );
+      if (res.rows.length > 0) {
+        // Delete used OTP
+        await pgPool.query('DELETE FROM otp_codes WHERE identifier = $1', [cleanId]);
+        return true;
+      }
+    } catch (e) {
+      console.error('[DB] Postgres verifyOtp error:', e.message);
+    }
+  }
+
+  // JSON check
+  const otps = readJSON(FILES.otps);
+  const record = otps.find(o => o.identifier === cleanId && o.otp === cleanOtp && new Date(o.expiresAt) > new Date());
+  if (record) {
+    writeJSON(FILES.otps, otps.filter(o => o.identifier !== cleanId));
+    return true;
+  }
+  return false;
+}
+
+async function getUserByIdentifier(identifier) {
+  const clean = identifier.trim().toLowerCase();
+  const cleanPhone = clean.replace(/\D/g, '').slice(-10);
+  const isPhone = cleanPhone.length === 10;
+
+  const users = await getUsers();
+  return users.find(u => {
+    if (isPhone && (u.phone || '').replace(/\D/g, '').slice(-10) === cleanPhone) return true;
+    if ((u.email || '').trim().toLowerCase() === clean) return true;
+    return false;
+  }) || null;
+}
+
+async function getUserBookings(phone, email) {
+  const cleanPhone = phone ? phone.replace(/\D/g, '').slice(-10) : '';
+  const cleanEmail = email ? email.trim().toLowerCase() : '';
+
+  const allBookings = await getBookings();
+  return allBookings.filter(b => {
+    const bPhone = (b.phone || '').replace(/\D/g, '').slice(-10);
+    const bEmail = (b.email || '').trim().toLowerCase();
+
+    const matchesPhone = Boolean(cleanPhone && bPhone && bPhone === cleanPhone);
+    const matchesEmail = Boolean(cleanEmail && bEmail && bEmail === cleanEmail);
+    return matchesPhone || matchesEmail;
+  });
+}
+
 module.exports = {
   initDB,
   getBookings,
@@ -731,6 +832,10 @@ module.exports = {
   getTransactions,
   upsertUser,
   getUsers,
+  getUserByIdentifier,
+  getUserBookings,
+  saveOtp,
+  verifyOtp,
   getServices,
   saveService,
   updateService,

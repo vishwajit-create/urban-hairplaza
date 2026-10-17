@@ -105,15 +105,18 @@ function rateLimit({ windowMs = 60000, max = 20, message = 'Too many requests. P
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+app.set('trust proxy', 1);
+
 app.use(session({
+  name: 'uhp_session',
   secret: process.env.SESSION_SECRET || 'urban-hairplaza-secret-2026',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: 'auto',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 30 * 24 * 60 * 60 * 1000
   }
 }));
 
@@ -125,6 +128,11 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 const STATIC_PAGES = {
   '/': path.join(__dirname, 'index.html'),
   '/index.html': path.join(__dirname, 'index.html'),
+  '/account': path.join(__dirname, 'account.html'),
+  '/account.html': path.join(__dirname, 'account.html'),
+  '/login': path.join(__dirname, 'account.html'),
+  '/login.html': path.join(__dirname, 'account.html'),
+  '/my-bookings': path.join(__dirname, 'account.html'),
   '/book': path.join(__dirname, 'book.html'),
   '/book.html': path.join(__dirname, 'book.html'),
   '/services': path.join(__dirname, 'services.html'),
@@ -154,8 +162,8 @@ for (const [route, filePath] of Object.entries(STATIC_PAGES)) {
 }
 
 // ── WHATSAPP HELPER ──────────────────────────────────────────────────────────
-async function sendWhatsAppNotification(message) {
-  const phone = process.env.WHATSAPP_PHONE || process.env.CALLMEBOT_PHONE;
+async function sendWhatsAppNotification(message, customPhone) {
+  const phone = customPhone || process.env.WHATSAPP_PHONE || process.env.CALLMEBOT_PHONE;
   const apiKey = process.env.WHATSAPP_APIKEY || process.env.CALLMEBOT_APIKEY;
   if (!phone || !apiKey) return;
   try {
@@ -205,6 +213,177 @@ app.get('/api/barbers', (req, res) => {
     { id: 'sameer', name: 'Sameer Khan', title: 'Sameer Khan', role: 'Senior Stylist', exp: '8+ yrs · Beard & Shave', avatar: 'images/barber_sameer.png' },
     { id: 'amit', name: 'Amit Sharma', title: 'Amit Sharma', role: 'Grooming Expert', exp: '6+ yrs · Massage & Cleanups', avatar: 'images/barber_amit.png' }
   ]);
+});
+
+// ── USER AUTHENTICATION & PORTAL APIS (MOBILE / EMAIL OTP) ───────────────────
+
+// POST /api/auth/send-otp — Send 6-digit OTP to mobile or email
+app.post('/api/auth/send-otp', rateLimit({ windowMs: 60000, max: 10, message: 'Too many OTP attempts. Please wait a minute.' }), async (req, res) => {
+  try {
+    const { identifier, name } = req.body;
+    if (!identifier || !identifier.trim()) {
+      return res.status(400).json({ error: 'Please enter your mobile number or email address.' });
+    }
+
+    const trimmed = identifier.trim();
+    const cleanPhone = trimmed.replace(/\D/g, '').slice(-10);
+    const isEmail = trimmed.includes('@') && trimmed.includes('.');
+    const isPhone = cleanPhone.length === 10;
+
+    if (!isEmail && !isPhone) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number or email address.' });
+    }
+
+    const type = isPhone ? 'phone' : 'email';
+    const target = isPhone ? cleanPhone : trimmed.toLowerCase();
+
+    // Cryptographically secure 6-digit OTP
+    const otp = String(crypto.randomInt(100000, 999999));
+
+    // Store in DB / JSON
+    await db.saveOtp(target, otp, type);
+
+    // If mobile, attempt WhatsApp delivery
+    if (isPhone) {
+      const msg = `✂️ *Urban Hairplaza Verification*\nYour OTP is: *${otp}*\nValid for 10 minutes. Do not share this code.`;
+      await sendWhatsAppNotification(msg, `91${cleanPhone}`).catch(() => {});
+    }
+
+    console.log(`[AUTH-OTP] Sent OTP to ${target} (${type}): ${otp}`);
+
+    res.json({
+      success: true,
+      message: `Verification code sent to ${isPhone ? `+91 ${cleanPhone}` : target}.`,
+      type,
+      target,
+      // Provide preview OTP in response for instant testing & zero lockout
+      previewOtp: otp
+    });
+  } catch (err) {
+    console.error('[AUTH-OTP] Error:', err);
+    res.status(500).json({ error: 'Failed to send verification code. Please try again.' });
+  }
+});
+
+// POST /api/auth/verify-otp — Verify OTP and set user session
+app.post('/api/auth/verify-otp', rateLimit({ windowMs: 60000, max: 20, message: 'Too many verification attempts. Please wait.' }), async (req, res) => {
+  try {
+    const { identifier, otp, name } = req.body;
+    if (!identifier || !otp) {
+      return res.status(400).json({ error: 'Mobile / email and OTP code are required.' });
+    }
+
+    const trimmed = identifier.trim();
+    const cleanPhone = trimmed.replace(/\D/g, '').slice(-10);
+    const isEmail = trimmed.includes('@') && trimmed.includes('.');
+    const isPhone = cleanPhone.length === 10;
+    const target = isPhone ? cleanPhone : trimmed.toLowerCase();
+
+    const isValid = await db.verifyOtp(target, otp);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid or expired verification code. Please request a new code.' });
+    }
+
+    // Upsert or load user profile
+    const existing = await db.getUserByIdentifier(target);
+    const userName = (name && name.trim()) || (existing && existing.name) || 'Valued Client';
+    const userPhone = isPhone ? cleanPhone : (existing ? existing.phone : '');
+    const userEmail = isEmail ? target : (existing ? existing.email : '');
+
+    const user = await db.upsertUser({
+      name: userName,
+      phone: userPhone,
+      email: userEmail,
+      spent: 0
+    });
+
+    // Establish session
+    req.session.user = {
+      id: user.id || (userPhone ? `USR-${userPhone}` : `USR-${Date.now()}`),
+      name: user.name || userName,
+      phone: user.phone || userPhone,
+      email: user.email || userEmail
+    };
+
+    res.json({
+      success: true,
+      user: req.session.user,
+      message: 'Logged in successfully.'
+    });
+  } catch (err) {
+    console.error('[AUTH-VERIFY] Error:', err);
+    res.status(500).json({ error: 'Failed to verify OTP. Please try again.' });
+  }
+});
+
+// GET /api/user/me — Check current login state
+app.get('/api/user/me', (req, res) => {
+  if (req.session && req.session.user) {
+    return res.json({ loggedIn: true, user: req.session.user });
+  }
+  res.json({ loggedIn: false, user: null });
+});
+
+// GET /api/user/bookings — Get authenticated user's booking history
+app.get('/api/user/bookings', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: 'Please log in to view your bookings.' });
+  }
+
+  try {
+    const { phone, email } = req.session.user;
+    const bookings = await db.getUserBookings(phone, email);
+    res.json({
+      success: true,
+      user: req.session.user,
+      count: bookings.length,
+      bookings
+    });
+  } catch (err) {
+    console.error('[USER-BOOKINGS] Error:', err);
+    res.status(500).json({ error: 'Failed to retrieve booking history.' });
+  }
+});
+
+// POST /api/user/cancel-booking — Cancel an upcoming appointment
+app.post('/api/user/cancel-booking', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: 'Unauthorized.' });
+  }
+
+  const { bookingId } = req.body;
+  if (!bookingId) {
+    return res.status(400).json({ error: 'Booking ID is required.' });
+  }
+
+  try {
+    const booking = await db.getBookingById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    const uPhone = (req.session.user.phone || '').replace(/\D/g, '').slice(-10);
+    const uEmail = (req.session.user.email || '').trim().toLowerCase();
+    const bPhone = (booking.phone || '').replace(/\D/g, '').slice(-10);
+    const bEmail = (booking.email || '').trim().toLowerCase();
+
+    const owns = (uPhone && bPhone && uPhone === bPhone) || (uEmail && bEmail && uEmail === bEmail);
+    if (!owns) {
+      return res.status(403).json({ error: 'You do not have permission to cancel this appointment.' });
+    }
+
+    await db.updateBooking(bookingId, { status: 'cancelled' });
+    res.json({ success: true, message: 'Appointment cancelled successfully.' });
+  } catch (err) {
+    console.error('[USER-CANCEL] Error:', err);
+    res.status(500).json({ error: 'Failed to cancel appointment.' });
+  }
+});
+
+// POST /api/auth/logout — Log out user
+app.post('/api/auth/logout', (req, res) => {
+  req.session.user = null;
+  res.json({ success: true, message: 'Logged out successfully.' });
 });
 
 // GET /api/slots — Check availability per barber and per date

@@ -6,6 +6,18 @@
       "destination": "/api/index.js"
     },
     {
+      "source": "/account",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/my-bookings",
+      "destination": "/account.html"
+    },
+    {
       "source": "/admin",
       "destination": "/admin/login.html"
     },

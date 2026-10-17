@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account & Booking History – Urban Hairplaza</title>
+  <meta name="description" content="Log in with Mobile or Email OTP to view your upcoming appointments, visit history, receipts, and manage bookings at Urban Hairplaza.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .auth-card {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .auth-tabs {
+      display: flex;
+      background: #F3F4F6;
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      text-align: center;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-body);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.15s ease;
+    }
+    .auth-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--text-main);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .otp-input-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .otp-field {
+      font-family: var(--font-mono);
+      font-size: 1.8rem;
+      letter-spacing: 0.35em;
+      text-align: center;
+      padding: 10px 16px;
+      max-width: 280px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .otp-field:focus {
+      border-color: var(--text-main);
+    }
+    .profile-banner {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .profile-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .profile-avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .profile-stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      background: #F9FAFB;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      text-align: center;
+    }
+    .stat-chip-num {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .stat-chip-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .history-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .history-card:hover {
+      border-color: #9CA3AF;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .history-k {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .history-v {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+    }
+    .status-badge.confirmed { background: var(--success-bg); color: var(--success); }
+    .status-badge.completed { background: #DBEAFE; color: #1E40AF; }
+    .status-badge.pending { background: #FEF3C7; color: #92400E; }
+    .status-badge.cancelled { background: #F3F4F6; color: #6B7280; }
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-pill {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-body);
+      cursor: pointer;
+    }
+    .filter-pill.active {
+      background: var(--text-main);
+      color: #FFFFFF;
+      border-color: var(--text-main);
+    }
+    .receipt-print-area { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block !important;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar</span>
+        <span>🕐 Daily: 9:00 AM – 9:00 PM</span>
+      </div>
+      <div class="topbar-info">
+        <span>📞 <a href="tel:+916202692426">+91 6202 692 426</a></span>
+        <span><a href="admin/login.html" style="color:var(--text-muted);">Admin Portal</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">✂️</div>
+        <div>
+          <div class="nav-brand-title">Urban Hairplaza</div>
+          <div class="nav-brand-sub">Simraha · Araria</div>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services & Pricing</a>
+        <a href="barbers.html" class="nav-link">Our Barbers</a>
+        <a href="gallery.html" class="nav-link">Gallery</a>
+        <a href="account.html" class="nav-link active">My Bookings</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="book.html" class="btn btn-primary btn-sm">Book Appointment</a>
+        <button class="hamburger" id="hamburger" aria-label="Open mobile menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="services.html" class="nav-link">Services & Pricing</a>
+    <a href="barbers.html" class="nav-link">Our Barbers</a>
+    <a href="gallery.html" class="nav-link">Gallery</a>
+    <a href="account.html" class="nav-link active">My Bookings</a>
+    <a href="contact.html" class="nav-link">Contact</a>
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <a href="book.html" class="btn btn-primary btn-block">Book Appointment</a>
+      <a href="tel:+916202692426" class="btn btn-secondary btn-block">📞 Call Salon</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="section-sm" style="background-color: #FFFFFF; border-bottom: 1px solid var(--border);">
+    <div class="container text-center">
+      <span class="mono-tag">Client Portal</span>
+      <h1 class="hero-title" style="margin-top: 6px;" id="page-heading">My Account & Bookings</h1>
+      <p class="section-subtitle">View your upcoming appointments, check advance payment receipts, and manage your bookings.</p>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <section class="section">
+    <div class="container">
+
+      <!-- ALERT CONTAINER -->
+      <div id="alert-box" style="max-width: 680px; margin: 0 auto 20px;"></div>
+
+      <!-- ═════════════════════════════════════════════════════════
+           VIEW 1: AUTHENTICATION (MOBILE / EMAIL OTP)
+           ═════════════════════════════════════════════════════════ -->
+      <div id="auth-section" class="auth-card">
+        <h2 style="font-size: 1.4rem; margin-bottom: 6px; text-align: center;">Log In or Sign Up</h2>
+        <p style="font-size: 0.875rem; color: var(--text-muted); text-align: center; margin-bottom: 20px;">
+          Enter your mobile number or email to receive a secure one-time passcode (OTP).
+        </p>
+
+        <!-- Step 1: Request OTP -->
+        <div id="step-send-otp">
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab-btn active" id="tab-phone" onclick="switchAuthTab('phone')">
+              📱 Mobile OTP
+            </button>
+            <button type="button" class="auth-tab-btn" id="tab-email" onclick="switchAuthTab('email')">
+              ✉️ Email OTP
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="auth-name">Full Name <span style="font-weight:normal; color:var(--text-muted);">(Optional for existing clients)</span></label>
+            <input type="text" class="form-control" id="auth-name" placeholder="e.g. Rahul Kumar">
+          </div>
+
+          <!-- Phone input -->
+          <div class="form-group" id="group-phone">
+            <label class="form-label" for="auth-phone">10-Digit Mobile Number <span style="color:#B91C1C;">*</span></label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:600; padding:10px 12px; background:#F3F4F6; border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-main);">+91</span>
+              <input type="tel" class="form-control" id="auth-phone" placeholder="9876543210" maxlength="10">
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">
+              OTP will be sent to your mobile number via WhatsApp / SMS.
+            </div>
+          </div>
+
+          <!-- Email input -->
+          <div class="form-group" id="group-email" style="display:none;">
+            <label class="form-label" for="auth-email">Email Address <span style="color:#B91C1C;">*</span></label>
+            <input type="email" class="form-control" id="auth-email" placeholder="name@example.com">
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">
+              A 6-digit verification code will be sent to your inbox.
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg" id="btn-send-otp" onclick="handleSendOtp()">
+            Send Verification Code →
+          </button>
+        </div>
+
+        <!-- Step 2: Verify OTP -->
+        <div id="step-verify-otp" style="display:none; text-align: center;">
+          <div style="width:50px; height:50px; background:#EEF2F6; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin:0 auto 12px;">
+            🔐
+          </div>
+          <h3 style="margin-bottom: 6px;">Enter 6-Digit Code</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;" id="otp-sent-to-label">
+            We sent a verification code to your number.
+          </p>
+
+          <!-- Test Helper Badge -->
+          <div id="preview-otp-badge" style="display:none; background:var(--accent-amber-light); border:1px solid var(--accent-amber); color:var(--accent-amber); padding:8px 12px; border-radius:var(--radius-sm); font-size:0.85rem; margin-bottom:16px; cursor:pointer;" onclick="autoFillOtp()">
+            ⚡ <strong>Test OTP: <span id="preview-otp-code"></span></strong> (Click to auto-fill)
+          </div>
+
+          <div class="otp-input-wrap">
+            <input type="text" class="otp-field" id="auth-otp" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg" id="btn-verify-otp" onclick="handleVerifyOtp()">
+            Verify & View My Bookings →
+          </button>
+
+          <div style="margin-top: 16px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+            <button type="button" style="background:none; border:none; color:var(--text-muted); text-decoration:underline; cursor:pointer;" onclick="backToSendOtp()">
+              ← Change Number / Email
+            </button>
+            <button type="button" id="btn-resend" style="background:none; border:none; color:var(--text-main); font-weight:600; cursor:pointer;" onclick="handleSendOtp()">
+              Resend Code
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════
+           VIEW 2: USER DASHBOARD (LOGGED IN)
+           ═════════════════════════════════════════════════════════ -->
+      <div id="dashboard-section" style="display:none;">
+
+        <!-- Client Profile Header -->
+        <div class="profile-banner">
+          <div class="profile-left">
+            <div class="profile-avatar" id="dash-avatar">U</div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h2 style="font-size: 1.3rem; margin-bottom: 2px;" id="dash-name">Valued Client</h2>
+                <span class="status-badge confirmed">Verified Client</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">
+                <span id="dash-phone"></span>
+                <span id="dash-email" style="margin-left: 8px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div class="profile-stats">
+              <div class="stat-chip">
+                <div class="stat-chip-num" id="stat-total-bookings">0</div>
+                <div class="stat-chip-lbl">Bookings</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-chip-num" id="stat-total-spent">₹0</div>
+                <div class="stat-chip-lbl">Total Spent</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="book.html" class="btn btn-primary btn-sm">✂️ Book New Slot</a>
+              <button class="btn btn-outline btn-sm" onclick="handleLogout()">Log Out</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom: 14px;">
+          <h3 style="font-size: 1.15rem;">Appointment History</h3>
+          <div class="filter-pills">
+            <button type="button" class="filter-pill active" onclick="filterBookings('all', this)">All</button>
+            <button type="button" class="filter-pill" onclick="filterBookings('upcoming', this)">Upcoming</button>
+            <button type="button" class="filter-pill" onclick="filterBookings('completed', this)">Completed</button>
+            <button type="button" class="filter-pill" onclick="filterBookings('cancelled', this)">Cancelled</button>
+          </div>
+        </div>
+
+        <!-- Bookings Container -->
+        <div id="bookings-list-container">
+          <!-- Populated by JavaScript -->
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PRINTABLE RECEIPT TEMPLATE (FOR PRINTING RECEIPT) -->
+  <div id="printable-receipt" class="receipt-print-area">
+    <div style="text-align:center; margin-bottom:20px; border-bottom:2px solid #000; padding-bottom:12px;">
+      <h2>URBAN HAIRPLAZA</h2>
+      <p>Near Phanishwar Nath Renu Statue, Simraha, Araria – 854331, Bihar</p>
+      <p>Phone: +91 6202 692 426</p>
+      <h3>APPOINTMENT RECEIPT</h3>
+    </div>
+    <div id="print-content" style="line-height:1.8; font-size:14px;"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="nav-brand-title" style="margin-bottom: 8px;">Urban Hairplaza</div>
+          <p style="font-size: 0.875rem; color: var(--text-muted); max-width: 280px;">
+            Men's barbershop offering haircuts, beard grooming, and doorstep home services in Simraha, Araria.
+          </p>
+        </div>
+        <div>
+          <h4 class="footer-title">Pages</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="services.html">Services & Pricing</a></li>
+            <li><a href="barbers.html">Our Barbers</a></li>
+            <li><a href="gallery.html">Gallery</a></li>
+            <li><a href="account.html">My Account & Bookings</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Booking</h4>
+          <ul class="footer-links">
+            <li><a href="book.html">In-Shop Appointment</a></li>
+            <li><a href="book.html?type=home">Doorstep Home Visit</a></li>
+            <li><a href="admin/login.html">Admin Login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Contact</h4>
+          <div style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+            <div>📍 Simraha, Araria – 854331, Bihar</div>
+            <div style="margin: 6px 0;">📞 <a href="tel:+916202692426" style="color:var(--text-main); font-weight:600;">+91 6202 692 426</a></div>
+            <div>🕐 9:00 AM – 9:00 PM (Daily)</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Urban Hairplaza Private Limited. All rights reserved.</span>
+        <span>Simraha, Araria, Bihar</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    const authState = {
+      tab: 'phone',
+      currentIdentifier: '',
+      previewOtp: '',
+      user: null,
+      bookings: [],
+      currentFilter: 'all'
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuthStatus();
+    });
+
+    function switchAuthTab(type) {
+      authState.tab = type;
+      document.getElementById('tab-phone').classList.toggle('active', type === 'phone');
+      document.getElementById('tab-email').classList.toggle('active', type === 'email');
+      document.getElementById('group-phone').style.display = (type === 'phone') ? 'block' : 'none';
+      document.getElementById('group-email').style.display = (type === 'email') ? 'block' : 'none';
+      clearAlert();
+    }
+
+    async function checkAuthStatus() {
+      try {
+        const res = await fetch('/api/user/me');
+        const data = await res.json();
+        if (data.loggedIn && data.user) {
+          authState.user = data.user;
+          renderDashboard();
+          await loadUserBookings();
+        } else {
+          renderAuthForm();
+        }
+      } catch (e) {
+        renderAuthForm();
+      }
+    }
+
+    function renderAuthForm() {
+      document.getElementById('auth-section').style.display = 'block';
+      document.getElementById('dashboard-section').style.display = 'none';
+      document.getElementById('page-heading').textContent = 'My Account & Bookings';
+    }
+
+    async function handleSendOtp() {
+      clearAlert();
+      const name = document.getElementById('auth-name').value.trim();
+      let identifier = '';
+
+      if (authState.tab === 'phone') {
+        const rawPhone = document.getElementById('auth-phone').value.trim().replace(/\D/g, '');
+        if (rawPhone.length < 10) {
+          showAlert('Please enter a valid 10-digit mobile number.', 'danger');
+          document.getElementById('auth-phone').focus();
+          return;
+        }
+        identifier = rawPhone.slice(-10);
+      } else {
+        const email = document.getElementById('auth-email').value.trim();
+        if (!email || !email.includes('@') || !email.includes('.')) {
+          showAlert('Please enter a valid email address.', 'danger');
+          document.getElementById('auth-email').focus();
+          return;
+        }
+        identifier = email;
+      }
+
+      authState.currentIdentifier = identifier;
+
+      const btn = document.getElementById('btn-send-otp');
+      btn.disabled = true;
+      btn.textContent = 'Sending Code...';
+
+      try {
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, name })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+
+        document.getElementById('step-send-otp').style.display = 'none';
+        document.getElementById('step-verify-otp').style.display = 'block';
+        document.getElementById('otp-sent-to-label').textContent = 
+          `We sent a 6-digit verification code to ${authState.tab === 'phone' ? `+91 ${identifier}` : identifier}`;
+
+        if (data.previewOtp) {
+          authState.previewOtp = data.previewOtp;
+          document.getElementById('preview-otp-code').textContent = data.previewOtp;
+          document.getElementById('preview-otp-badge').style.display = 'inline-block';
+        }
+
+        showAlert(data.message, 'success');
+        document.getElementById('auth-otp').focus();
+      } catch (err) {
+        showAlert(err.message, 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Verification Code →';
+      }
+    }
+
+    function autoFillOtp() {
+      if (authState.previewOtp) {
+        document.getElementById('auth-otp').value = authState.previewOtp;
+      }
+    }
+
+    function backToSendOtp() {
+      document.getElementById('step-verify-otp').style.display = 'none';
+      document.getElementById('step-send-otp').style.display = 'block';
+      clearAlert();
+    }
+
+    async function handleVerifyOtp() {
+      clearAlert();
+      const otp = document.getElementById('auth-otp').value.trim();
+      const name = document.getElementById('auth-name').value.trim();
+
+      if (!otp || otp.length < 6) {
+        showAlert('Please enter the 6-digit verification code.', 'danger');
+        document.getElementById('auth-otp').focus();
+        return;
+      }
+
+      const btn = document.getElementById('btn-verify-otp');
+      btn.disabled = true;
+      btn.textContent = 'Verifying Code...';
+
+      try {
+        const res = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identifier: authState.currentIdentifier,
+            otp,
+            name
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Verification failed');
+
+        authState.user = data.user;
+        showAlert('Login successful! Loading your appointments...', 'success');
+        setTimeout(async () => {
+          clearAlert();
+          renderDashboard();
+          await loadUserBookings();
+        }, 600);
+
+      } catch (err) {
+        showAlert(err.message, 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Verify & View My Bookings →';
+      }
+    }
+
+    function renderDashboard() {
+      document.getElementById('auth-section').style.display = 'none';
+      document.getElementById('dashboard-section').style.display = 'block';
+
+      const u = authState.user;
+      document.getElementById('dash-name').textContent = u.name || 'Valued Client';
+      document.getElementById('dash-avatar').textContent = (u.name || 'U').charAt(0).toUpperCase();
+      document.getElementById('dash-phone').textContent = u.phone ? `📞 +91 ${u.phone.replace(/\D/g, '').slice(-10)}` : '';
+      document.getElementById('dash-email').textContent = u.email ? `✉️ ${u.email}` : '';
+      document.getElementById('page-heading').textContent = `Welcome, ${u.name || 'Client'}`;
+    }
+
+    async function loadUserBookings() {
+      const container = document.getElementById('bookings-list-container');
+      container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">Loading your bookings...</div>';
+
+      try {
+        const res = await fetch('/api/user/bookings');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load bookings');
+
+        authState.bookings = data.bookings || [];
+
+        // Update stats
+        const total = authState.bookings.length;
+        const totalSpent = authState.bookings.reduce((sum, b) => {
+          return sum + (b.status !== 'cancelled' ? (Number(b.price) || 0) : 0);
+        }, 0);
+
+        document.getElementById('stat-total-bookings').textContent = total;
+        document.getElementById('stat-total-spent').textContent = `₹${totalSpent}`;
+
+        renderBookingsList();
+      } catch (err) {
+        container.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+      }
+    }
+
+    function filterBookings(type, btn) {
+      authState.currentFilter = type;
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderBookingsList();
+    }
+
+    function renderBookingsList() {
+      const container = document.getElementById('bookings-list-container');
+      const today = new Date().toISOString().split('T')[0];
+
+      let list = authState.bookings;
+
+      if (authState.currentFilter === 'upcoming') {
+        list = list.filter(b => b.date >= today && b.status !== 'cancelled');
+      } else if (authState.currentFilter === 'completed') {
+        list = list.filter(b => b.status === 'completed' || (b.date < today && b.status !== 'cancelled'));
+      } else if (authState.currentFilter === 'cancelled') {
+        list = list.filter(b => b.status === 'cancelled');
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:var(--radius); padding:40px 20px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:12px;">💈</div>
+            <h4 style="margin-bottom:6px;">No appointments found in this view</h4>
+            <p style="font-size:0.9rem; color:var(--text-muted); max-width:380px; margin:0 auto 20px;">
+              Ready for a fresh haircut, clean beard styling, or a hot towel shave?
+            </p>
+            <a href="book.html" class="btn btn-primary">Book an Appointment Now →</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(b => {
+        const isUpcoming = (b.date >= today && b.status !== 'cancelled');
+        const statusClass = b.status === 'completed' ? 'completed' 
+          : b.status === 'cancelled' ? 'cancelled' 
+          : b.status === 'payment_pending' ? 'pending' 
+          : 'confirmed';
+
+        const statusLabel = b.status === 'completed' ? '✓ Completed' 
+          : b.status === 'cancelled' ? '✕ Cancelled' 
+          : b.status === 'payment_pending' ? '⏳ Payment Pending' 
+          : '✓ Confirmed Reservation';
+
+        const balanceDue = Math.max(0, (Number(b.price) || 0) - (Number(b.advancePaid) || 0));
+
+        const waText = encodeURIComponent(`Hello Urban Hairplaza, I am checking my booking #${b.id} for ${b.service} with ${b.barber} on ${b.date} at ${b.time}.`);
+        const waLink = `https://wa.me/916202692426?text=${waText}`;
+
+        const calTitle = encodeURIComponent(`Urban Hairplaza – ${b.service}`);
+        const calDetails = encodeURIComponent(`Barber appointment #${b.id} with ${b.barber}.\nSimraha, Araria.`);
+        const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${calTitle}&details=${calDetails}&location=${encodeURIComponent('Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar')}`;
+
+        return `
+          <div class="history-card">
+            <div class="history-header">
+              <div>
+                <span style="font-family:var(--font-mono); font-weight:700; color:var(--text-main); font-size:0.95rem;">#${b.id}</span>
+                <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">${b.createdAt ? formatTimeAgo(b.createdAt) : ''}</span>
+              </div>
+              <span class="status-badge ${statusClass}">${statusLabel}</span>
+            </div>
+
+            <div class="history-grid">
+              <div>
+                <div class="history-k">Service</div>
+                <div class="history-v">${escapeHtml(b.service)}</div>
+              </div>
+              <div>
+                <div class="history-k">Barber</div>
+                <div class="history-v">${escapeHtml(b.barber || 'Assigned Stylist')}</div>
+              </div>
+              <div>
+                <div class="history-k">Appointment Date & Time</div>
+                <div class="history-v">📅 ${formatDisplayDate(b.date)} at ${b.time}</div>
+              </div>
+              <div>
+                <div class="history-k">Service Location</div>
+                <div class="history-v">${b.type === 'home' ? '🏠 Doorstep Home Visit' : '🏢 In-Shop Salon'}</div>
+              </div>
+              <div>
+                <div class="history-k">Advance Paid</div>
+                <div class="history-v" style="color:var(--success);">₹${b.advancePaid || 0} (Paid)</div>
+              </div>
+              <div>
+                <div class="history-k">Balance Due at Salon</div>
+                <div class="history-v">₹${balanceDue}</div>
+              </div>
+            </div>
+
+            ${b.address ? `<div style="font-size:0.85rem; color:var(--text-body); background:#F9FAFB; padding:8px 12px; border-radius:var(--radius-sm); margin-bottom:14px;"><strong>Address:</strong> ${escapeHtml(b.address)}</div>` : ''}
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <a href="${waLink}" target="_blank" class="btn btn-whatsapp btn-sm">💬 WhatsApp Salon</a>
+                <a href="${calUrl}" target="_blank" class="btn btn-secondary btn-sm">📅 Calendar</a>
+                <button type="button" class="btn btn-outline btn-sm" onclick="printReceipt('${b.id}')">🖨️ Receipt</button>
+              </div>
+
+              ${isUpcoming ? `
+                <button type="button" class="btn btn-danger btn-sm" onclick="cancelAppointment('${b.id}')">
+                  Cancel Appointment
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function cancelAppointment(bookingId) {
+      if (!confirm(`Are you sure you want to cancel appointment #${bookingId}?`)) return;
+
+      try {
+        const res = await fetch('/api/user/cancel-booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to cancel appointment');
+
+        showAlert('Appointment cancelled successfully.', 'success');
+        await loadUserBookings();
+      } catch (err) {
+        showAlert(err.message, 'danger');
+      }
+    }
+
+    function printReceipt(bookingId) {
+      const b = authState.bookings.find(item => item.id === bookingId);
+      if (!b) return;
+
+      const printArea = document.getElementById('print-content');
+      const balanceDue = Math.max(0, (Number(b.price) || 0) - (Number(b.advancePaid) || 0));
+
+      printArea.innerHTML = `
+        <p><strong>Booking ID:</strong> #${b.id}</p>
+        <p><strong>Date & Time:</strong> ${formatDisplayDate(b.date)} at ${b.time}</p>
+        <p><strong>Client Name:</strong> ${escapeHtml(b.name)}</p>
+        <p><strong>Mobile:</strong> +91 ${escapeHtml(b.phone)}</p>
+        <p><strong>Service:</strong> ${escapeHtml(b.service)}</p>
+        <p><strong>Barber:</strong> ${escapeHtml(b.barber)}</p>
+        <p><strong>Location:</strong> ${b.type === 'home' ? 'Doorstep Home Visit' : 'In-Shop Salon'}</p>
+        <hr style="margin:12px 0;">
+        <p><strong>Service Total:</strong> ₹${b.price}</p>
+        <p><strong>Advance Deposit (Paid):</strong> ₹${b.advancePaid || 0}</p>
+        <p><strong>Balance Due:</strong> ₹${balanceDue}</p>
+        <p><strong>Status:</strong> ${b.status.toUpperCase()}</p>
+        <hr style="margin:12px 0;">
+        <p style="font-size:12px; color:#555;">Thank you for choosing Urban Hairplaza. Please bring this receipt or show your confirmation message upon arrival.</p>
+      `;
+
+      window.print();
+    }
+
+    async function handleLogout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      authState.user = null;
+      authState.bookings = [];
+      renderAuthForm();
+      showAlert('You have been logged out.', 'info');
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById('alert-box');
+      box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    function clearAlert() {
+      document.getElementById('alert-box').innerHTML = '';
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      const dt = new Date(y, m - 1, d);
+      return dt.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatTimeAgo(isoStr) {
+      try {
+        const diff = Date.now() - new Date(isoStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        const days = Math.floor(hrs / 24);
+        return `${days}d ago`;
+      } catch (e) { return ''; }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
