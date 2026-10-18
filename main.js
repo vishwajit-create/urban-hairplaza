@@ -66,4 +66,41 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // ── COOKIE CONSENT BANNER ────────────────────────────────────────────────
+  const consent = localStorage.getItem('uhp_cookie_consent');
+  if (!consent) {
+    const banner = document.createElement('div');
+    banner.id = 'uhp-cookie-banner';
+    banner.innerHTML = `
+      <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 860px; background: #111827; color: #F9FAFB; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 12px; padding: 18px 22px; box-shadow: 0 12px 35px rgba(0,0,0,0.45); z-index: 999999; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="display: flex; align-items: flex-start; gap: 12px; max-width: 540px;">
+          <div style="font-size: 1.5rem; line-height: 1;">🍪</div>
+          <div style="font-size: 0.88rem; line-height: 1.5; color: #E5E7EB;">
+            <strong>Your Privacy & Cookies:</strong> We use essential cookies to keep you signed in and secure your appointment bookings. We strictly never sell or track your data. By using our site, you agree to our <a href="privacy.html" style="color: #D4AF37; text-decoration: underline; font-weight: 600;">Privacy & Cookies Policy</a>.
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button id="uhp-cookie-essential" style="background: transparent; border: 1px solid #4B5563; color: #D1D5DB; font-size: 0.82rem; font-weight: 600; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+            Essential Only
+          </button>
+          <button id="uhp-cookie-accept" style="background: #D4AF37; border: 1px solid #D4AF37; color: #111827; font-size: 0.82rem; font-weight: 700; padding: 8px 18px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;">
+            Accept All
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(banner);
+
+    const closeBanner = (choice) => {
+      localStorage.setItem('uhp_cookie_consent', choice);
+      banner.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      banner.style.opacity = '0';
+      banner.style.pointerEvents = 'none';
+      setTimeout(() => banner.remove(), 350);
+    };
+
+    document.getElementById('uhp-cookie-accept')?.addEventListener('click', () => closeBanner('accepted'));
+    document.getElementById('uhp-cookie-essential')?.addEventListener('click', () => closeBanner('essential'));
+  }
 });

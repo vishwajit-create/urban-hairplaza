@@ -18,6 +18,22 @@
       "destination": "/account.html"
     },
     {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/cookies",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/privacy.html"
+    },
+    {
       "source": "/admin",
       "destination": "/admin/login.html"
     },

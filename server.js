@@ -147,6 +147,11 @@ const STATIC_PAGES = {
   '/contact.html': path.join(__dirname, 'contact.html'),
   '/lookbook': path.join(__dirname, 'lookbook.html'),
   '/lookbook.html': path.join(__dirname, 'lookbook.html'),
+  '/privacy': path.join(__dirname, 'privacy.html'),
+  '/privacy.html': path.join(__dirname, 'privacy.html'),
+  '/privacy-policy': path.join(__dirname, 'privacy.html'),
+  '/cookies': path.join(__dirname, 'privacy.html'),
+  '/terms': path.join(__dirname, 'privacy.html'),
   '/styles.css': path.join(__dirname, 'styles.css'),
   '/main.js': path.join(__dirname, 'main.js')
 };
