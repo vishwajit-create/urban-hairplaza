@@ -179,8 +179,10 @@ try {
 // ── REAL SMS DISPATCHER (Textbee / Fast2SMS / Twilio / 2Factor) ───────────────
 async function sendRealSmsOtp(phone, otp) {
   // 1. Textbee Gateway API (Official: https://api.textbee.dev/api/v1/gateway/send-sms)
-  const textbeeKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
-  const textbeeDevice = (process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').trim();
+  const rawKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
+  const textbeeKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
+  const rawDevice = (process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').trim();
+  const textbeeDevice = rawDevice.replace(/^['"]|['"]$/g, '').trim();
 
   if (textbeeKey) {
     try {
@@ -576,8 +578,10 @@ app.get('/api/user/me', (req, res) => {
 
 // GET /api/textbee/status — Diagnostic endpoint to check Textbee configuration
 app.get('/api/textbee/status', async (req, res) => {
-  const textbeeKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
-  const textbeeDevice = (process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').trim();
+  const rawKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
+  const textbeeKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
+  const rawDevice = (process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').trim();
+  const textbeeDevice = rawDevice.replace(/^['"]|['"]$/g, '').trim();
 
   if (!textbeeKey) {
     return res.json({
@@ -586,33 +590,43 @@ app.get('/api/textbee/status', async (req, res) => {
     });
   }
 
-  // Ping Textbee API to verify credentials
+  const results = {};
+
+  // Variation 1: x-api-key header
   try {
-    const testRes = await axios.get('https://api.textbee.dev/api/v1/gateway/devices', {
+    const res1 = await axios.get('https://api.textbee.dev/api/v1/gateway/devices', {
       headers: { 'x-api-key': textbeeKey },
-      timeout: 8000
+      timeout: 7000
     });
-    return res.json({
-      configured: true,
-      authenticated: true,
-      apiKeyValid: true,
-      deviceIdSet: textbeeDevice || '(Using default device)',
-      devices: testRes.data,
-      message: 'Textbee API key is valid and authenticated!'
-    });
-  } catch (err) {
-    return res.json({
-      configured: true,
-      authenticated: false,
-      statusCode: err.response?.status || 500,
-      apiKeyPreview: textbeeKey.length > 8 ? `${textbeeKey.slice(0, 4)}...${textbeeKey.slice(-4)}` : 'SET',
-      deviceIdSet: textbeeDevice || 'NONE',
-      gatewayError: err.response?.data || err.message,
-      message: err.response?.status === 401
-        ? 'Textbee returned 401 Unauthorized (AUTH_INVALID). Please check that the API Key in Vercel matches your Textbee Dashboard exactly.'
-        : 'Textbee returned an error.'
-    });
+    results.xApiKey = { status: 200, success: true, data: res1.data };
+  } catch (e1) {
+    results.xApiKey = { status: e1.response?.status, error: e1.response?.data || e1.message };
   }
+
+  // Variation 2: Authorization: Bearer
+  try {
+    const res2 = await axios.get('https://api.textbee.dev/api/v1/gateway/devices', {
+      headers: { 'Authorization': `Bearer ${textbeeKey}` },
+      timeout: 7000
+    });
+    results.bearerAuth = { status: 200, success: true, data: res2.data };
+  } catch (e2) {
+    results.bearerAuth = { status: e2.response?.status, error: e2.response?.data || e2.message };
+  }
+
+  const isWorking = Boolean(results.xApiKey?.success || results.bearerAuth?.success);
+
+  return res.json({
+    configured: true,
+    authenticated: isWorking,
+    apiKeyLength: textbeeKey.length,
+    apiKeyPreview: `${textbeeKey.slice(0, 5)}...${textbeeKey.slice(-4)}`,
+    deviceId: textbeeDevice || 'Using default',
+    authTests: results,
+    message: isWorking
+      ? 'Textbee is fully connected and ready!'
+      : 'Textbee rejected the credentials with AUTH_INVALID. Please ensure your API key was copied completely from https://textbee.dev dashboard without missing characters.'
+  });
 });
 
 // GET /api/user/bookings — Get authenticated user's booking history
