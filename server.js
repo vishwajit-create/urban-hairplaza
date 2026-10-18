@@ -176,9 +176,37 @@ try {
   console.warn('[Email] nodemailer module not loaded, SMTP fallback disabled.');
 }
 
-// ── REAL SMS DISPATCHER (Fast2SMS / Twilio / 2Factor) ─────────────────────────
+// ── REAL SMS DISPATCHER (Textbee / Fast2SMS / Twilio / 2Factor) ───────────────
 async function sendRealSmsOtp(phone, otp) {
-  // 1. Fast2SMS (India Quick OTP API - fastest & easiest for Indian numbers)
+  // 1. Textbee Gateway API (Android phone or Textbee cloud as SMS Gateway)
+  if (process.env.TEXTBEE_API_KEY && process.env.TEXTBEE_DEVICE_ID) {
+    try {
+      const apiKey = process.env.TEXTBEE_API_KEY.trim();
+      const deviceId = process.env.TEXTBEE_DEVICE_ID.trim();
+      const formattedRecipient = phone.startsWith('+') ? phone : `+91${phone}`;
+
+      const res = await axios.post(
+        `https://api.textbee.dev/api/v1/gateway/devices/${deviceId}/send-sms`,
+        {
+          recipients: [formattedRecipient],
+          message: `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`
+        },
+        {
+          headers: {
+            'x-api-key': apiKey,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        }
+      );
+      console.log(`[SMS-Textbee] Dispatched OTP to ${formattedRecipient}:`, res.data);
+      return true;
+    } catch (err) {
+      console.warn('[SMS-Textbee] Error:', err.response?.data || err.message);
+    }
+  }
+
+  // 2. Fast2SMS (India Quick OTP API - fastest & easiest for Indian numbers)
   if (process.env.FAST2SMS_API_KEY) {
     try {
       const response = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
@@ -197,7 +225,7 @@ async function sendRealSmsOtp(phone, otp) {
     }
   }
 
-  // 2. Twilio SMS (Global SMS)
+  // 3. Twilio SMS (Global SMS)
   const twilioSid = process.env.TWILIO_ACCOUNT_SID;
   const twilioToken = process.env.TWILIO_AUTH_TOKEN;
   const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
@@ -224,7 +252,7 @@ async function sendRealSmsOtp(phone, otp) {
     }
   }
 
-  // 3. 2Factor.in SMS (India)
+  // 4. 2Factor.in SMS (India)
   if (process.env.TWOFACTOR_API_KEY) {
     try {
       await axios.get(`https://2factor.in/v1/${process.env.TWOFACTOR_API_KEY.trim()}/SMS/${phone}/${otp}/AUTOGEN`, { timeout: 7000 });
