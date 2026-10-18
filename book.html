@@ -583,6 +583,13 @@
         }
       }
 
+      // Check if redirected with order_id
+      const queryOrderId = new URLSearchParams(window.location.search).get('order_id');
+      if (queryOrderId) {
+        window.location.href = `/pay?order_id=${encodeURIComponent(queryOrderId)}`;
+        return;
+      }
+
       // Pre-fill user contact info if logged in
       try {
         const uRes = await fetch('/api/user/me');
@@ -892,14 +899,24 @@
               redirectTarget: '_modal'
             }).then(async (result) => {
               if (result.error) {
-                showAlert(result.error.message || 'Payment cancelled. Your chair was not reserved yet.', 'warning');
+                showAlert(`Payment was incomplete: ${result.error.message || 'Cancelled'}. We have sent a direct payment link to +91 ${state.clientPhone} via SMS so you can complete your booking within 15 minutes.`, 'warning');
                 resetPayButton();
+                fetch('/api/payment-failed', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ order_id: orderId, reason: result.error.message || 'Payment cancelled by user' })
+                }).catch(() => {});
                 return;
               }
               await verifyBackendPayment(orderId, false);
             }).catch(err => {
-              showAlert('Gateway modal closed: ' + err.message, 'warning');
+              showAlert(`Payment modal closed: ${err.message}. We have sent a payment link to +91 ${state.clientPhone} via SMS so you can finish anytime.`, 'warning');
               resetPayButton();
+              fetch('/api/payment-failed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: orderId, reason: err.message || 'Payment modal closed' })
+              }).catch(() => {});
             });
           } else {
             payBtn.innerHTML = '<span class="loading-spinner"></span> Confirming Reservation...';

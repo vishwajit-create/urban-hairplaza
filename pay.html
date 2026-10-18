@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Appointment Payment | Urban Hairplaza</title>
+  <meta name="description" content="Securely complete your appointment advance payment for Urban Hairplaza Simraha, Araria.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Cashfree JS SDK v3 -->
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <style>
+    body {
+      background: #0f1013;
+      color: #f5f5f7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .pay-container {
+      max-width: 600px;
+      margin: 40px auto 60px;
+      padding: 0 16px;
+      width: 100%;
+      flex: 1;
+    }
+    .pay-card {
+      background: #18191e;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 18px;
+      padding: 32px 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+    .pay-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #d4af37, #f3e5ab, #d4af37);
+    }
+    .pay-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .pay-brand {
+      font-family: 'Cinzel', serif;
+      color: #d4af37;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .pay-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+    .pay-sub {
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+    .booking-summary-box {
+      background: #121316;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+      font-size: 0.925rem;
+    }
+    .summary-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .summary-label {
+      color: #9ca3af;
+    }
+    .summary-val {
+      font-weight: 600;
+      color: #f3f4f6;
+      text-align: right;
+    }
+    .advance-highlight {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .advance-amount {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #e6c65b;
+      font-family: monospace;
+    }
+    .btn-pay-now {
+      background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%);
+      color: #0b0b0e;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 16px 24px;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    }
+    .btn-pay-now:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45);
+      background: linear-gradient(135deg, #e6c65b 0%, #c49615 100%);
+    }
+    .btn-pay-now:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-secondary-link {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #d1d5db;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary-link:hover {
+      border-color: #d4af37;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .guarantee-badges {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 20px;
+      font-size: 0.775rem;
+      color: #9ca3af;
+      flex-wrap: wrap;
+    }
+    .guarantee-badges span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .success-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .alert-box {
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+    }
+    .alert-box.info { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; }
+    .alert-box.warning { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fcd34d; }
+    .alert-box.danger { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+    .alert-box.success { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar</span>
+        <span>🕐 Daily: 9:00 AM – 9:00 PM</span>
+      </div>
+      <div class="topbar-info">
+        <span>📞 <a href="tel:+916202692426">+91 6202 692 426</a></span>
+        <span><a href="account.html" style="color:#d4af37;">My Bookings</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div class="pay-container">
+    <div class="pay-card" id="pay-card">
+      <div class="pay-header">
+        <a href="index.html" class="pay-brand" style="text-decoration:none;">
+          <span>✂️</span> URBAN HAIRPLAZA
+        </a>
+        <div id="status-pill-area"></div>
+        <h1 class="pay-title" id="page-title">Loading Appointment Details...</h1>
+        <p class="pay-sub" id="page-subtitle">Please wait while we look up your booking order.</p>
+      </div>
+
+      <div id="alert-container"></div>
+
+      <!-- Content Area filled by JavaScript -->
+      <div id="booking-content-area" style="display:none;">
+        <div class="booking-summary-box">
+          <div class="summary-row">
+            <span class="summary-label">Booking Reference</span>
+            <span class="summary-val" id="sum-id" style="font-family:monospace; color:#e6c65b;">#---</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Client Name</span>
+            <span class="summary-val" id="sum-name">---</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Service</span>
+            <span class="summary-val" id="sum-service">---</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Barber / Stylist</span>
+            <span class="summary-val" id="sum-barber">---</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Appointment Time</span>
+            <span class="summary-val" id="sum-datetime">---</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Service Type</span>
+            <span class="summary-val" id="sum-type">---</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Service Price</span>
+            <span class="summary-val" id="sum-total">₹---</span>
+          </div>
+        </div>
+
+        <!-- Pending Payment View -->
+        <div id="view-pending" style="display:none;">
+          <div class="advance-highlight">
+            <div>
+              <div style="font-weight:700; color:#f3e5ab; font-size:0.95rem;">Advance Booking Deposit</div>
+              <div style="font-size:0.8rem; color:#9ca3af; margin-top:2px;">Remaining balance payable at salon after haircut</div>
+            </div>
+            <div class="advance-amount">₹50</div>
+          </div>
+
+          <button type="button" class="btn-pay-now" id="btn-pay" onclick="handlePayAdvance()">
+            <span>🔒</span> Pay ₹50 via UPI / Card / Netbanking
+          </button>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
+            <button type="button" class="btn-secondary-link" onclick="handleResendSms()">
+              📲 Resend Link to My Mobile
+            </button>
+            <a href="account.html" class="btn-secondary-link">
+              👤 View My Bookings
+            </a>
+          </div>
+
+          <div class="guarantee-badges">
+            <span>🛡️ 256-Bit SSL Encrypted</span>
+            <span>⚡ Instant Confirmation</span>
+            <span>📱 SMS & WhatsApp Receipt</span>
+          </div>
+        </div>
+
+        <!-- Confirmed View -->
+        <div id="view-confirmed" style="display:none; text-align:center;">
+          <div style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.25); border-radius:12px; padding:18px; margin-bottom:20px;">
+            <div style="font-size:2rem; margin-bottom:6px;">🎉</div>
+            <h3 style="color:#34d399; margin-bottom:6px; font-size:1.2rem;">Chair Successfully Reserved!</h3>
+            <p style="font-size:0.875rem; color:#d1d5db; margin:0;">
+              Your confirmation message has been sent to your mobile phone. See you at the lounge!
+            </p>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <a href="https://wa.me/916202692426" target="_blank" class="btn btn-whatsapp" id="btn-whatsapp-conf" style="width:100%; justify-content:center;">
+              💬 Open in WhatsApp
+            </a>
+            <a href="account.html" class="btn-pay-now" style="text-decoration:none; text-align:center;">
+              👤 View in My Bookings
+            </a>
+            <a href="index.html" class="btn-secondary-link" style="width:100%;">
+              🏠 Return to Homepage
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentBooking = null;
+    let cashfreeInstance = null;
+
+    function getParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    function showAlert(msg, type = 'info') {
+      const c = document.getElementById('alert-container');
+      c.innerHTML = `<div class="alert-box ${type}">${msg}</div>`;
+    }
+
+    function clearAlert() {
+      document.getElementById('alert-container').innerHTML = '';
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const orderId = getParam('order_id') || getParam('orderId') || getParam('id');
+      if (!orderId) {
+        document.getElementById('page-title').textContent = 'Order Reference Missing';
+        document.getElementById('page-subtitle').textContent = 'Please open the payment link sent to your mobile or booking confirmation.';
+        showAlert('No appointment reference found. <a href="book.html" style="color:#d4af37;">Book a new appointment</a> or <a href="account.html" style="color:#d4af37;">view your bookings</a>.', 'warning');
+        return;
+      }
+
+      await loadBooking(orderId);
+    });
+
+    async function loadBooking(orderId) {
+      try {
+        const res = await fetch(`/api/booking-details/${encodeURIComponent(orderId)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Appointment record not found');
+        }
+
+        currentBooking = data.booking;
+        renderBooking(currentBooking);
+
+        // If 'pay=true' or 'auto=true' in URL and still pending, trigger payment automatically
+        if ((getParam('pay') === 'true' || getParam('retry') === 'true') && currentBooking.status !== 'confirmed') {
+          handlePayAdvance();
+        }
+
+      } catch (err) {
+        document.getElementById('page-title').textContent = 'Appointment Not Found';
+        document.getElementById('page-subtitle').textContent = err.message;
+        showAlert(`${err.message}. If you need help, please call <a href="tel:+916202692426" style="color:#d4af37;">+91 6202 692 426</a>.`, 'danger');
+      }
+    }
+
+    function renderBooking(b) {
+      document.getElementById('booking-content-area').style.display = 'block';
+
+      document.getElementById('sum-id').textContent = `#${b.id}`;
+      document.getElementById('sum-name').textContent = `${b.name} (${b.phone ? '+91 ' + b.phone.slice(-10) : ''})`;
+      document.getElementById('sum-service').textContent = b.service;
+      document.getElementById('sum-barber').textContent = b.barber || 'Assigned Stylist';
+      document.getElementById('sum-datetime').textContent = `📅 ${b.date} at ${b.time}`;
+      document.getElementById('sum-type').textContent = b.type === 'home' ? '🏠 Doorstep Home Visit' : '🏢 In-Shop Salon';
+      document.getElementById('sum-total').textContent = `₹${b.price}`;
+
+      const statusPill = document.getElementById('status-pill-area');
+
+      if (b.status === 'confirmed' || b.status === 'completed') {
+        document.getElementById('page-title').textContent = 'Appointment Confirmed';
+        document.getElementById('page-subtitle').textContent = 'Your slot is safely booked. Advance deposit is paid.';
+        statusPill.innerHTML = '<span class="success-badge">✓ Confirmed & Paid</span>';
+        document.getElementById('view-pending').style.display = 'none';
+        document.getElementById('view-confirmed').style.display = 'block';
+
+        const waText = encodeURIComponent(`Hello Urban Hairplaza, I have confirmed booking #${b.id} for ${b.service} on ${b.date} at ${b.time}.`);
+        document.getElementById('btn-whatsapp-conf').href = `https://wa.me/916202692426?text=${waText}`;
+
+      } else {
+        document.getElementById('page-title').textContent = 'Complete Advance Payment';
+        document.getElementById('page-subtitle').textContent = 'Pay ₹50 advance to confirm your appointment slot.';
+        statusPill.innerHTML = '<span class="alert-box warning" style="display:inline-block; padding:4px 10px; font-size:0.8rem; font-weight:600; margin-bottom:12px;">⏳ Payment Pending</span>';
+        document.getElementById('view-pending').style.display = 'block';
+        document.getElementById('view-confirmed').style.display = 'none';
+      }
+    }
+
+    async function handlePayAdvance() {
+      if (!currentBooking) return;
+
+      const btn = document.getElementById('btn-pay');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Contacting Payment Gateway...';
+      clearAlert();
+
+      try {
+        const res = await fetch('/api/retry-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: currentBooking.id })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to initiate payment');
+
+        if (data.is_simulation) {
+          // Simulation verification
+          btn.innerHTML = '<span class="spinner"></span> Verifying Advance Deposit...';
+          await verifyPayment(currentBooking.id, true);
+          return;
+        }
+
+        if (typeof Cashfree !== 'undefined') {
+          cashfreeInstance = Cashfree({ mode: data.environment || 'sandbox' });
+        }
+
+        if (!cashfreeInstance) {
+          await verifyPayment(currentBooking.id, true);
+          return;
+        }
+
+        btn.innerHTML = 'Complete in Payment Popup...';
+
+        cashfreeInstance.checkout({
+          paymentSessionId: data.payment_session_id,
+          redirectTarget: '_modal'
+        }).then(async (result) => {
+          if (result.error) {
+            showAlert(`Payment was incomplete: ${result.error.message || 'Cancelled by user'}. We have resent the link to your phone.`, 'warning');
+            resetPayBtn();
+            // Report failure to server so SMS payment link is triggered
+            await fetch('/api/payment-failed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ order_id: currentBooking.id, reason: result.error.message })
+            }).catch(() => {});
+            return;
+          }
+
+          // Verify with server
+          btn.innerHTML = '<span class="spinner"></span> Verifying Payment & Reserving Chair...';
+          await verifyPayment(currentBooking.id, false);
+        }).catch(async (err) => {
+          showAlert(`Payment window closed: ${err.message}`, 'warning');
+          resetPayBtn();
+          await fetch('/api/payment-failed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: currentBooking.id, reason: err.message })
+          }).catch(() => {});
+        });
+
+      } catch (err) {
+        showAlert(err.message, 'danger');
+        resetPayBtn();
+      }
+    }
+
+    async function verifyPayment(orderId, isSimulation) {
+      try {
+        const res = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId, is_simulation: isSimulation })
+        });
+        const vData = await res.json();
+        if (!res.ok) throw new Error(vData.error || 'Verification failed');
+
+        currentBooking = vData.booking || currentBooking;
+        currentBooking.status = 'confirmed';
+        renderBooking(currentBooking);
+        showAlert('Payment verified! Confirmation SMS and WhatsApp dispatched.', 'success');
+
+      } catch (err) {
+        showAlert(err.message, 'danger');
+        resetPayBtn();
+      }
+    }
+
+    function resetPayBtn() {
+      const btn = document.getElementById('btn-pay');
+      btn.disabled = false;
+      btn.innerHTML = '<span>🔒</span> Pay ₹50 via UPI / Card / Netbanking';
+    }
+
+    async function handleResendSms() {
+      if (!currentBooking) return;
+      showAlert('Sending payment link via SMS to your phone...', 'info');
+      try {
+        const res = await fetch('/api/payment-failed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: currentBooking.id, reason: 'Customer requested payment link' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showAlert(`Payment link dispatched to +91 ${currentBooking.phone.slice(-10)} via SMS!`, 'success');
+        } else {
+          showAlert('Failed to dispatch SMS. Please contact salon.', 'warning');
+        }
+      } catch (err) {
+        showAlert('SMS dispatch error: ' + err.message, 'warning');
+      }
+    }
+  </script>
+</body>
+</html>

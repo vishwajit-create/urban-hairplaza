@@ -18,6 +18,10 @@
       "destination": "/account.html"
     },
     {
+      "source": "/pay",
+      "destination": "/pay.html"
+    },
+    {
       "source": "/privacy",
       "destination": "/privacy.html"
     },

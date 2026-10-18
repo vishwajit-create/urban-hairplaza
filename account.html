@@ -780,7 +780,7 @@
               </div>
               <div>
                 <div class="history-k">Advance Paid</div>
-                <div class="history-v" style="color:var(--success);">₹${b.advancePaid || 0} (Paid)</div>
+                <div class="history-v" style="color:${(b.advancePaid > 0) ? 'var(--success)' : '#D97706'};">${(b.advancePaid > 0) ? `₹${b.advancePaid} (Paid)` : '₹0 (Unpaid)'}</div>
               </div>
               <div>
                 <div class="history-k">Balance Due at Salon</div>
@@ -792,6 +792,14 @@
 
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${b.status === 'payment_pending' ? `
+                  <a href="/pay?order_id=${b.id}" class="btn btn-primary btn-sm" style="background:#D97706; border-color:#D97706; color:#FFF; font-weight:700;">
+                    💳 Complete Payment (₹50)
+                  </a>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="resendPaymentLink('${b.id}')">
+                    📲 Send Link via SMS
+                  </button>
+                ` : ''}
                 <a href="${waLink}" target="_blank" class="btn btn-whatsapp btn-sm">💬 WhatsApp Salon</a>
                 <a href="${calUrl}" target="_blank" class="btn btn-secondary btn-sm">📅 Calendar</a>
                 <button type="button" class="btn btn-outline btn-sm" onclick="printReceipt('${b.id}')">🖨️ Receipt</button>
@@ -806,6 +814,25 @@
           </div>
         `;
       }).join('');
+    }
+
+    async function resendPaymentLink(bookingId) {
+      showAlert('Dispatching payment link to your registered phone number via SMS...', 'info');
+      try {
+        const res = await fetch('/api/payment-failed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: bookingId, reason: 'Requested from client dashboard' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showAlert(`Payment link successfully sent to your mobile phone via SMS!`, 'success');
+        } else {
+          showAlert(data.message || 'Failed to dispatch SMS.', 'warning');
+        }
+      } catch (err) {
+        showAlert('Error sending payment link: ' + err.message, 'danger');
+      }
     }
 
     async function cancelAppointment(bookingId) {

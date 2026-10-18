@@ -133,6 +133,8 @@ const STATIC_PAGES = {
   '/login': path.join(__dirname, 'account.html'),
   '/login.html': path.join(__dirname, 'account.html'),
   '/my-bookings': path.join(__dirname, 'account.html'),
+  '/pay': path.join(__dirname, 'pay.html'),
+  '/pay.html': path.join(__dirname, 'pay.html'),
   '/book': path.join(__dirname, 'book.html'),
   '/book.html': path.join(__dirname, 'book.html'),
   '/services': path.join(__dirname, 'services.html'),
@@ -177,7 +179,13 @@ try {
 }
 
 // ── REAL SMS DISPATCHER (Textbee / Fast2SMS / Twilio / 2Factor) ───────────────
-async function sendRealSmsOtp(phone, otp) {
+async function sendRealSms(phone, message) {
+  if (!phone || !message) return false;
+
+  const rawPhone = String(phone).replace(/\D/g, '').slice(-10);
+  if (rawPhone.length !== 10) return false;
+  const formattedPhone = `+91${rawPhone}`;
+
   // 1. Textbee Gateway API (Official: https://api.textbee.dev/api/v1/gateway/send-sms)
   const rawKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
   const textbeeKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
@@ -186,18 +194,13 @@ async function sendRealSmsOtp(phone, otp) {
 
   if (textbeeKey) {
     try {
-      const formattedRecipient = phone.startsWith('+') ? phone : `+91${phone}`;
-
-      const payload = {
-        deviceId: textbeeDevice,
-        recipients: [formattedRecipient],
-        message: `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`
-      };
-
-      // Call Textbee official REST endpoint
       const res = await axios.post(
         'https://api.textbee.dev/api/v1/gateway/send-sms',
-        payload,
+        {
+          deviceId: textbeeDevice,
+          recipients: [formattedPhone],
+          message: message
+        },
         {
           headers: {
             'x-api-key': textbeeKey,
@@ -206,44 +209,46 @@ async function sendRealSmsOtp(phone, otp) {
           timeout: 10000
         }
       );
-      console.log(`[SMS-Textbee] Dispatched OTP to ${formattedRecipient}:`, res.data);
+      console.log(`[SMS-Textbee] Sent to ${formattedPhone}:`, res.data);
       return true;
     } catch (err) {
       console.warn('[SMS-Textbee] Error:', err.response?.data || err.message);
     }
   }
 
-  // 2. Fast2SMS (India Quick OTP API - fastest & easiest for Indian numbers)
+  // 2. Fast2SMS (India Bulk/OTP API fallback)
   if (process.env.FAST2SMS_API_KEY) {
     try {
-      const response = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
-        params: {
-          authorization: process.env.FAST2SMS_API_KEY.trim(),
-          variables_values: otp,
-          route: 'otp',
-          numbers: phone
+      const res = await axios.post('https://www.fast2sms.com/dev/bulkV2', {
+        route: 'v3',
+        message: message,
+        language: 'english',
+        flash: 0,
+        numbers: rawPhone
+      }, {
+        headers: {
+          'authorization': process.env.FAST2SMS_API_KEY.trim()
         },
         timeout: 7000
       });
-      console.log(`[SMS-Fast2SMS] Sent to ${phone}:`, response.data);
+      console.log(`[SMS-Fast2SMS] Sent to ${rawPhone}:`, res.data);
       return true;
     } catch (err) {
       console.warn('[SMS-Fast2SMS] Error:', err.response?.data || err.message);
     }
   }
 
-  // 3. Twilio SMS (Global SMS)
+  // 3. Twilio SMS fallback
   const twilioSid = process.env.TWILIO_ACCOUNT_SID;
   const twilioToken = process.env.TWILIO_AUTH_TOKEN;
   const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
   if (twilioSid && twilioToken && twilioFrom) {
     try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
       const auth = Buffer.from(`${twilioSid.trim()}:${twilioToken.trim()}`).toString('base64');
       const params = new URLSearchParams({
         To: formattedPhone,
         From: twilioFrom.trim(),
-        Body: `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes.`
+        Body: message
       });
       await axios.post(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid.trim()}/Messages.json`, params.toString(), {
         headers: {
@@ -259,11 +264,18 @@ async function sendRealSmsOtp(phone, otp) {
     }
   }
 
-  // 4. 2Factor.in SMS (India)
+  // 4. 2Factor.in SMS fallback
   if (process.env.TWOFACTOR_API_KEY) {
     try {
-      await axios.get(`https://2factor.in/v1/${process.env.TWOFACTOR_API_KEY.trim()}/SMS/${phone}/${otp}/AUTOGEN`, { timeout: 7000 });
-      console.log(`[SMS-2Factor] Sent to ${phone}`);
+      await axios.get(`https://2factor.in/v1/${process.env.TWOFACTOR_API_KEY.trim()}/ADDON_SERVICES/SEND/TSMS`, {
+        params: {
+          From: 'URBANH',
+          To: rawPhone,
+          Msg: message
+        },
+        timeout: 7000
+      });
+      console.log(`[SMS-2Factor] Sent to ${rawPhone}`);
       return true;
     } catch (err) {
       console.warn('[SMS-2Factor] Error:', err.response?.data || err.message);
@@ -273,36 +285,23 @@ async function sendRealSmsOtp(phone, otp) {
   return false;
 }
 
-// ── REAL EMAIL DISPATCHER (Resend / Gmail SMTP / Brevo) ───────────────────────
-async function sendRealEmailOtp(email, otp) {
-  const htmlTemplate = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <div style="background: linear-gradient(135deg, #1c1d22 0%, #121316 100%); padding: 30px 24px; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2);">
-        <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">✂️ URBAN HAIRPLAZA</h1>
-        <p style="color: #8e8e93; margin: 8px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Luxury Grooming Lounge</p>
-      </div>
-      <div style="padding: 32px 24px; text-align: center;">
-        <p style="font-size: 15px; color: #cfcfd4; margin: 0 0 16px 0;">Use the verification code below to securely sign in and view your appointments:</p>
-        <div style="display: inline-block; background: rgba(212,175,55,0.12); border: 2px dashed #d4af37; border-radius: 12px; padding: 14px 28px; margin: 12px 0 20px 0;">
-          <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #e6c65b; font-family: monospace;">${otp}</span>
-        </div>
-        <p style="font-size: 13px; color: #8e8e93; margin: 0;">⏱️ This code expires in <strong>10 minutes</strong>. Never share your OTP with anyone.</p>
-      </div>
-      <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
-        <p style="font-size: 12px; color: #636366; margin: 0;">📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar · +91 6202 692 426</p>
-      </div>
-    </div>
-  `;
+async function sendRealSmsOtp(phone, otp) {
+  return sendRealSms(phone, `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`);
+}
 
-  // 1. Resend API (Recommended - fast, high deliverability, zero spam)
+// ── REAL EMAIL DISPATCHER (Resend / Gmail SMTP / Brevo) ───────────────────────
+async function sendRealEmail(email, subject, html) {
+  if (!email || !email.includes('@')) return false;
+
+  // 1. Resend API (Recommended)
   if (process.env.RESEND_API_KEY) {
     try {
       const fromEmail = process.env.RESEND_FROM || 'Urban Hairplaza <onboarding@resend.dev>';
       const res = await axios.post('https://api.resend.com/emails', {
         from: fromEmail,
         to: email,
-        subject: `Your Urban Hairplaza Verification Code: ${otp}`,
-        html: htmlTemplate
+        subject: subject,
+        html: html
       }, {
         headers: {
           'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
@@ -338,8 +337,8 @@ async function sendRealEmailOtp(email, otp) {
       await transporter.sendMail({
         from: `"Urban Hairplaza" <${smtpUser.trim()}>`,
         to: email,
-        subject: `✂️ Your Urban Hairplaza Verification Code: ${otp}`,
-        html: htmlTemplate
+        subject: subject,
+        html: html
       });
       console.log(`[Email-SMTP] Sent to ${email} via ${smtpUser}`);
       return true;
@@ -348,14 +347,14 @@ async function sendRealEmailOtp(email, otp) {
     }
   }
 
-  // 3. Brevo (Sendinblue) API
+  // 3. Brevo API
   if (process.env.BREVO_API_KEY) {
     try {
       await axios.post('https://api.brevo.com/v3/smtp/email', {
         sender: { name: 'Urban Hairplaza', email: process.env.BREVO_SENDER || 'urbanhairplaza@gmail.com' },
         to: [{ email }],
-        subject: `✂️ Your Urban Hairplaza Verification Code: ${otp}`,
-        htmlContent: htmlTemplate
+        subject: subject,
+        htmlContent: html
       }, {
         headers: {
           'api-key': process.env.BREVO_API_KEY.trim(),
@@ -371,6 +370,28 @@ async function sendRealEmailOtp(email, otp) {
   }
 
   return false;
+}
+
+async function sendRealEmailOtp(email, otp) {
+  const htmlTemplate = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="background: linear-gradient(135deg, #1c1d22 0%, #121316 100%); padding: 30px 24px; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2);">
+        <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">✂️ URBAN HAIRPLAZA</h1>
+        <p style="color: #8e8e93; margin: 8px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Luxury Grooming Lounge</p>
+      </div>
+      <div style="padding: 32px 24px; text-align: center;">
+        <p style="font-size: 15px; color: #cfcfd4; margin: 0 0 16px 0;">Use the verification code below to securely sign in and view your appointments:</p>
+        <div style="display: inline-block; background: rgba(212,175,55,0.12); border: 2px dashed #d4af37; border-radius: 12px; padding: 14px 28px; margin: 12px 0 20px 0;">
+          <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #e6c65b; font-family: monospace;">${otp}</span>
+        </div>
+        <p style="font-size: 13px; color: #8e8e93; margin: 0;">⏱️ This code expires in <strong>10 minutes</strong>. Never share your OTP with anyone.</p>
+      </div>
+      <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+        <p style="font-size: 12px; color: #636366; margin: 0;">📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar · +91 6202 692 426</p>
+      </div>
+    </div>
+  `;
+  return sendRealEmail(email, `✂️ Your Urban Hairplaza Verification Code: ${otp}`, htmlTemplate);
 }
 
 // ── WHATSAPP HELPER ──────────────────────────────────────────────────────────
@@ -403,6 +424,129 @@ function buildWhatsAppMessage(booking) {
     `*Status:* Confirmed ✅\n` +
     `--------------------------------\n` +
     `📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar`;
+}
+
+// ── COMPREHENSIVE NOTIFICATION ENGINES ───────────────────────────────────────
+
+// 1. SLOT BOOKED CONFIRMATION NOTIFICATION
+async function sendBookingConfirmationNotifications(booking, publicBase = 'https://salonbooking-rho.vercel.app') {
+  if (!booking) return;
+
+  const cleanPhone = (booking.phone || '').replace(/\D/g, '').slice(-10);
+  const balanceDue = Math.max(0, (Number(booking.price) || 0) - (Number(booking.advancePaid) || 0));
+
+  // A. SMS Confirmation via Textbee
+  const smsText = `✂️ Urban Hairplaza: Your slot is CONFIRMED! #${booking.id}. Service: ${booking.service}, Stylist: ${booking.barber || 'Assigned Stylist'}, Date: ${booking.date} at ${booking.time}. Advance Paid: ₹${booking.advancePaid || 50}. Balance Due: ₹${balanceDue}. Location: Near Phanishwar Nath Renu Statue, Simraha, Araria. Manage booking: ${publicBase}/account.html. See you soon!`;
+  sendRealSms(cleanPhone, smsText).catch(e => console.warn('[SMS-Conf-Error]', e.message));
+
+  // B. WhatsApp Confirmation
+  const waMsg = `✂️ *Urban Hairplaza – Slot Confirmed!* ✅\n` +
+    `--------------------------------\n` +
+    `Hello *${booking.name}*, your appointment has been successfully booked!\n\n` +
+    `📋 *Booking ID:* #${booking.id}\n` +
+    `💈 *Service:* ${booking.service}\n` +
+    `✂️ *Barber:* ${booking.barber || 'Assigned Stylist'}\n` +
+    `📅 *Date & Time:* ${booking.date} at ${booking.time}\n` +
+    `📍 *Location:* ${booking.type === 'home' ? '🏠 Home Visit' : '🏢 In-Shop (Simraha, Araria)'}\n` +
+    `💰 *Advance Paid:* ₹${booking.advancePaid || 0}\n` +
+    `💵 *Balance Due at Salon:* ₹${balanceDue}\n\n` +
+    `View appointment details & receipt anytime:\n` +
+    `${publicBase}/account.html\n\n` +
+    `Need help or want to reschedule? Reply here or call +91 6202 692 426.`;
+
+  // Send to client's WhatsApp
+  if (cleanPhone) {
+    sendWhatsAppNotification(waMsg, `91${cleanPhone}`).catch(() => {});
+  }
+  // Send alert to salon owner
+  sendWhatsAppNotification(`📢 *New Confirmed Slot!* #${booking.id} for ${booking.name} (${booking.phone}) on ${booking.date} at ${booking.time}. Service: ${booking.service} with ${booking.barber}.`).catch(() => {});
+
+  // C. Email Confirmation (if customer provided email)
+  if (booking.email && booking.email.includes('@')) {
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #1c1d22 0%, #121316 100%); padding: 28px 24px; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2);">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700;">✂️ URBAN HAIRPLAZA</h1>
+          <p style="color: #8e8e93; margin: 6px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Appointment Confirmed</p>
+        </div>
+        <div style="padding: 26px 24px;">
+          <h2 style="font-size: 18px; color: #ffffff; margin: 0 0 8px 0;">Hello ${booking.name}, your chair is ready!</h2>
+          <p style="font-size: 14px; color: #9ca3af; margin: 0 0 20px 0;">Your appointment is confirmed. Here is your appointment summary:</p>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 22px;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Booking ID</td><td style="padding: 8px 0; font-weight: 700; color: #e6c65b; text-align: right;">#${booking.id}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Service</td><td style="padding: 8px 0; font-weight: 600; color: #fff; text-align: right;">${booking.service}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Barber</td><td style="padding: 8px 0; font-weight: 600; color: #fff; text-align: right;">${booking.barber || 'Assigned Stylist'}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Date & Time</td><td style="padding: 8px 0; font-weight: 600; color: #fff; text-align: right;">${booking.date} at ${booking.time}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Advance Paid</td><td style="padding: 8px 0; font-weight: 700; color: #34d399; text-align: right;">₹${booking.advancePaid || 50} (Paid)</td></tr>
+            <tr><td style="padding: 8px 0; color: #9ca3af;">Balance Due at Salon</td><td style="padding: 8px 0; font-weight: 700; color: #fff; text-align: right;">₹${balanceDue}</td></tr>
+          </table>
+
+          <div style="text-align: center; margin-top: 24px;">
+            <a href="${publicBase}/account.html" style="background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%); color: #000; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">View Appointment & Receipt →</a>
+          </div>
+        </div>
+        <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #636366;">
+          📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar · 📞 +91 6202 692 426
+        </div>
+      </div>
+    `;
+    sendRealEmail(booking.email, `✂️ Appointment Confirmed #${booking.id} – Urban Hairplaza`, emailHtml).catch(e => console.warn('[Email-Conf-Error]', e.message));
+  }
+}
+
+// 2. PAYMENT FAILED / INCOMPLETE NOTIFICATION (WITH PAYMENT LINK)
+async function sendPaymentFailedNotifications(booking, reason = '', publicBase = 'https://salonbooking-rho.vercel.app') {
+  if (!booking) return;
+
+  const cleanPhone = (booking.phone || '').replace(/\D/g, '').slice(-10);
+  const payLink = `${publicBase}/pay?order_id=${booking.id}`;
+
+  // A. SMS with direct payment link via Textbee
+  const smsText = `✂️ Urban Hairplaza: Payment for appointment #${booking.id} (${booking.service}) was not completed. Complete your ₹50 advance payment now to lock your chair: ${payLink} (Held for 15 mins). Need help? Call +916202692426.`;
+  sendRealSms(cleanPhone, smsText).catch(e => console.warn('[SMS-Fail-Error]', e.message));
+
+  // B. WhatsApp message with payment link
+  const waMsg = `⚠️ *Urban Hairplaza – Payment Incomplete*\n` +
+    `--------------------------------\n` +
+    `Hello *${booking.name}*, we noticed your advance payment of ₹50 for appointment *#${booking.id}* (${booking.service}) did not go through or was interrupted.\n\n` +
+    `👉 *Click here to complete payment and lock your chair:*\n` +
+    `${payLink}\n\n` +
+    `📅 *Reserved Slot:* ${booking.date} at ${booking.time}\n` +
+    `✂️ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
+    `📍 *Location:* Simraha, Araria\n\n` +
+    `Your chair is temporarily held for 15 minutes. Complete payment to guarantee your slot.\n` +
+    `Questions? Call +91 6202 692 426.`;
+
+  if (cleanPhone) {
+    sendWhatsAppNotification(waMsg, `91${cleanPhone}`).catch(() => {});
+  }
+
+  // C. Email with payment link (if customer provided email)
+  if (booking.email && booking.email.includes('@')) {
+    const emailHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(239,68,68,0.3); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #221212 0%, #150a0a 100%); padding: 28px 24px; text-align: center; border-bottom: 1px solid rgba(239,68,68,0.2);">
+          <h1 style="color: #f87171; margin: 0; font-size: 22px; font-weight: 700;">⚠️ Payment Incomplete</h1>
+          <p style="color: #d1d5db; margin: 6px 0 0 0; font-size: 13px;">Urban Hairplaza · Appointment #${booking.id}</p>
+        </div>
+        <div style="padding: 26px 24px;">
+          <p style="font-size: 15px; color: #e5e7eb; margin: 0 0 16px 0;">Hello ${booking.name}, your advance payment of ₹50 for <strong>${booking.service}</strong> on <strong>${booking.date} at ${booking.time}</strong> could not be completed.</p>
+          <p style="font-size: 14px; color: #9ca3af; margin: 0 0 24px 0;">Your chair is temporarily held for the next 15 minutes. Please complete payment using the link below to confirm your appointment:</p>
+
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${payLink}" style="background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%); color: #000; font-weight: 700; padding: 14px 28px; border-radius: 10px; font-size: 15px; text-decoration: none; display: inline-block;">💳 Complete ₹50 Payment Now →</a>
+          </div>
+
+          <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">Or copy this link in your browser: <br><span style="color:#e6c65b; word-break:break-all;">${payLink}</span></p>
+        </div>
+        <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #636366;">
+          Need assistance? Call +91 6202 692 426
+        </div>
+      </div>
+    `;
+    sendRealEmail(booking.email, `⚠️ Complete Payment for Appointment #${booking.id} – Urban Hairplaza`, emailHtml).catch(e => console.warn('[Email-Fail-Error]', e.message));
+  }
 }
 
 // ── PUBLIC API ROUTES ────────────────────────────────────────────────────────
@@ -985,6 +1129,8 @@ app.post('/api/verify-payment', async (req, res) => {
         isPaid = true;
         paidAmount = Number(cfRes.data.order_amount) || paidAmount;
       } else {
+        const publicBase = getPublicBaseUrl(req);
+        sendPaymentFailedNotifications(booking, cfRes.data?.order_status || 'Payment incomplete', publicBase).catch(() => {});
         return res.status(400).json({
           error: `Payment is not completed. Current status: ${cfRes.data?.order_status || 'UNKNOWN'}`
         });
@@ -1018,10 +1164,12 @@ app.post('/api/verify-payment', async (req, res) => {
         gatewayResponse: gatewayData
       });
 
-      // WhatsApp notification
-      const waMsg = buildWhatsAppMessage(updatedBooking || booking);
-      sendWhatsAppNotification(waMsg).catch(() => {});
+      const publicBase = getPublicBaseUrl(req);
 
+      // Dispatches Confirmation SMS to customer, WhatsApp to customer & salon, and Email!
+      sendBookingConfirmationNotifications(updatedBooking || booking, publicBase).catch(() => {});
+
+      const waMsg = buildWhatsAppMessage(updatedBooking || booking);
       const businessNumber = process.env.BUSINESS_WHATSAPP || '916202692426';
       const encodedMsg = encodeURIComponent(waMsg);
       const whatsappClientLink = `https://wa.me/${businessNumber}?text=${encodedMsg}`;
@@ -1037,6 +1185,220 @@ app.post('/api/verify-payment', async (req, res) => {
   } catch (err) {
     console.error('Verify payment error:', err.response?.data || err.message);
     res.status(500).json({ error: 'Payment verification failed. Please contact us.' });
+  }
+});
+
+// POST /api/payment-failed — Triggered when checkout fails, closes, or is cancelled
+app.post('/api/payment-failed', async (req, res) => {
+  try {
+    const { order_id, reason } = req.body;
+    if (!order_id) {
+      return res.status(400).json({ error: 'Order ID is required.' });
+    }
+
+    const booking = await db.getBookingById(order_id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (booking.status === 'confirmed' || booking.status === 'completed') {
+      return res.json({ success: true, message: 'Booking is already confirmed.' });
+    }
+
+    const publicBase = getPublicBaseUrl(req);
+    const payLink = `${publicBase}/pay?order_id=${booking.id}`;
+
+    // Dispatches SMS with payment link via Textbee, WhatsApp, and Email
+    sendPaymentFailedNotifications(booking, reason || 'Payment Incomplete', publicBase).catch(() => {});
+
+    res.json({
+      success: true,
+      order_id: booking.id,
+      payment_link: payLink,
+      message: `Payment retry link sent to +91 ${booking.phone.slice(-10)} via SMS.`
+    });
+  } catch (err) {
+    console.error('[PAYMENT-FAILED] Error:', err);
+    res.status(500).json({ error: 'Failed to process payment failure notice.' });
+  }
+});
+
+// GET /api/booking-details/:id — Safe booking details for payment retry page
+app.get('/api/booking-details/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const booking = await db.getBookingById(id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Appointment not found.' });
+    }
+
+    res.json({
+      success: true,
+      booking: {
+        id: booking.id,
+        name: booking.name,
+        phone: booking.phone,
+        email: booking.email,
+        service: booking.service,
+        barber: booking.barber,
+        date: booking.date,
+        time: booking.time,
+        type: booking.type,
+        address: booking.address,
+        price: booking.price,
+        duration: booking.duration,
+        advancePaid: booking.advancePaid || 0,
+        status: booking.status,
+        createdAt: booking.createdAt
+      }
+    });
+  } catch (err) {
+    console.error('[BOOKING-DETAILS] Error:', err);
+    res.status(500).json({ error: 'Failed to load booking details.' });
+  }
+});
+
+// POST /api/retry-payment — Generate a fresh Cashfree payment session for retry
+app.post('/api/retry-payment', rateLimit({ windowMs: 60000, max: 15, message: 'Too many requests. Please wait a moment.' }), async (req, res) => {
+  try {
+    const { order_id } = req.body;
+    if (!order_id) {
+      return res.status(400).json({ error: 'Order ID is required.' });
+    }
+
+    const booking = await db.getBookingById(order_id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (booking.status === 'confirmed' || booking.status === 'completed') {
+      return res.status(400).json({ error: 'This booking is already paid and confirmed.' });
+    }
+
+    const appId = process.env.CASHFREE_APP_ID;
+    const secretKey = process.env.CASHFREE_SECRET_KEY;
+    const env = (process.env.CASHFREE_ENVIRONMENT || 'sandbox').toLowerCase();
+    const isConfigured = Boolean(appId && secretKey && appId.trim().length > 3);
+    const advance = 50;
+    const publicBase = getPublicBaseUrl(req);
+
+    if (isConfigured) {
+      const cashfreeUrl = env === 'production'
+        ? 'https://api.cashfree.com/pg/orders'
+        : 'https://sandbox.cashfree.com/pg/orders';
+
+      const cleanReqPhone = (booking.phone || '').replace(/\D/g, '').slice(-10);
+      const customerPhone = cleanReqPhone.length === 10 ? cleanReqPhone : '9876543210';
+
+      // Check if existing order on Cashfree has an active session
+      let sessionData = null;
+      try {
+        const existingOrderRes = await axios.get(`${cashfreeUrl}/${order_id}`, {
+          headers: {
+            'x-client-id': appId.trim(),
+            'x-client-secret': secretKey.trim(),
+            'x-api-version': '2023-08-01'
+          },
+          timeout: 8000
+        });
+
+        if (existingOrderRes.data?.payment_session_id && existingOrderRes.data?.order_status === 'ACTIVE') {
+          sessionData = existingOrderRes.data;
+        }
+      } catch (e) {}
+
+      // If not active, create fresh session
+      if (!sessionData) {
+        const cfPayload = {
+          order_id: order_id,
+          order_amount: advance,
+          order_currency: 'INR',
+          customer_details: {
+            customer_id: `cust_${customerPhone}`,
+            customer_name: booking.name,
+            customer_phone: customerPhone,
+            customer_email: (booking.email && booking.email.includes('@')) ? booking.email.trim() : 'client@urbanhairplaza.com'
+          },
+          order_meta: {
+            return_url: `${publicBase}/pay?order_id=${order_id}`,
+            notify_url: `${publicBase}/api/cashfree-webhook`
+          },
+          order_note: `Urban Hairplaza Advance Booking for ${booking.service}`
+        };
+
+        const cfRes = await axios.post(cashfreeUrl, cfPayload, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-client-id': appId.trim(),
+            'x-client-secret': secretKey.trim(),
+            'x-api-version': '2023-08-01'
+          },
+          timeout: 10000
+        });
+        sessionData = cfRes.data;
+      }
+
+      return res.json({
+        success: true,
+        order_id: order_id,
+        payment_session_id: sessionData.payment_session_id,
+        environment: env,
+        advanceAmount: advance,
+        is_simulation: false
+      });
+    } else {
+      return res.json({
+        success: true,
+        order_id: order_id,
+        payment_session_id: `sim_session_${order_id}`,
+        environment: 'sandbox',
+        advanceAmount: advance,
+        is_simulation: true
+      });
+    }
+
+  } catch (err) {
+    console.error('[RETRY-PAYMENT] Error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Failed to create payment session for retry.', details: err.response?.data?.message || err.message });
+  }
+});
+
+// POST /api/cashfree-webhook — Handle asynchronous Cashfree payment notifications
+app.post('/api/cashfree-webhook', async (req, res) => {
+  try {
+    const data = req.body?.data || req.body;
+    const order = data?.order || data;
+    const orderId = order?.order_id || req.body?.order_id;
+    const orderStatus = order?.order_status || data?.payment?.payment_status;
+
+    if (!orderId) {
+      return res.status(200).send('Ignored: No order_id in webhook');
+    }
+
+    const booking = await db.getBookingById(orderId);
+    if (!booking) {
+      return res.status(200).send('Ignored: Booking not found');
+    }
+
+    const publicBase = getPublicBaseUrl(req);
+
+    if (orderStatus === 'PAID' || orderStatus === 'SUCCESS') {
+      if (booking.status !== 'confirmed') {
+        const updated = await db.updateBooking(booking.id, {
+          status: 'confirmed',
+          advancePaid: 50,
+          paymentVerifiedAt: new Date().toISOString()
+        });
+        sendBookingConfirmationNotifications(updated || booking, publicBase).catch(() => {});
+      }
+    } else if (orderStatus === 'FAILED' || orderStatus === 'USER_DROPPED' || orderStatus === 'CANCELLED') {
+      sendPaymentFailedNotifications(booking, orderStatus, publicBase).catch(() => {});
+    }
+
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('[CASHFREE-WEBHOOK] Error:', err);
+    res.status(200).json({ error: err.message });
   }
 });
 
@@ -1094,6 +1456,9 @@ app.post('/api/bookings', rateLimit({ windowMs: 60000, max: 10, message: 'Too ma
         customerEmail: booking.email
       });
     }
+
+    const publicBase = getPublicBaseUrl(req);
+    sendBookingConfirmationNotifications(booking, publicBase).catch(() => {});
 
     const waMsg = buildWhatsAppMessage(booking);
     sendWhatsAppNotification(waMsg).catch(() => {});
