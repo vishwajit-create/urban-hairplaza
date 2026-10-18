@@ -182,19 +182,17 @@ async function sendRealSmsOtp(phone, otp) {
   const rawKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
   const textbeeKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
   const rawDevice = (process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').trim();
-  const textbeeDevice = rawDevice.replace(/^['"]|['"]$/g, '').trim();
+  const textbeeDevice = rawDevice.replace(/^['"]|['"]$/g, '').trim() || '6ad42a0d5291071e5774b0b1';
 
   if (textbeeKey) {
     try {
       const formattedRecipient = phone.startsWith('+') ? phone : `+91${phone}`;
 
       const payload = {
+        deviceId: textbeeDevice,
         recipients: [formattedRecipient],
         message: `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`
       };
-      if (textbeeDevice) {
-        payload.deviceId = textbeeDevice;
-      }
 
       // Call Textbee official REST endpoint
       const res = await axios.post(
@@ -211,32 +209,7 @@ async function sendRealSmsOtp(phone, otp) {
       console.log(`[SMS-Textbee] Dispatched OTP to ${formattedRecipient}:`, res.data);
       return true;
     } catch (err) {
-      console.warn('[SMS-Textbee] Primary endpoint error:', err.response?.data || err.message);
-
-      // Fallback: devices/:deviceId/send-sms if deviceId is specified
-      if (textbeeDevice) {
-        try {
-          const formattedRecipient = phone.startsWith('+') ? phone : `+91${phone}`;
-          const fallbackRes = await axios.post(
-            `https://api.textbee.dev/api/v1/gateway/devices/${textbeeDevice}/send-sms`,
-            {
-              recipients: [formattedRecipient],
-              message: `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`
-            },
-            {
-              headers: {
-                'x-api-key': textbeeKey,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          console.log(`[SMS-Textbee] Dispatched OTP via fallback to ${formattedRecipient}:`, fallbackRes.data);
-          return true;
-        } catch (err2) {
-          console.warn('[SMS-Textbee] Fallback endpoint error:', err2.response?.data || err2.message);
-        }
-      }
+      console.warn('[SMS-Textbee] Error:', err.response?.data || err.message);
     }
   }
 
@@ -578,54 +551,88 @@ app.get('/api/user/me', (req, res) => {
 
 // GET /api/textbee/status — Diagnostic endpoint to check Textbee configuration
 app.get('/api/textbee/status', async (req, res) => {
-  const rawKey = (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
+  const queryKey = typeof req.query.apiKey === 'string' ? req.query.apiKey.trim() : '';
+  const rawKey = queryKey || (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
   const textbeeKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
-  const rawDevice = (process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').trim();
-  const textbeeDevice = rawDevice.replace(/^['"]|['"]$/g, '').trim();
+  const rawDevice = (req.query.deviceId || process.env.TEXTBEE_DEVICE_ID || process.env.TEXTBEE_DEVICE || process.env.DEVICE_ID || '').toString().trim();
+  const textbeeDevice = rawDevice.replace(/^['"]|['"]$/g, '').trim() || '6ad42a0d5291071e5774b0b1';
 
   if (!textbeeKey) {
     return res.json({
       configured: false,
-      message: 'TEXTBEE_API_KEY is missing in environment variables.'
+      message: 'TEXTBEE_API_KEY is missing in environment variables. Add TEXTBEE_API_KEY in Vercel settings.'
     });
   }
 
-  const results = {};
+  const results = {
+    apiKeyPreview: `${textbeeKey.slice(0, 5)}...${textbeeKey.slice(-4)}`,
+    deviceId: textbeeDevice,
+    receivedMessagesTest: null,
+    sendSmsTest: null
+  };
 
-  // Variation 1: x-api-key header
+  // Check Textbee authentication via GET /gateway/messages?direction=received
   try {
-    const res1 = await axios.get('https://api.textbee.dev/api/v1/gateway/devices', {
+    const apiRes = await axios.get('https://api.textbee.dev/api/v1/gateway/messages?direction=received', {
       headers: { 'x-api-key': textbeeKey },
-      timeout: 7000
+      timeout: 10000
     });
-    results.xApiKey = { status: 200, success: true, data: res1.data };
-  } catch (e1) {
-    results.xApiKey = { status: e1.response?.status, error: e1.response?.data || e1.message };
+    results.receivedMessagesTest = {
+      success: true,
+      statusCode: apiRes.status,
+      data: apiRes.data
+    };
+  } catch (err) {
+    results.receivedMessagesTest = {
+      success: false,
+      statusCode: err.response?.status || 500,
+      error: err.response?.data || err.message
+    };
   }
 
-  // Variation 2: Authorization: Bearer
-  try {
-    const res2 = await axios.get('https://api.textbee.dev/api/v1/gateway/devices', {
-      headers: { 'Authorization': `Bearer ${textbeeKey}` },
-      timeout: 7000
-    });
-    results.bearerAuth = { status: 200, success: true, data: res2.data };
-  } catch (e2) {
-    results.bearerAuth = { status: e2.response?.status, error: e2.response?.data || e2.message };
+  // Optional: If testRecipient is provided in query params, test sending an SMS
+  const testRecipient = req.query.testPhone || req.query.testRecipient;
+  if (testRecipient) {
+    try {
+      const formatted = testRecipient.startsWith('+') ? testRecipient : `+91${testRecipient}`;
+      const sendRes = await axios.post(
+        'https://api.textbee.dev/api/v1/gateway/send-sms',
+        {
+          deviceId: textbeeDevice,
+          recipients: [formatted],
+          message: 'Hello from Urban Hairplaza (Textbee integration test).'
+        },
+        {
+          headers: {
+            'x-api-key': textbeeKey,
+            'Content-Type': 'application/json'
+          },
+          timeout: 12000
+        }
+      );
+      results.sendSmsTest = {
+        success: true,
+        statusCode: sendRes.status,
+        data: sendRes.data
+      };
+    } catch (sendErr) {
+      results.sendSmsTest = {
+        success: false,
+        statusCode: sendErr.response?.status || 500,
+        error: sendErr.response?.data || sendErr.message
+      };
+    }
   }
 
-  const isWorking = Boolean(results.xApiKey?.success || results.bearerAuth?.success);
+  const isAuthenticated = Boolean(results.receivedMessagesTest?.success);
 
   return res.json({
     configured: true,
-    authenticated: isWorking,
-    apiKeyLength: textbeeKey.length,
-    apiKeyPreview: `${textbeeKey.slice(0, 5)}...${textbeeKey.slice(-4)}`,
-    deviceId: textbeeDevice || 'Using default',
-    authTests: results,
-    message: isWorking
-      ? 'Textbee is fully connected and ready!'
-      : 'Textbee rejected the credentials with AUTH_INVALID. Please ensure your API key was copied completely from https://textbee.dev dashboard without missing characters.'
+    authenticated: isAuthenticated,
+    details: results,
+    message: isAuthenticated
+      ? 'Textbee API key is valid and connected!'
+      : `Textbee authentication failed: ${JSON.stringify(results.receivedMessagesTest?.error || 'Unknown error')}`
   });
 });
 
