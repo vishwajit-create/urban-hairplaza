@@ -22,10 +22,68 @@ const db = require('./db');
 
 function safeCompare(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
+  const cleanA = a.replace(/^['"]|['"]$/g, '').trim();
+  const cleanB = b.replace(/^['"]|['"]$/g, '').trim();
+  const bufA = Buffer.from(cleanA);
+  const bufB = Buffer.from(cleanB);
   if (bufA.length !== bufB.length) return false;
   return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// ── STATELESS AUTH TOKEN (HMAC SHA-256) FOR SERVERLESS / MULTI-INSTANCE RESILIENCE ──
+const AUTH_SECRET = process.env.SESSION_SECRET || 'urban-hairplaza-secret-2026';
+
+function createAuthToken(payload) {
+  const json = JSON.stringify(payload);
+  const data = Buffer.from(json).toString('base64url');
+  const signature = crypto.createHmac('sha256', AUTH_SECRET).update(data).digest('base64url');
+  return data + '.' + signature;
+}
+
+function verifyAuthToken(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const data = parts[0];
+  const signature = parts[1];
+  if (!data || !signature) return null;
+  const expectedSig = crypto.createHmac('sha256', AUTH_SECRET).update(data).digest('base64url');
+  if (expectedSig !== signature) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function extractToken(req) {
+  // 1. Authorization header: Bearer <token>
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  // 2. Custom headers
+  if (req.headers['x-admin-token']) return String(req.headers['x-admin-token']).trim();
+  if (req.headers['x-owner-token']) return String(req.headers['x-owner-token']).trim();
+  if (req.headers['x-auth-token']) return String(req.headers['x-auth-token']).trim();
+  // 3. Cookies
+  if (req.headers.cookie) {
+    const cookies = req.headers.cookie.split(';');
+    for (const c of cookies) {
+      const trimmed = c.trim();
+      if (trimmed.startsWith('uhp_admin_token=')) {
+        return decodeURIComponent(trimmed.slice('uhp_admin_token='.length));
+      }
+      if (trimmed.startsWith('uhp_owner_token=')) {
+        return decodeURIComponent(trimmed.slice('uhp_owner_token='.length));
+      }
+    }
+  }
+  // 4. Query param
+  if (req.query && req.query.token) return req.query.token;
+  return null;
 }
 
 const app = express();
@@ -144,6 +202,12 @@ const STATIC_PAGES = {
   '/owner/register': path.join(__dirname, 'register-salon.html'),
   '/owner/dashboard': path.join(__dirname, 'owner', 'dashboard.html'),
   '/owner/dashboard.html': path.join(__dirname, 'owner', 'dashboard.html'),
+  '/admin': path.join(__dirname, 'admin', 'login.html'),
+  '/admin/': path.join(__dirname, 'admin', 'login.html'),
+  '/admin/login': path.join(__dirname, 'admin', 'login.html'),
+  '/admin/login.html': path.join(__dirname, 'admin', 'login.html'),
+  '/admin/dashboard': path.join(__dirname, 'admin', 'dashboard.html'),
+  '/admin/dashboard.html': path.join(__dirname, 'admin', 'dashboard.html'),
   '/pay': path.join(__dirname, 'pay.html'),
   '/pay.html': path.join(__dirname, 'pay.html'),
   '/book': path.join(__dirname, 'book.html'),
@@ -610,7 +674,14 @@ app.get('/api/barbers', async (req, res) => {
 app.get('/api/salons', async (req, res) => {
   try {
     const { search, city, area, service, status } = req.query;
-    const isAdmin = Boolean(req.session && req.session.isAdmin);
+    let isAdmin = Boolean(req.session && req.session.isAdmin);
+    if (!isAdmin) {
+      const token = extractToken(req);
+      if (token) {
+        const payload = verifyAuthToken(token);
+        if (payload && payload.role === 'admin') isAdmin = true;
+      }
+    }
     const salons = await db.getSalons({
       search,
       city,
@@ -805,10 +876,28 @@ app.post('/api/owner/login', rateLimit({ windowMs: 60000, max: 10, message: 'Too
       salonId: owner.salonId
     };
 
+    const token = createAuthToken({
+      role: 'owner',
+      ownerId: owner.id,
+      name: owner.name,
+      phone: owner.phone,
+      email: owner.email,
+      salonId: owner.salonId,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000
+    });
+
+    res.cookie('uhp_owner_token', token, {
+      httpOnly: true,
+      secure: 'auto',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     res.json({
       success: true,
       owner: req.session.owner,
-      salon
+      salon,
+      token
     });
   } catch (err) {
     console.error('[OWNER-LOGIN] Error:', err);
@@ -818,15 +907,33 @@ app.post('/api/owner/login', rateLimit({ windowMs: 60000, max: 10, message: 'Too
 
 // GET /api/owner/me — Check owner authentication status
 app.get('/api/owner/me', async (req, res) => {
-  if (req.session && req.session.owner) {
-    const salon = await db.getSalonById(req.session.owner.salonId);
-    return res.json({ loggedIn: true, owner: req.session.owner, salon });
+  let owner = req.session && req.session.owner;
+  if (!owner) {
+    const token = extractToken(req);
+    if (token) {
+      const payload = verifyAuthToken(token);
+      if (payload && payload.role === 'owner' && payload.salonId) {
+        owner = {
+          id: payload.ownerId,
+          name: payload.name,
+          phone: payload.phone,
+          email: payload.email,
+          salonId: payload.salonId
+        };
+        if (req.session) req.session.owner = owner;
+      }
+    }
+  }
+  if (owner && owner.salonId) {
+    const salon = await db.getSalonById(owner.salonId);
+    return res.json({ loggedIn: true, owner, salon });
   }
   res.json({ loggedIn: false, owner: null });
 });
 
 // POST /api/owner/logout — Salon owner log out
 app.post('/api/owner/logout', (req, res) => {
+  res.clearCookie('uhp_owner_token');
   if (req.session) {
     delete req.session.owner;
   }
@@ -838,6 +945,23 @@ app.post('/api/owner/logout', (req, res) => {
 function requireOwner(req, res, next) {
   if (req.session && req.session.owner && req.session.owner.salonId) {
     return next();
+  }
+  const token = extractToken(req);
+  if (token) {
+    const payload = verifyAuthToken(token);
+    if (payload && payload.role === 'owner' && payload.salonId) {
+      if (req.session) {
+        req.session.owner = {
+          id: payload.ownerId,
+          name: payload.name,
+          phone: payload.phone,
+          email: payload.email,
+          salonId: payload.salonId
+        };
+      }
+      req.ownerData = payload;
+      return next();
+    }
   }
   return res.status(401).json({ error: 'Unauthorized. Salon owner login required.' });
 }
@@ -1986,23 +2110,56 @@ app.post('/api/enquiries', rateLimit({ windowMs: 60000, max: 5, message: 'Please
 
 // ── ADMIN AUTHENTICATION MIDDLEWARE ─────────────────────────────────────────
 function requireAdmin(req, res, next) {
+  // 1. Session check
   if (req.session && req.session.isAdmin) {
     return next();
+  }
+  // 2. Stateless HMAC token check (critical for Vercel serverless lambdas)
+  const token = extractToken(req);
+  if (token) {
+    const payload = verifyAuthToken(token);
+    if (payload && payload.role === 'admin') {
+      if (req.session) {
+        req.session.isAdmin = true;
+        req.session.user = payload.user || 'Admin';
+      }
+      req.adminUser = payload.user || 'Admin';
+      return next();
+    }
   }
   return res.status(401).json({ error: 'Unauthorized. Admin login required.' });
 }
 
 // ── ADMIN AUTH ROUTES ────────────────────────────────────────────────────────
-// Protected with brute-force rate limiter (max 8 attempts per 15 min per IP) and timing-safe comparison
-app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 8, message: 'Too many login attempts. Please wait 15 minutes.' }), (req, res) => {
+// Protected with brute-force rate limiter (max 15 attempts per 15 min per IP) and timing-safe comparison
+app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Too many login attempts. Please wait 15 minutes.' }), (req, res) => {
   const { username, password } = req.body;
-  const adminUser = process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin';
-  const adminPass = process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025';
+  const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
+  const adminPass = (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025').replace(/^['"]|['"]$/g, '').trim();
 
-  if (safeCompare(username, adminUser) && safeCompare(password, adminPass)) {
-    req.session.isAdmin = true;
-    req.session.user = username;
-    return res.json({ success: true, user: username });
+  const cleanUser = typeof username === 'string' ? username.trim() : '';
+  const cleanPass = typeof password === 'string' ? password : '';
+
+  if (safeCompare(cleanUser, adminUser) && safeCompare(cleanPass, adminPass)) {
+    const token = createAuthToken({
+      role: 'admin',
+      user: cleanUser,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    if (req.session) {
+      req.session.isAdmin = true;
+      req.session.user = cleanUser;
+    }
+
+    res.cookie('uhp_admin_token', token, {
+      httpOnly: true,
+      secure: 'auto',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    return res.json({ success: true, user: cleanUser, token });
   }
   res.status(401).json({ success: false, error: 'Invalid username or password.' });
 });
@@ -2011,13 +2168,29 @@ app.get('/api/admin/me', (req, res) => {
   if (req.session && req.session.isAdmin) {
     return res.json({ authenticated: true, user: req.session.user || 'Admin' });
   }
+  const token = extractToken(req);
+  if (token) {
+    const payload = verifyAuthToken(token);
+    if (payload && payload.role === 'admin') {
+      if (req.session) {
+        req.session.isAdmin = true;
+        req.session.user = payload.user || 'Admin';
+      }
+      return res.json({ authenticated: true, user: payload.user || 'Admin' });
+    }
+  }
   res.status(401).json({ authenticated: false });
 });
 
 app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy(() => {
+  res.clearCookie('uhp_admin_token');
+  if (req.session) {
+    req.session.destroy(() => {
+      res.json({ success: true });
+    });
+  } else {
     res.json({ success: true });
-  });
+  }
 });
 
 // ── ADMIN DATA MANAGEMENT ───────────────────────────────────────────────────

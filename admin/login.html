@@ -181,8 +181,11 @@ input::placeholder { color: rgba(255,255,255,0.2); }
 </div>
 
 <script>
-// Redirect if already logged in
-fetch('/api/admin/me')
+// Check if already logged in
+const savedToken = localStorage.getItem('uhp_admin_token');
+const meHeaders = savedToken ? { 'Authorization': 'Bearer ' + savedToken } : {};
+
+fetch('/api/admin/me', { headers: meHeaders })
   .then(r => r.json())
   .then(d => { if (d.authenticated) window.location.href = '/admin/dashboard.html'; })
   .catch(() => {});
@@ -200,20 +203,24 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        username: document.getElementById('username').value,
+        username: document.getElementById('username').value.trim(),
         password: document.getElementById('password').value
       })
     });
     const data = await res.json();
     if (res.ok && data.success) {
+      if (data.token) {
+        localStorage.setItem('uhp_admin_token', data.token);
+      }
       window.location.href = '/admin/dashboard.html';
     } else {
+      errEl.textContent = data.error ? '❌ ' + data.error : '❌ Invalid username or password. Please try again.';
       errEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Sign In →';
     }
   } catch {
-    errEl.textContent = '❌ Server error. Make sure the server is running.';
+    errEl.textContent = '❌ Server error. Make sure the server is reachable.';
     errEl.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Sign In →';

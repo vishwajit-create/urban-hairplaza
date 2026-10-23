@@ -221,6 +221,9 @@
           throw new Error(data.error || 'Login failed. Please check credentials.');
         }
 
+        if (data.token) {
+          localStorage.setItem('uhp_owner_token', data.token);
+        }
         window.location.href = 'dashboard.html';
       } catch (err) {
         errEl.textContent = err.message;

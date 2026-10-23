@@ -67,11 +67,19 @@
     },
     {
       "source": "/admin",
-      "destination": "/admin/login.html"
+      "destination": "/admin/index.html"
     },
     {
       "source": "/admin/",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/login",
       "destination": "/admin/login.html"
+    },
+    {
+      "source": "/admin/dashboard",
+      "destination": "/admin/dashboard.html"
     }
   ]
 }

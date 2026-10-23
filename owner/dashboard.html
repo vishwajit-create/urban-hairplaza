@@ -607,7 +607,7 @@
     // Check auth on page load
     async function initDashboard() {
       try {
-        const res = await fetch('/api/owner/me');
+        const res = await ownerFetch('/api/owner/me');
         const data = await res.json();
         if (!data.loggedIn || !data.owner) {
           window.location.href = 'login.html';
@@ -657,7 +657,7 @@
 
     async function loadStats() {
       try {
-        const res = await fetch('/api/owner/stats');
+        const res = await ownerFetch('/api/owner/stats');
         const data = await res.json();
         if (data.success && data.stats) {
           document.getElementById('stat-total').textContent = data.stats.totalBookings || 0;
@@ -670,7 +670,7 @@
 
     async function loadBookings() {
       try {
-        const res = await fetch('/api/owner/bookings');
+        const res = await ownerFetch('/api/owner/bookings');
         const data = await res.json();
         const tbody = document.getElementById('bookings-tbody');
         const bookings = (data.success && Array.isArray(data.bookings)) ? data.bookings : [];
@@ -745,7 +745,7 @@
     async function updateBookingStatus(id, status) {
       if (!confirm(`Are you sure you want to change this appointment status to "${status}"?`)) return;
       try {
-        const res = await fetch(`/api/owner/bookings/${id}`, {
+        const res = await ownerFetch(`/api/owner/bookings/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
@@ -761,7 +761,7 @@
 
     async function loadServices() {
       try {
-        const res = await fetch('/api/owner/services');
+        const res = await ownerFetch('/api/owner/services');
         const data = await res.json();
         const tbody = document.getElementById('services-tbody');
         const services = (data.success && Array.isArray(data.services)) ? data.services : [];
@@ -788,7 +788,7 @@
 
     async function loadStaff() {
       try {
-        const res = await fetch('/api/owner/staff');
+        const res = await ownerFetch('/api/owner/staff');
         const data = await res.json();
         const tbody = document.getElementById('staff-tbody');
         const staff = (data.success && Array.isArray(data.staff)) ? data.staff : [];
@@ -844,7 +844,7 @@
       };
 
       try {
-        const res = await fetch('/api/owner/salon', {
+        const res = await ownerFetch('/api/owner/salon', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updates)
@@ -887,7 +887,7 @@
         category: document.getElementById('new-srv-category').value,
         desc: document.getElementById('new-srv-desc').value.trim()
       };
-      const res = await fetch('/api/owner/services', {
+      const res = await ownerFetch('/api/owner/services', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -900,7 +900,7 @@
 
     async function deleteService(id) {
       if (!confirm('Remove this service?')) return;
-      await fetch(`/api/owner/services/${id}`, { method: 'DELETE' });
+      await ownerFetch(`/api/owner/services/${id}`, { method: 'DELETE' });
       loadServices();
     }
 
@@ -911,7 +911,7 @@
         role: document.getElementById('new-stf-role').value.trim(),
         experience: document.getElementById('new-stf-exp').value.trim()
       };
-      const res = await fetch('/api/owner/staff', {
+      const res = await ownerFetch('/api/owner/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -924,12 +924,12 @@
 
     async function deleteStaff(id) {
       if (!confirm('Remove this barber from salon staff?')) return;
-      await fetch(`/api/owner/staff/${id}`, { method: 'DELETE' });
+      await ownerFetch(`/api/owner/staff/${id}`, { method: 'DELETE' });
       loadStaff();
     }
 
     async function handleLogout() {
-      await fetch('/api/owner/logout', { method: 'POST' });
+      await ownerFetch('/api/owner/logout', { method: 'POST' });
       window.location.href = 'login.html';
     }
 

@@ -728,15 +728,42 @@ let filteredUsers        = [];
 let filteredEnquiries    = [];
 let filteredSalons       = [];
 
+// ── AUTHENTICATED FETCH HELPER (TOKEN & COOKIE RESILIENT) ──
+function getAdminToken() {
+  return localStorage.getItem('uhp_admin_token') || '';
+}
+
+async function adminFetch(url, options = {}) {
+  const token = getAdminToken();
+  const headers = Object.assign({}, options.headers || {});
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
+  return fetch(url, { ...options, headers });
+}
+
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', async () => {
   // Auth check
   try {
-    const r = await fetch('/api/admin/me');
-    if (!r.ok) { window.location.href = '/admin/login.html'; return; }
+    const r = await adminFetch('/api/admin/me');
+    if (!r.ok) {
+      localStorage.removeItem('uhp_admin_token');
+      window.location.href = '/admin/login.html';
+      return;
+    }
     const d = await r.json();
+    if (!d.authenticated) {
+      localStorage.removeItem('uhp_admin_token');
+      window.location.href = '/admin/login.html';
+      return;
+    }
     document.getElementById('admin-name').textContent = d.user || 'Admin';
-  } catch { window.location.href = '/admin/login.html'; return; }
+  } catch {
+    localStorage.removeItem('uhp_admin_token');
+    window.location.href = '/admin/login.html';
+    return;
+  }
 
   // Date
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
@@ -745,14 +772,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAll() {
-  await Promise.all([loadStats(), loadBookings(), loadTransactions(), loadUsers(), loadEnquiries(), loadServices(), loadSalons()]);
+  await Promise.allSettled([
+    loadStats(),
+    loadBookings(),
+    loadTransactions(),
+    loadUsers(),
+    loadEnquiries(),
+    loadServices(),
+    loadSalons()
+  ]);
 }
 
 async function loadStats() {
   try {
-    const r = await fetch('/api/admin/stats');
+    const r = await adminFetch('/api/admin/stats');
+    if (!r.ok) return;
     const d = await r.json();
-    document.getElementById('st-total').textContent       = d.bookings.total;
+    if (!d || !d.bookings) return;
+
+    document.getElementById('st-total').textContent       = d.bookings.total ?? 0;
     if (document.getElementById('st-revenue')) {
       document.getElementById('st-revenue').textContent     = `₹${d.revenue?.totalAdvance || 0}`;
       document.getElementById('st-revenue-sub').textContent = `${d.transactions?.totalCount || 0} payments`;
@@ -760,36 +798,51 @@ async function loadStats() {
     if (document.getElementById('st-clients')) {
       document.getElementById('st-clients').textContent     = d.clients?.totalClients || 0;
     }
-    if (document.getElementById('st-pending')) document.getElementById('st-pending').textContent = d.bookings.pending;
-    if (document.getElementById('st-confirmed')) document.getElementById('st-confirmed').textContent = d.bookings.confirmed;
-    document.getElementById('st-enquiries').textContent   = d.enquiries.unread;
-    document.getElementById('st-enq-sub').textContent     = `${d.enquiries.unread} unread of ${d.enquiries.total}`;
+    if (document.getElementById('st-pending')) document.getElementById('st-pending').textContent = d.bookings.pending ?? 0;
+    if (document.getElementById('st-confirmed')) document.getElementById('st-confirmed').textContent = d.bookings.confirmed ?? 0;
+    if (d.enquiries) {
+      document.getElementById('st-enquiries').textContent   = d.enquiries.unread ?? 0;
+      document.getElementById('st-enq-sub').textContent     = `${d.enquiries.unread ?? 0} unread of ${d.enquiries.total ?? 0}`;
+    }
 
     // Badge counts
     const pb = document.getElementById('pending-count');
     const ub = document.getElementById('unread-count');
-    if (d.bookings.pending > 0) { pb.textContent = d.bookings.pending; pb.style.display = 'inline-block'; }
-    else pb.style.display = 'none';
-    if (d.enquiries.unread > 0) { ub.textContent = d.enquiries.unread; ub.style.display = 'inline-block'; }
-    else ub.style.display = 'none';
-  } catch(e) { console.error(e); }
+    if (pb) {
+      if ((d.bookings.pending || 0) > 0) { pb.textContent = d.bookings.pending; pb.style.display = 'inline-block'; }
+      else pb.style.display = 'none';
+    }
+    if (ub && d.enquiries) {
+      if ((d.enquiries.unread || 0) > 0) { ub.textContent = d.enquiries.unread; ub.style.display = 'inline-block'; }
+      else ub.style.display = 'none';
+    }
+  } catch(e) { console.error('loadStats error:', e); }
 }
 
 async function loadBookings() {
   try {
-    const r = await fetch('/api/admin/bookings');
-    if (!r.ok) { window.location.href = '/admin/'; return; }
-    allBookings = await r.json();
+    const r = await adminFetch('/api/admin/bookings');
+    if (!r.ok) {
+      console.warn('Bookings API error status:', r.status);
+      document.getElementById('bookings-body').innerHTML = `<tr><td colspan="9" class="empty-row">⚠️ Unable to load bookings (${r.status}). Click Refresh to retry.</td></tr>`;
+      return;
+    }
+    const data = await r.json();
+    allBookings = Array.isArray(data) ? data : [];
     filteredBookings = [...allBookings];
     renderBookings(filteredBookings);
-  } catch(e) { document.getElementById('bookings-body').innerHTML = `<tr><td colspan="9" class="empty-row">⚠️ Failed to load bookings.</td></tr>`; }
+  } catch(e) {
+    console.error('loadBookings error:', e);
+    document.getElementById('bookings-body').innerHTML = `<tr><td colspan="9" class="empty-row">⚠️ Failed to load bookings.</td></tr>`;
+  }
 }
 
 async function loadEnquiries() {
   try {
-    const r = await fetch('/api/admin/enquiries');
+    const r = await adminFetch('/api/admin/enquiries');
     if (!r.ok) return;
-    allEnquiries = await r.json();
+    const data = await r.json();
+    allEnquiries = Array.isArray(data) ? data : [];
     filteredEnquiries = [...allEnquiries];
     renderEnquiries(filteredEnquiries);
   } catch(e) { document.getElementById('enquiries-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load enquiries.</td></tr>`; }
@@ -797,9 +850,10 @@ async function loadEnquiries() {
 
 async function loadServices() {
   try {
-    const r = await fetch('/api/services');
+    const r = await adminFetch('/api/services');
     if (!r.ok) return;
-    allServices = await r.json();
+    const data = await r.json();
+    allServices = Array.isArray(data) ? data : [];
     renderServices(allServices);
   } catch(e) { document.getElementById('services-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load services.</td></tr>`; }
 }
@@ -912,14 +966,19 @@ function showSection(sec) {
   // Update stat card display
   const statsRow = document.getElementById('stats-row');
   statsRow.style.display = (sec === 'services' || sec === 'salons') ? 'none' : 'grid';
+
+  if (sec === 'salons' && (!allSalons || allSalons.length === 0)) {
+    loadSalons();
+  }
 }
 
 // ── TRANSACTIONS HANDLERS ──
 async function loadTransactions() {
   try {
-    const r = await fetch('/api/admin/transactions');
+    const r = await adminFetch('/api/admin/transactions');
     if (r.ok) {
-      allTransactions = await r.json();
+      const data = await r.json();
+      allTransactions = Array.isArray(data) ? data : [];
       filteredTransactions = [...allTransactions];
       renderTransactions(filteredTransactions);
     }
@@ -958,9 +1017,10 @@ function filterTransactions(q) {
 // ── CLIENTS HANDLERS ──
 async function loadUsers() {
   try {
-    const r = await fetch('/api/admin/users');
+    const r = await adminFetch('/api/admin/users');
     if (r.ok) {
-      allUsers = await r.json();
+      const data = await r.json();
+      allUsers = Array.isArray(data) ? data : [];
       filteredUsers = [...allUsers];
       renderUsers(filteredUsers);
     }
@@ -1053,7 +1113,7 @@ function filterEnquiriesByStatus(s) {
 // ── ACTIONS ──
 async function updateBookingStatus(id, status) {
   try {
-    const r = await fetch(`/api/admin/bookings/${id}`, {
+    const r = await adminFetch(`/api/admin/bookings/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
@@ -1068,7 +1128,7 @@ async function updateBookingStatus(id, status) {
 async function deleteBooking(id) {
   if (!confirm('Delete this booking permanently?')) return;
   try {
-    await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
+    await adminFetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
     toast('🗑️ Booking deleted.', 'muted');
     await loadAll();
   } catch { toast('❌ Error.', 'red'); }
@@ -1076,7 +1136,7 @@ async function deleteBooking(id) {
 
 async function updateEnquiryStatus(id, status) {
   try {
-    const r = await fetch(`/api/admin/enquiries/${id}`, {
+    const r = await adminFetch(`/api/admin/enquiries/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
@@ -1091,7 +1151,7 @@ async function updateEnquiryStatus(id, status) {
 async function deleteEnquiry(id) {
   if (!confirm('Delete this enquiry permanently?')) return;
   try {
-    await fetch(`/api/admin/enquiries/${id}`, { method: 'DELETE' });
+    await adminFetch(`/api/admin/enquiries/${id}`, { method: 'DELETE' });
     toast('🗑️ Enquiry deleted.', 'muted');
     await loadAll();
   } catch { toast('❌ Error.', 'red'); }
@@ -1117,7 +1177,7 @@ async function saveService(event, id) {
       method = 'PUT';
     }
 
-    const r = await fetch(url, {
+    const r = await adminFetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1135,7 +1195,7 @@ async function saveService(event, id) {
 async function deleteService(id) {
   if (!confirm('Delete this service permanently?')) return;
   try {
-    await fetch(`/api/admin/services/${id}`, { method: 'DELETE' });
+    await adminFetch(`/api/admin/services/${id}`, { method: 'DELETE' });
     toast('🗑️ Service deleted.', 'muted');
     await loadServices();
   } catch { toast('❌ Error.', 'red'); }
@@ -1262,16 +1322,16 @@ function closeDrawer() {
 // ── LOGOUT ──
 async function doLogout() {
   try {
-    await fetch('/api/admin/logout', { method: 'POST' });
-  } finally {
-    window.location.href = '/admin/';
-  }
+    await adminFetch('/api/admin/logout', { method: 'POST' });
+  } catch(e) {}
+  localStorage.removeItem('uhp_admin_token');
+  window.location.href = '/admin/login.html';
 }
 
 // ── SALONS NETWORK HANDLERS ──
 async function loadSalons() {
   try {
-    const r = await fetch('/api/admin/salons');
+    const r = await adminFetch('/api/admin/salons');
     if (r.ok) {
       const data = await r.json();
       allSalons = Array.isArray(data.salons) ? data.salons : [];
@@ -1289,6 +1349,8 @@ async function loadSalons() {
           countEl.style.display = 'none';
         }
       }
+    } else {
+      document.getElementById('salons-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load salons (${r.status}).</td></tr>`;
     }
   } catch(e) {
     document.getElementById('salons-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load salons.</td></tr>`;
@@ -1368,7 +1430,7 @@ async function updateSalonStatus(id, status) {
   if (!confirm(confirmMsg)) return;
 
   try {
-    const res = await fetch(`/api/admin/salons/${id}/status`, {
+    const res = await adminFetch(`/api/admin/salons/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
@@ -1388,7 +1450,7 @@ async function updateSalonStatus(id, status) {
 async function deleteSalon(id) {
   if (!confirm('Are you sure you want to delete this salon? This action cannot be undone.')) return;
   try {
-    const res = await fetch(`/api/admin/salons/${id}`, { method: 'DELETE' });
+    const res = await adminFetch(`/api/admin/salons/${id}`, { method: 'DELETE' });
     const d = await res.json();
     if (d.success) {
       toast('Salon deleted successfully.', 'gold');
