@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B9JT7TX8H9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-B9JT7TX8H9');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Your Salon – Urban Hairplaza Partner Network</title>
+  <meta name="description" content="List your salon or barbershop on Urban Hairplaza. Receive advance online bookings, stop no-shows, manage your stylists, and grow your grooming business.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9137281869704150"
+     crossorigin="anonymous"></script>
+  <style>
+    .reg-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    @media (max-width: 600px) {
+      .reg-wrap {
+        padding: 24px 18px;
+      }
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 600px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1px solid var(--border);
+      padding: 11px 14px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      background: #FDFDFD;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--text-main);
+      box-shadow: 0 0 0 3px rgba(17,24,39,0.06);
+    }
+    .form-step-badge {
+      display: inline-block;
+      background: #FEF3C7;
+      color: #92400E;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .perks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    @media (max-width: 768px) {
+      .perks-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .perk-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+    .perk-card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+    .perk-card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+    .perk-card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>📍 Urban Hairplaza Partner Network</span>
+        <span>Empowering Local Barbers & Salons</span>
+      </div>
+      <div class="topbar-info">
+        <span>Already registered? <a href="owner/login.html" style="color:var(--text-main); font-weight:700;">Owner Login →</a></span>
+        <span>📞 Support: <a href="tel:+916202692426">+91 6202 692 426</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">✂️</div>
+        <div>
+          <div class="nav-brand-title">Urban Hairplaza</div>
+          <div class="nav-brand-sub">Partner Network</div>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="salons.html" class="nav-link">Explore Salons</a>
+        <a href="services.html" class="nav-link">Services</a>
+        <a href="owner/login.html" class="nav-link">Owner Login</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="owner/login.html" class="btn btn-outline btn-sm">Owner Login</a>
+        <a href="salons.html" class="btn btn-secondary btn-sm">Browse Salons</a>
+        <button class="hamburger" id="hamburger" aria-label="Open mobile menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="salons.html" class="nav-link">Explore Salons</a>
+    <a href="owner/login.html" class="nav-link">Salon Owner Login</a>
+    <a href="contact.html" class="nav-link">Contact</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="section-sm" style="background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%); border-bottom: 1px solid var(--border);">
+    <div class="container text-center" style="max-width: 720px;">
+      <span class="form-step-badge">Salon Owner Onboarding</span>
+      <h1 class="hero-title" style="margin-top: 6px; font-size: clamp(2.2rem, 4vw, 3rem);">Register Your Salon</h1>
+      <p class="section-subtitle">
+        Join the fastest growing salon network. Get online bookings with verified advance deposits, manage your staff, and increase your monthly salon revenue.
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION CONTENT -->
+  <section class="section">
+    <div class="container">
+
+      <!-- PERKS -->
+      <div class="perks-grid">
+        <div class="perk-card">
+          <div class="perk-card-icon">📅</div>
+          <div class="perk-card-title">Online Slot Booking</div>
+          <div class="perk-card-desc">Clients choose their exact date, time, and favorite barber online.</div>
+        </div>
+        <div class="perk-card">
+          <div class="perk-card-icon">💰</div>
+          <div class="perk-card-title">₹50 Advance Lock</div>
+          <div class="perk-card-desc">Advance deposits eliminate no-shows and keep your chairs consistently filled.</div>
+        </div>
+        <div class="perk-card">
+          <div class="perk-card-icon">📱</div>
+          <div class="perk-card-title">Private Owner Portal</div>
+          <div class="perk-card-desc">Dedicated dashboard to manage your rates, services, barbers, and appointments.</div>
+        </div>
+      </div>
+
+      <!-- REGISTRATION FORM WRAP -->
+      <div class="reg-wrap" id="reg-box">
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px;">
+          <h2 style="font-size: 1.4rem;">Salon Information & Credentials</h2>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 4px;">
+            Fill in your details. New salons are reviewed and approved by the platform administrator before going live.
+          </p>
+        </div>
+
+        <div id="error-msg" style="display:none; background:#FEE2E2; border:1px solid #F87171; color:#991B1B; padding:12px; border-radius:var(--radius); font-size:0.9rem; margin-bottom:20px;"></div>
+
+        <form id="salon-reg-form" onsubmit="handleRegistration(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="salonName">Salon / Shop Name *</label>
+              <input type="text" id="salonName" name="salonName" required placeholder="e.g. Royal Men's Lounge">
+            </div>
+
+            <div class="form-group">
+              <label for="ownerName">Owner's Full Name *</label>
+              <input type="text" id="ownerName" name="ownerName" required placeholder="e.g. Mohammad Arif">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="phone">Owner WhatsApp / Mobile Number *</label>
+              <input type="tel" id="phone" name="phone" required maxlength="10" placeholder="10-digit mobile number">
+              <small style="color:var(--text-muted); font-size:0.78rem;">You will use this number to log in to your owner dashboard.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Owner Email Address</label>
+              <input type="email" id="email" name="email" placeholder="owner@gmail.com">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="password">Create Owner Dashboard Password *</label>
+              <input type="password" id="password" name="password" required minlength="6" placeholder="At least 6 characters">
+            </div>
+
+            <div class="form-group">
+              <label for="city">City / District *</label>
+              <select id="city" name="city" required>
+                <option value="Simraha">Simraha</option>
+                <option value="Araria">Araria</option>
+                <option value="Forbesganj">Forbesganj</option>
+                <option value="Purnia">Purnia</option>
+                <option value="Patna">Patna</option>
+                <option value="Katihar">Katihar</option>
+                <option value="Other">Other City</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="area">Area / Neighborhood / Landmark *</label>
+              <input type="text" id="area" name="area" required placeholder="e.g. Main Market, Near Bus Stand">
+            </div>
+
+            <div class="form-group">
+              <label for="startingPrice">Starting Haircut Price (₹) *</label>
+              <input type="number" id="startingPrice" name="startingPrice" required value="100" min="50">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="address">Full Physical Address *</label>
+            <input type="text" id="address" name="address" required placeholder="Shop number, Road name, Landmark, Pin code">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="hours">Operating Hours</label>
+              <input type="text" id="hours" name="hours" value="9:00 AM – 9:00 PM" placeholder="e.g. 9:00 AM – 9:00 PM">
+            </div>
+
+            <div class="form-group">
+              <label for="servicesSummary">Popular Services Summary</label>
+              <input type="text" id="servicesSummary" name="servicesSummary" value="Haircut · Beard Styling · Royal Shave" placeholder="e.g. Haircut · Shave · Facial">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Short Description / About Your Salon</label>
+            <textarea id="description" name="description" rows="3" placeholder="Tell customers about your salon, experience, hygiene standards, and specialties..."></textarea>
+          </div>
+
+          <div style="background:#F3F4F6; padding:14px; border-radius:var(--radius); font-size:0.85rem; color:var(--text-body); margin-bottom:20px;">
+            ℹ️ <strong>Platform Verification:</strong> After registration, your profile will be reviewed by admin to guarantee high hygiene and customer service standards. Once approved, customers can book appointments online.
+          </div>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary btn-block btn-lg">
+            Submit Salon Registration →
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px; font-size: 0.875rem;">
+          Already have an approved salon account? <a href="owner/login.html" style="font-weight:700; color:var(--text-main);">Log In to Owner Portal →</a>
+        </div>
+      </div>
+
+      <!-- SUCCESS CONFIRMATION MODAL / PANEL -->
+      <div id="success-box" style="display:none; max-width:640px; margin:0 auto; background:#FFFFFF; border:1px solid #34D399; border-radius:var(--radius-lg); padding:40px 32px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+        <div style="font-size: 3.5rem; margin-bottom: 16px;">🎉</div>
+        <span class="form-step-badge" style="background:#DCFCE7; color:#15803D;">Registration Submitted</span>
+        <h2 style="font-size: 1.8rem; margin: 12px 0 8px 0;" id="success-salon-name">Your Salon Has Been Registered!</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px;">
+          Thank you for joining Urban Hairplaza. Your salon profile has been saved with <strong>Status: Pending Verification</strong>. Our verification team has been notified via WhatsApp & SMS.
+        </p>
+
+        <div style="background: #F9FAFB; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: left; margin-bottom: 24px; font-size: 0.9rem;">
+          <div style="margin-bottom: 6px;">📋 <strong>Salon ID:</strong> <span id="success-salon-id" style="font-family:monospace; color:var(--accent-amber);"></span></div>
+          <div style="margin-bottom: 6px;">👤 <strong>Owner Mobile:</strong> <span id="success-owner-phone"></span></div>
+          <div>⏱️ <strong>What happens next:</strong> Platform admin reviews your submission. In the meantime, you can sign in to your owner dashboard to customize your menu and staff.</div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a href="owner/login.html" class="btn btn-primary btn-lg">Go to Owner Login →</a>
+          <a href="salons.html" class="btn btn-secondary btn-lg">View Salon Directory</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+      <p style="color:var(--text-muted); font-size:0.875rem;">© 2026 Urban Hairplaza Network. Multi-Salon Ecosystem.</p>
+      <div style="display:flex; gap:16px; font-size:0.85rem;">
+        <a href="salons.html" style="color:var(--text-main);">Salons Directory</a>
+        <a href="owner/login.html" style="color:var(--text-main);">Owner Portal</a>
+        <a href="privacy.html" style="color:var(--text-muted);">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    async function handleRegistration(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('error-msg');
+      errBox.style.display = 'none';
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting Application...';
+
+      const formData = {
+        salonName: document.getElementById('salonName').value.trim(),
+        ownerName: document.getElementById('ownerName').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        area: document.getElementById('area').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        startingPrice: document.getElementById('startingPrice').value.trim(),
+        hours: document.getElementById('hours').value.trim(),
+        servicesSummary: document.getElementById('servicesSummary').value.trim(),
+        description: document.getElementById('description').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/salons/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Failed to submit registration');
+        }
+
+        // Show success screen
+        document.getElementById('reg-box').style.display = 'none';
+        const successBox = document.getElementById('success-box');
+        document.getElementById('success-salon-name').textContent = `${formData.salonName} Registered!`;
+        document.getElementById('success-salon-id').textContent = data.salonId;
+        document.getElementById('success-owner-phone').textContent = `+91 ${formData.phone}`;
+        successBox.style.display = 'block';
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Submit Salon Registration →';
+      }
+    }
+
+    const hamburger = document.getElementById('hamburger');
+    const drawer = document.getElementById('mobile-drawer');
+    if (hamburger && drawer) {
+      hamburger.addEventListener('click', () => {
+        drawer.classList.toggle('open');
+      });
+    }
+  </script>
+</body>
+</html>

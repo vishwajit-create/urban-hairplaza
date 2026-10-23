@@ -221,6 +221,21 @@
 
         <div id="booking-alert-box"></div>
 
+        <!-- ACTIVE SALON SELECTOR BANNER -->
+        <div id="active-salon-banner" style="background:#FFFFFF; border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="width:44px; height:44px; background:var(--bg-subtle); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:22px;">💈</div>
+            <div>
+              <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:700;">Selected Salon</div>
+              <div id="booking-salon-name" style="font-size:1.15rem; font-weight:700; color:var(--text-main);">Urban Hairplaza (Flagship)</div>
+              <div id="booking-salon-loc" style="font-size:0.85rem; color:var(--text-muted);">Simraha · Araria</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <a href="salons.html" class="btn btn-secondary btn-sm" style="font-size:0.82rem;">Change Salon ⇄</a>
+          </div>
+        </div>
+
         <!-- ── STEP 1: SERVICE ────────────────────────────── -->
         <div class="step-panel active" id="step-panel-1">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom: 16px;">
@@ -389,6 +404,10 @@
 
           <div class="summary-box">
             <div class="summary-row">
+              <span style="color:var(--text-muted);">Salon</span>
+              <span style="font-weight:700; color:var(--text-main);" id="sum-salon">Urban Hairplaza</span>
+            </div>
+            <div class="summary-row">
               <span style="color:var(--text-muted);">Service</span>
               <span style="font-weight:600;" id="sum-service">Classic Tailored Haircut</span>
             </div>
@@ -445,6 +464,10 @@
             <div style="display:inline-block; font-family:var(--font-mono); font-weight:700; background:#F3F4F6; border:1px solid var(--border); padding:6px 16px; border-radius:var(--radius-sm); margin-bottom:24px;" id="confirmed-booking-id">#UHP-000000</div>
 
             <div class="summary-box" style="text-align: left; max-width: 520px; margin: 0 auto 24px;">
+              <div class="summary-row">
+                <span style="color:var(--text-muted);">Salon</span>
+                <span style="font-weight:700; color:var(--text-main);" id="conf-salon">Urban Hairplaza</span>
+              </div>
               <div class="summary-row">
                 <span style="color:var(--text-muted);">Client</span>
                 <span style="font-weight:600;" id="conf-name">-</span>
@@ -546,8 +569,12 @@
   <script src="main.js"></script>
   <script>
     const state = {
+      salonId: 'salon-urban-hairplaza',
+      salonName: 'Urban Hairplaza (Flagship)',
+      salonAddress: 'Simraha · Araria',
       mode: 'inshop',
       services: [],
+      barbers: [],
       selectedService: null,
       selectedBarber: 'Any Barber',
       selectedDate: '',
@@ -577,6 +604,7 @@
       state.selectedDate = today;
 
       const params = new URLSearchParams(window.location.search);
+      const preSalonId = params.get('salonId') || params.get('salon');
       const preService = params.get('service');
       const preBarber = params.get('barber');
       const preType = params.get('type');
@@ -585,15 +613,17 @@
         switchMode('home');
       }
 
+      if (preSalonId) {
+        state.salonId = preSalonId.trim();
+      }
+
+      await loadSalonInfo(state.salonId);
+      await loadBarbers();
       await loadServices(preService);
 
       if (preBarber) {
         const decoded = decodeURIComponent(preBarber).trim();
-        const validBarbers = ['Any Barber', 'Raj Kumar', 'Sameer Khan', 'Amit Sharma'];
-        const matched = validBarbers.find(b => b.toLowerCase() === decoded.toLowerCase() || decoded.toLowerCase().includes(b.toLowerCase().split(' ')[0]));
-        if (matched) {
-          updateBarberUI(matched);
-        }
+        updateBarberUI(decoded);
       }
 
       // Check if redirected with order_id
@@ -616,9 +646,69 @@
       } catch (e) {}
     });
 
+    async function loadSalonInfo(salonId) {
+      try {
+        const res = await fetch(`/api/salons/${encodeURIComponent(salonId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.salon) {
+            state.salonId = data.salon.id;
+            state.salonName = data.salon.name;
+            state.salonAddress = `${data.salon.area ? `${data.salon.area}, ` : ''}${data.salon.city || 'Simraha'}`;
+          }
+        }
+      } catch (e) {}
+
+      const sName = document.getElementById('booking-salon-name');
+      if (sName) sName.textContent = state.salonName;
+      const sLoc = document.getElementById('booking-salon-loc');
+      if (sLoc) sLoc.textContent = state.salonAddress;
+      const sumSalon = document.getElementById('sum-salon');
+      if (sumSalon) sumSalon.textContent = state.salonName;
+      const confSalon = document.getElementById('conf-salon');
+      if (confSalon) confSalon.textContent = state.salonName;
+    }
+
+    async function loadBarbers() {
+      try {
+        const res = await fetch(`/api/barbers?salonId=${encodeURIComponent(state.salonId)}`);
+        if (res.ok) {
+          state.barbers = await res.json();
+          renderBarbersList();
+        }
+      } catch (e) {}
+    }
+
+    function renderBarbersList() {
+      if (!state.barbers || state.barbers.length === 0) return;
+      const dropdown = document.getElementById('barber-select');
+      const grid = document.querySelector('.barber-pick-grid');
+
+      if (dropdown) {
+        dropdown.innerHTML = state.barbers.map(b => `
+          <option value="${b.name}">💈 ${b.name} – ${b.role || 'Stylist'} (${b.exp || ''})</option>
+        `).join('');
+      }
+
+      if (grid) {
+        grid.innerHTML = state.barbers.map(b => {
+          const isSelected = (state.selectedBarber === b.name || (state.selectedBarber === 'Any Barber' && b.id === 'any'));
+          const avatar = b.avatar ? `<img src="${b.avatar}" alt="${b.name}" class="barber-avatar-img">` : `<div class="barber-avatar-img" style="display:flex; align-items:center; justify-content:center; font-size:1.5rem;">💈</div>`;
+          return `
+            <div class="barber-pick-card ${isSelected ? 'selected' : ''}" data-barber="${b.name}" onclick="selectBarber('${b.name}', this)">
+              ${avatar}
+              <div style="font-weight: 600; color: var(--text-main);">${b.name}</div>
+              <div style="font-size: 0.775rem; color: var(--accent-amber); margin: 3px 0;">${b.role || 'Stylist'}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${b.exp || ''}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
     async function loadServices(preSelectedId) {
       try {
-        const res = await fetch('/api/services');
+        const res = await fetch(`/api/services?salonId=${encodeURIComponent(state.salonId)}`);
         if (res.ok) state.services = await res.json();
       } catch (e) {}
 
@@ -778,7 +868,7 @@
       renderArea.innerHTML = '<div style="padding:16px; color:var(--text-muted);">Loading slots...</div>';
 
       try {
-        const url = `/api/slots?date=${encodeURIComponent(state.selectedDate)}&barber=${encodeURIComponent(state.selectedBarber)}`;
+        const url = `/api/slots?date=${encodeURIComponent(state.selectedDate)}&barber=${encodeURIComponent(state.selectedBarber)}&salonId=${encodeURIComponent(state.salonId)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to query slots');
         const data = await res.json();
@@ -871,6 +961,8 @@
         const payload = {
           advanceAmount: state.advanceAmount,
           bookingDetails: {
+            salonId: state.salonId,
+            salonName: state.salonName,
             name: state.clientName,
             phone: state.clientPhone,
             email: state.clientEmail,
@@ -977,6 +1069,8 @@
       document.getElementById('step-panel-success').classList.add('active');
 
       document.getElementById('confirmed-booking-id').textContent = `#${booking.id}`;
+      const confSalon = document.getElementById('conf-salon');
+      if (confSalon) confSalon.textContent = booking.salonName || state.salonName;
       document.getElementById('conf-name').textContent = `${booking.name} (+91 ${booking.phone})`;
       document.getElementById('conf-service').textContent = booking.service;
       document.getElementById('conf-barber').textContent = booking.barber;

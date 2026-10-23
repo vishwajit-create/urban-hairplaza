@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B9JT7TX8H9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-B9JT7TX8H9');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salon Owner Dashboard – Urban Hairplaza</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9137281869704150"
+     crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #C9A84C;
+      --gold-dark: #9A7B2C;
+      --black: #0D0D0D;
+      --dark: #121316;
+      --card: #18191E;
+      --card-alt: #1F2128;
+      --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(201,168,76,0.3);
+      --text: #F3F4F6;
+      --muted: #9CA3AF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --radius: 8px;
+    }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header.dash-header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      color: #000;
+    }
+    .salon-title-wrap h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-approved { background: rgba(16,185,129,0.15); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }
+    .status-pending { background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }
+    .status-suspended { background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      border: 1px solid transparent;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: #0D0D0D;
+    }
+    .btn-gold:hover { opacity: 0.92; }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.3);
+      color: #F87171;
+    }
+    .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+
+    /* LAYOUT */
+    .dash-container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+      flex: 1;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .stat-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stat-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* TABS */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* TABLE */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th {
+      background: var(--card-alt);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* FORMS */
+    .form-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 800px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      border-color: var(--gold);
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) {
+      .form-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+    .modal-card {
+      background: var(--card);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="dash-header">
+    <div class="header-brand">
+      <div class="header-logo">💈</div>
+      <div class="salon-title-wrap">
+        <h1>
+          <span id="salon-name-display">Loading Salon...</span>
+          <span class="status-badge" id="salon-status-badge">...</span>
+        </h1>
+        <div style="font-size: 0.8rem; color: var(--muted);" id="owner-name-display">
+          Private Salon Management Portal
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <a href="../book.html" id="public-booking-link" target="_blank" class="btn btn-ghost btn-sm">
+        🌐 View Booking Page
+      </a>
+      <button onclick="handleLogout()" class="btn btn-danger btn-sm">
+        Sign Out
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN BODY -->
+  <main class="dash-container">
+
+    <!-- PENDING BANNER IF APPLICABLE -->
+    <div id="pending-banner" style="display:none; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:var(--radius); padding:16px 20px; margin-bottom:24px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:1.5rem;">⏳</span>
+        <div>
+          <div style="font-weight:700; color:#FBBF24;">Your salon is currently pending admin verification</div>
+          <div style="font-size:0.875rem; color:var(--muted); margin-top:2px;">
+            You can set up your services, staff, and address below. Once approved by the master admin, your salon will be published in the public directory.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Bookings</div>
+        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-sub">Lifetime appointments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Today's Appointments</div>
+        <div class="stat-val" style="color:var(--gold);" id="stat-today">0</div>
+        <div class="stat-sub">Scheduled for today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Confirmed Slots</div>
+        <div class="stat-val" style="color:var(--success);" id="stat-confirmed">0</div>
+        <div class="stat-sub">Advance verified</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Estimated Revenue</div>
+        <div class="stat-val" id="stat-revenue">₹0</div>
+        <div class="stat-sub">From booked services</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('bookings', this)">📅 Appointments (<span id="tab-count-bookings">0</span>)</button>
+      <button class="tab-btn" onclick="switchTab('services', this)">✂️ Services Menu (<span id="tab-count-services">0</span>)</button>
+      <button class="tab-btn" onclick="switchTab('staff', this)">👥 Staff & Barbers (<span id="tab-count-staff">0</span>)</button>
+      <button class="tab-btn" onclick="switchTab('profile', this)">⚙️ Salon Profile & Hours</button>
+    </div>
+
+    <!-- TAB 1: APPOINTMENTS -->
+    <div id="tab-bookings" class="tab-content active">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <h2 style="font-size:1.25rem;">Salon Appointments</h2>
+        <div style="display:flex; gap:8px;">
+          <button onclick="loadBookings()" class="btn btn-ghost btn-sm">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Client</th>
+                <th>Service & Barber</th>
+                <th>Date & Time</th>
+                <th>Fee / Advance</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-tbody">
+              <tr>
+                <td colspan="7" style="text-align:center; padding:36px; color:var(--muted);">Loading appointments...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SERVICES MENU -->
+    <div id="tab-services" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <h2 style="font-size:1.25rem;">Services & Pricing</h2>
+        <button onclick="openAddServiceModal()" class="btn btn-gold btn-sm">+ Add New Service</button>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Service Name</th>
+                <th>Category</th>
+                <th>Duration</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="services-tbody">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:36px; color:var(--muted);">Loading services...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: STAFF & BARBERS -->
+    <div id="tab-staff" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <h2 style="font-size:1.25rem;">Staff & Barbers</h2>
+        <button onclick="openAddStaffModal()" class="btn btn-gold btn-sm">+ Add Barber / Stylist</button>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Barber Name</th>
+                <th>Role / Specialty</th>
+                <th>Experience</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staff-tbody">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:36px; color:var(--muted);">Loading staff...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SALON PROFILE -->
+    <div id="tab-profile" class="tab-content">
+      <div class="form-panel">
+        <h2 style="font-size:1.25rem; margin-bottom:16px;">Edit Salon Information</h2>
+        <div id="profile-msg" style="display:none; padding:10px; border-radius:6px; margin-bottom:16px; font-size:0.875rem;"></div>
+
+        <form onsubmit="handleSaveProfile(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="prof-name">Salon Name</label>
+              <input type="text" id="prof-name" required>
+            </div>
+            <div class="form-group">
+              <label for="prof-phone">Salon Contact Phone</label>
+              <input type="text" id="prof-phone" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="prof-city">City</label>
+              <input type="text" id="prof-city" required>
+            </div>
+            <div class="form-group">
+              <label for="prof-area">Area / Neighborhood</label>
+              <input type="text" id="prof-area" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="prof-address">Full Physical Address</label>
+            <input type="text" id="prof-address" required>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="prof-hours">Opening Hours</label>
+              <input type="text" id="prof-hours" placeholder="e.g. 9:00 AM – 9:00 PM">
+            </div>
+            <div class="form-group">
+              <label for="prof-startingPrice">Starting Price (₹)</label>
+              <input type="number" id="prof-startingPrice">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="prof-servicesSummary">Services Tagline / Summary</label>
+            <input type="text" id="prof-servicesSummary">
+          </div>
+
+          <div class="form-group">
+            <label for="prof-description">About the Salon</label>
+            <textarea id="prof-description" rows="3"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-gold" id="btn-save-profile">
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ADD SERVICE MODAL -->
+  <div class="modal-overlay" id="service-modal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:1.15rem; color:#fff;">Add Service</h3>
+        <button onclick="closeModal('service-modal')" style="color:var(--muted); font-size:1.2rem;">✕</button>
+      </div>
+      <form onsubmit="handleAddService(event)">
+        <div class="form-group">
+          <label>Service Name *</label>
+          <input type="text" id="new-srv-name" required placeholder="e.g. Skin Fade Haircut">
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Price (₹) *</label>
+            <input type="number" id="new-srv-price" required value="150" min="20">
+          </div>
+          <div class="form-group">
+            <label>Duration (mins) *</label>
+            <input type="number" id="new-srv-duration" required value="30" min="5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="new-srv-category">
+            <option value="Haircut">Haircut</option>
+            <option value="Beard">Beard & Shave</option>
+            <option value="Treatment">Facial & Massage</option>
+            <option value="Color">Hair Coloring</option>
+            <option value="Special">Special Grooming</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="new-srv-desc" placeholder="Brief details about this service">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" onclick="closeModal('service-modal')" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-gold">Create Service</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD STAFF MODAL -->
+  <div class="modal-overlay" id="staff-modal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:1.15rem; color:#fff;">Add Barber / Stylist</h3>
+        <button onclick="closeModal('staff-modal')" style="color:var(--muted); font-size:1.2rem;">✕</button>
+      </div>
+      <form onsubmit="handleAddStaff(event)">
+        <div class="form-group">
+          <label>Stylist / Barber Name *</label>
+          <input type="text" id="new-stf-name" required placeholder="e.g. Imran Ali">
+        </div>
+        <div class="form-group">
+          <label>Role / Specialty *</label>
+          <input type="text" id="new-stf-role" required value="Master Barber" placeholder="e.g. Fade Specialist">
+        </div>
+        <div class="form-group">
+          <label>Experience</label>
+          <input type="text" id="new-stf-exp" value="5+ Years" placeholder="e.g. 5+ Years">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" onclick="closeModal('staff-modal')" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-gold">Add Staff</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentSalon = null;
+    let currentOwner = null;
+
+    // Check auth on page load
+    async function initDashboard() {
+      try {
+        const res = await fetch('/api/owner/me');
+        const data = await res.json();
+        if (!data.loggedIn || !data.owner) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        currentOwner = data.owner;
+        currentSalon = data.salon;
+
+        renderHeader();
+        loadStats();
+        loadBookings();
+        loadServices();
+        loadStaff();
+        populateProfileForm();
+      } catch (e) {
+        console.error('Failed to init owner dashboard:', e);
+        window.location.href = 'login.html';
+      }
+    }
+
+    function renderHeader() {
+      document.getElementById('salon-name-display').textContent = currentSalon ? currentSalon.name : 'My Salon';
+      document.getElementById('owner-name-display').textContent = `Owner: ${currentOwner.name} (${currentOwner.phone})`;
+
+      const statusEl = document.getElementById('salon-status-badge');
+      const status = (currentSalon && currentSalon.status) || 'pending';
+      statusEl.className = `status-badge status-${status}`;
+      statusEl.textContent = status === 'approved' ? '✓ Live & Approved' : (status === 'suspended' ? 'Suspended' : 'Pending Verification');
+
+      if (status === 'pending') {
+        document.getElementById('pending-banner').style.display = 'block';
+      }
+
+      if (currentSalon) {
+        document.getElementById('public-booking-link').href = `../book.html?salonId=${currentSalon.id}`;
+      }
+    }
+
+    function switchTab(tabName, btnEl) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      const target = document.getElementById(`tab-${tabName}`);
+      if (target) target.classList.add('active');
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/owner/stats');
+        const data = await res.json();
+        if (data.success && data.stats) {
+          document.getElementById('stat-total').textContent = data.stats.totalBookings || 0;
+          document.getElementById('stat-today').textContent = data.stats.todayBookings || 0;
+          document.getElementById('stat-confirmed').textContent = data.stats.confirmedBookings || 0;
+          document.getElementById('stat-revenue').textContent = `₹${data.stats.totalRevenue || 0}`;
+        }
+      } catch (e) {}
+    }
+
+    async function loadBookings() {
+      try {
+        const res = await fetch('/api/owner/bookings');
+        const data = await res.json();
+        const tbody = document.getElementById('bookings-tbody');
+        const bookings = (data.success && Array.isArray(data.bookings)) ? data.bookings : [];
+        document.getElementById('tab-count-bookings').textContent = bookings.length;
+
+        if (bookings.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:36px; color:var(--muted);">No appointments booked for this salon yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = bookings.map(b => {
+          const isConfirmed = b.status === 'confirmed';
+          const isCompleted = b.status === 'completed';
+          const isCancelled = b.status === 'cancelled';
+          const cleanPhone = (b.phone || '').replace(/\D/g, '').slice(-10);
+
+          let badgeColor = 'var(--muted)';
+          if (isConfirmed) badgeColor = 'var(--success)';
+          if (isCompleted) badgeColor = '#60A5FA';
+          if (isCancelled) badgeColor = 'var(--danger)';
+
+          return `
+            <tr>
+              <td>
+                <span style="font-family:'DM Mono', monospace; font-weight:700; color:var(--gold);">#${b.id}</span>
+              </td>
+              <td>
+                <div style="font-weight:600; color:#fff;">${b.name}</div>
+                <div style="font-size:0.8rem; color:var(--muted);">📞 <a href="tel:${b.phone}" style="color:var(--text);">${b.phone}</a></div>
+              </td>
+              <td>
+                <div style="font-weight:600;">${b.service}</div>
+                <div style="font-size:0.8rem; color:var(--muted);">Stylist: ${b.barber || 'Assigned'}</div>
+              </td>
+              <td>
+                <div>📅 ${b.date}</div>
+                <div style="font-size:0.8rem; color:var(--gold);">⏰ ${b.time}</div>
+              </td>
+              <td>
+                <div>₹${b.price} Total</div>
+                <div style="font-size:0.8rem; color:var(--success);">₹${b.advancePaid || 0} Adv</div>
+              </td>
+              <td>
+                <span style="color:${badgeColor}; font-weight:700; text-transform:uppercase; font-size:0.75rem;">
+                  ${b.status}
+                </span>
+              </td>
+              <td>
+                <div style="display:flex; gap:6px;">
+                  ${!isCompleted && !isCancelled ? `
+                    <button onclick="updateBookingStatus('${b.id}', 'completed')" class="btn btn-sm btn-ghost" title="Mark Completed">✓ Done</button>
+                  ` : ''}
+                  ${!isConfirmed && !isCompleted && !isCancelled ? `
+                    <button onclick="updateBookingStatus('${b.id}', 'confirmed')" class="btn btn-sm btn-gold">Confirm</button>
+                  ` : ''}
+                  ${!isCancelled ? `
+                    <button onclick="updateBookingStatus('${b.id}', 'cancelled')" class="btn btn-sm btn-danger">Cancel</button>
+                  ` : ''}
+                  ${cleanPhone ? `
+                    <a href="https://wa.me/91${cleanPhone}" target="_blank" class="btn btn-sm btn-ghost" title="WhatsApp Client">💬</a>
+                  ` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Failed to load bookings:', e);
+      }
+    }
+
+    async function updateBookingStatus(id, status) {
+      if (!confirm(`Are you sure you want to change this appointment status to "${status}"?`)) return;
+      try {
+        const res = await fetch(`/api/owner/bookings/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        if (res.ok) {
+          loadBookings();
+          loadStats();
+        }
+      } catch (e) {
+        alert('Failed to update booking status.');
+      }
+    }
+
+    async function loadServices() {
+      try {
+        const res = await fetch('/api/owner/services');
+        const data = await res.json();
+        const tbody = document.getElementById('services-tbody');
+        const services = (data.success && Array.isArray(data.services)) ? data.services : [];
+        document.getElementById('tab-count-services').textContent = services.length;
+
+        if (services.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">No custom services added yet. Click "+ Add New Service".</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = services.map(s => `
+          <tr>
+            <td style="font-weight:600; color:#fff;">${s.icon || '✂️'} ${s.name}</td>
+            <td>${s.category || 'Haircut'}</td>
+            <td>${s.duration || 30} mins</td>
+            <td style="font-weight:700; color:var(--gold);">₹${s.price}</td>
+            <td>
+              <button onclick="deleteService('${s.id}')" class="btn btn-sm btn-danger">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadStaff() {
+      try {
+        const res = await fetch('/api/owner/staff');
+        const data = await res.json();
+        const tbody = document.getElementById('staff-tbody');
+        const staff = (data.success && Array.isArray(data.staff)) ? data.staff : [];
+        document.getElementById('tab-count-staff').textContent = staff.length;
+
+        if (staff.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--muted);">No staff registered yet. Click "+ Add Barber / Stylist".</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = staff.map(st => `
+          <tr>
+            <td style="font-weight:600; color:#fff;">💈 ${st.name}</td>
+            <td>${st.role || 'Barber'}</td>
+            <td>${st.experience || '3+ Years'}</td>
+            <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">AVAILABLE</span></td>
+            <td>
+              <button onclick="deleteStaff('${st.id}')" class="btn btn-sm btn-danger">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    function populateProfileForm() {
+      if (!currentSalon) return;
+      document.getElementById('prof-name').value = currentSalon.name || '';
+      document.getElementById('prof-phone').value = currentSalon.phone || '';
+      document.getElementById('prof-city').value = currentSalon.city || '';
+      document.getElementById('prof-area').value = currentSalon.area || '';
+      document.getElementById('prof-address').value = currentSalon.address || '';
+      document.getElementById('prof-hours').value = currentSalon.hours || '';
+      document.getElementById('prof-startingPrice').value = currentSalon.startingPrice || 100;
+      document.getElementById('prof-servicesSummary').value = currentSalon.servicesSummary || '';
+      document.getElementById('prof-description').value = currentSalon.description || '';
+    }
+
+    async function handleSaveProfile(e) {
+      e.preventDefault();
+      const msg = document.getElementById('profile-msg');
+      msg.style.display = 'none';
+
+      const updates = {
+        name: document.getElementById('prof-name').value.trim(),
+        phone: document.getElementById('prof-phone').value.trim(),
+        city: document.getElementById('prof-city').value.trim(),
+        area: document.getElementById('prof-area').value.trim(),
+        address: document.getElementById('prof-address').value.trim(),
+        hours: document.getElementById('prof-hours').value.trim(),
+        startingPrice: Number(document.getElementById('prof-startingPrice').value) || 100,
+        servicesSummary: document.getElementById('prof-servicesSummary').value.trim(),
+        description: document.getElementById('prof-description').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/owner/salon', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentSalon = data.salon;
+          renderHeader();
+          msg.textContent = 'Salon profile updated successfully!';
+          msg.style.background = 'rgba(16,185,129,0.15)';
+          msg.style.color = '#34D399';
+          msg.style.display = 'block';
+        }
+      } catch (err) {
+        msg.textContent = 'Failed to save salon profile.';
+        msg.style.background = 'rgba(239,68,68,0.15)';
+        msg.style.color = '#F87171';
+        msg.style.display = 'block';
+      }
+    }
+
+    function openAddServiceModal() {
+      document.getElementById('service-modal').style.display = 'flex';
+    }
+
+    function openAddStaffModal() {
+      document.getElementById('staff-modal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    async function handleAddService(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('new-srv-name').value.trim(),
+        price: document.getElementById('new-srv-price').value,
+        duration: document.getElementById('new-srv-duration').value,
+        category: document.getElementById('new-srv-category').value,
+        desc: document.getElementById('new-srv-desc').value.trim()
+      };
+      const res = await fetch('/api/owner/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        closeModal('service-modal');
+        loadServices();
+      }
+    }
+
+    async function deleteService(id) {
+      if (!confirm('Remove this service?')) return;
+      await fetch(`/api/owner/services/${id}`, { method: 'DELETE' });
+      loadServices();
+    }
+
+    async function handleAddStaff(e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('new-stf-name').value.trim(),
+        role: document.getElementById('new-stf-role').value.trim(),
+        experience: document.getElementById('new-stf-exp').value.trim()
+      };
+      const res = await fetch('/api/owner/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        closeModal('staff-modal');
+        loadStaff();
+      }
+    }
+
+    async function deleteStaff(id) {
+      if (!confirm('Remove this barber from salon staff?')) return;
+      await fetch(`/api/owner/staff/${id}`, { method: 'DELETE' });
+      loadStaff();
+    }
+
+    async function handleLogout() {
+      await fetch('/api/owner/logout', { method: 'POST' });
+      window.location.href = 'login.html';
+    }
+
+    // Initialize
+    initDashboard();
+  </script>
+</body>
+</html>

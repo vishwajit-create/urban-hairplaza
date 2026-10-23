@@ -457,6 +457,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <button class="nav-item" id="nav-services" onclick="showSection('services')">
       <span class="nav-icon">💈</span> Services
     </button>
+    <button class="nav-item" id="nav-salons" onclick="showSection('salons')">
+      <span class="nav-icon">🏪</span> Salons Network
+      <span class="badge-count" id="pending-salons-count" style="display:none; background:#E8893A;">0</span>
+    </button>
 
     <div class="nav-label" style="margin-top:16px;">Website</div>
     <button class="nav-item" onclick="window.open('/', '_blank')">
@@ -492,6 +496,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <button class="tab-btn" id="tab-clients" onclick="showSection('clients')">👥 Clients</button>
     <button class="tab-btn" id="tab-enquiries" onclick="showSection('enquiries')">📩 Enquiries</button>
     <button class="tab-btn" id="tab-services" onclick="showSection('services')">💈 Services</button>
+    <button class="tab-btn" id="tab-salons" onclick="showSection('salons')">🏪 Salons</button>
   </div>
 
   <div class="content">
@@ -660,6 +665,41 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
     </div>
+
+    <!-- SALONS NETWORK SECTION -->
+    <div id="section-salons" style="display:none;">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>🏪 Salons Network & Verification</h3>
+          <input type="search" class="search-box" placeholder="🔍 Search salon name, city, owner…" oninput="filterSalons(this.value)" id="search-salons">
+          <select class="filter-select" onchange="filterSalonsByStatus(this.value)" id="filter-salons">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending Approval</option>
+            <option value="approved">Approved & Live</option>
+            <option value="suspended">Suspended</option>
+          </select>
+          <button class="btn-refresh" onclick="loadSalons()">↻ Refresh Salons</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="salons-table">
+            <thead>
+              <tr>
+                <th>Salon Name</th>
+                <th>Location</th>
+                <th>Owner & Contact</th>
+                <th>Starting Price</th>
+                <th>Hours & Summary</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="salons-body">
+              <tr><td colspan="7" class="loading-row"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -680,11 +720,13 @@ let allTransactions = [];
 let allUsers        = [];
 let allEnquiries    = [];
 let allServices     = [];
+let allSalons       = [];
 let currentSection  = 'bookings';
 let filteredBookings     = [];
 let filteredTransactions = [];
 let filteredUsers        = [];
 let filteredEnquiries    = [];
+let filteredSalons       = [];
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', async () => {
@@ -703,7 +745,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAll() {
-  await Promise.all([loadStats(), loadBookings(), loadTransactions(), loadUsers(), loadEnquiries(), loadServices()]);
+  await Promise.all([loadStats(), loadBookings(), loadTransactions(), loadUsers(), loadEnquiries(), loadServices(), loadSalons()]);
 }
 
 async function loadStats() {
@@ -776,6 +818,7 @@ function renderBookings(list) {
         <div style="font-size:11px; color:var(--muted);">
           <a href="tel:${b.phone}" style="color:var(--muted); text-decoration:none;" title="Call">${escHtml(b.phone)}</a>
         </div>
+        ${b.salonName ? `<div style="font-size:10px; color:var(--gold); margin-top:3px; font-weight:600;">💈 ${escHtml(b.salonName)}</div>` : ''}
       </td>
       <td style="max-width:160px;">
         <div style="font-weight:500; color:#fff; font-size:13px;">${escHtml(b.service)}</div>
@@ -838,13 +881,15 @@ function showSection(sec) {
   document.getElementById('section-clients').style.display      = sec === 'clients'      ? 'block' : 'none';
   document.getElementById('section-enquiries').style.display    = sec === 'enquiries'    ? 'block' : 'none';
   document.getElementById('section-services').style.display     = sec === 'services'     ? 'block' : 'none';
+  document.getElementById('section-salons').style.display       = sec === 'salons'       ? 'block' : 'none';
 
   const titles = {
     bookings: '📅 Bookings',
     transactions: '💳 Payment Transactions Log',
     clients: '👥 Clients Directory & Profiles',
     enquiries: '📩 Enquiries',
-    services: '💈 Services'
+    services: '💈 Services',
+    salons: '🏪 Salons Network & Verification'
   };
   document.getElementById('page-title').textContent = titles[sec] || '';
 
@@ -854,6 +899,7 @@ function showSection(sec) {
   document.getElementById('nav-clients').classList.toggle('active',      sec === 'clients');
   document.getElementById('nav-enquiries').classList.toggle('active',    sec === 'enquiries');
   document.getElementById('nav-services').classList.toggle('active',     sec === 'services');
+  document.getElementById('nav-salons').classList.toggle('active',       sec === 'salons');
 
   // Update mobile active
   document.getElementById('tab-bookings').classList.toggle('active',     sec === 'bookings');
@@ -861,10 +907,11 @@ function showSection(sec) {
   document.getElementById('tab-clients').classList.toggle('active',      sec === 'clients');
   document.getElementById('tab-enquiries').classList.toggle('active',    sec === 'enquiries');
   document.getElementById('tab-services').classList.toggle('active',     sec === 'services');
+  document.getElementById('tab-salons').classList.toggle('active',       sec === 'salons');
 
   // Update stat card display
   const statsRow = document.getElementById('stats-row');
-  statsRow.style.display = (sec === 'services') ? 'none' : 'grid';
+  statsRow.style.display = (sec === 'services' || sec === 'salons') ? 'none' : 'grid';
 }
 
 // ── TRANSACTIONS HANDLERS ──
@@ -1219,6 +1266,151 @@ async function doLogout() {
   } finally {
     window.location.href = '/admin/';
   }
+}
+
+// ── SALONS NETWORK HANDLERS ──
+async function loadSalons() {
+  try {
+    const r = await fetch('/api/admin/salons');
+    if (r.ok) {
+      const data = await r.json();
+      allSalons = Array.isArray(data.salons) ? data.salons : [];
+      filteredSalons = [...allSalons];
+      renderSalons(filteredSalons);
+
+      // Pending salons counter
+      const pendingCount = allSalons.filter(s => s.status === 'pending').length;
+      const countEl = document.getElementById('pending-salons-count');
+      if (countEl) {
+        if (pendingCount > 0) {
+          countEl.textContent = pendingCount;
+          countEl.style.display = 'inline-block';
+        } else {
+          countEl.style.display = 'none';
+        }
+      }
+    }
+  } catch(e) {
+    document.getElementById('salons-body').innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Failed to load salons.</td></tr>`;
+  }
+}
+
+function renderSalons(list) {
+  const tbody = document.getElementById('salons-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-row">🏪 No salons found. Registered salons will appear here.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(s => {
+    const isApproved = s.status === 'approved';
+    const isPending = s.status === 'pending';
+    const isSuspended = s.status === 'suspended';
+    const isFlagship = s.id === 'salon-urban-hairplaza';
+
+    let badgeClass = 'badge-pending';
+    let badgeText = '⏳ Pending Verification';
+    if (isApproved) { badgeClass = 'badge-confirmed'; badgeText = '✅ Approved & Live'; }
+    if (isSuspended) { badgeClass = 'badge-cancelled'; badgeText = '⛔ Suspended'; }
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:700; color:#fff; font-size:14px;">${escHtml(s.name)}</div>
+          <div style="font-size:11px; color:var(--gold); font-family:'DM Mono',monospace;">
+            ${isFlagship ? '⭐ FLAGSHIP' : '🏢 PARTNER'} · ${s.id}
+          </div>
+        </td>
+        <td>
+          <div style="font-weight:600; color:#fff; font-size:13px;">${escHtml(s.city || 'Simraha')}, ${escHtml(s.area || '')}</div>
+          <div style="font-size:11px; color:var(--muted); max-width:200px;">${escHtml(s.address || '')}</div>
+        </td>
+        <td>
+          <div style="color:#fff; font-size:13px;">📞 <a href="tel:${s.phone}" style="color:var(--text);">${escHtml(s.phone || '—')}</a></div>
+          ${s.email ? `<div style="font-size:11px; color:var(--muted);">${escHtml(s.email)}</div>` : ''}
+        </td>
+        <td>
+          <div style="font-weight:700; color:var(--gold); font-size:14px;">₹${s.startingPrice || 100}</div>
+          <div style="font-size:10px; color:var(--muted);">Starting rate</div>
+        </td>
+        <td>
+          <div style="font-size:12px; color:#fff;">🕐 ${escHtml(s.hours || '9 AM - 9 PM')}</div>
+          <div style="font-size:11px; color:var(--muted); max-width:180px;">✂️ ${escHtml(s.servicesSummary || 'Grooming')}</div>
+        </td>
+        <td>
+          <span class="badge ${badgeClass}">${badgeText}</span>
+        </td>
+        <td>
+          <div class="action-btns">
+            ${!isApproved ? `
+              <button class="btn-action btn-confirm" onclick="updateSalonStatus('${s.id}', 'approved')">✓ Approve</button>
+            ` : `
+              <button class="btn-action btn-cancel" onclick="updateSalonStatus('${s.id}', 'suspended')">⏸ Suspend</button>
+            `}
+            ${isSuspended ? `
+              <button class="btn-action btn-confirm" onclick="updateSalonStatus('${s.id}', 'approved')">▶ Activate</button>
+            ` : ''}
+            <a href="../book.html?salonId=${s.id}" target="_blank" class="btn-action btn-view">🌐 View</a>
+            ${!isFlagship ? `
+              <button class="btn-action btn-delete" onclick="deleteSalon('${s.id}')">🗑</button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function updateSalonStatus(id, status) {
+  const confirmMsg = status === 'approved' 
+    ? 'Approve this salon and publish it live on the platform?' 
+    : `Change this salon status to "${status}"?`;
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const res = await fetch(`/api/admin/salons/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const d = await res.json();
+    if (d.success) {
+      toast(`Salon status updated to ${status}!`, 'green');
+      loadSalons();
+    } else {
+      toast(d.error || 'Failed to update salon.', 'red');
+    }
+  } catch (e) {
+    toast('Error updating salon status.', 'red');
+  }
+}
+
+async function deleteSalon(id) {
+  if (!confirm('Are you sure you want to delete this salon? This action cannot be undone.')) return;
+  try {
+    const res = await fetch(`/api/admin/salons/${id}`, { method: 'DELETE' });
+    const d = await res.json();
+    if (d.success) {
+      toast('Salon deleted successfully.', 'gold');
+      loadSalons();
+    } else {
+      toast(d.error || 'Failed to delete salon.', 'red');
+    }
+  } catch (e) {
+    toast('Error deleting salon.', 'red');
+  }
+}
+
+function filterSalons(q) {
+  filteredSalons = allSalons.filter(s =>
+    !q || [s.name, s.city, s.area, s.phone, s.id, s.address].join(' ').toLowerCase().includes(q.toLowerCase())
+  );
+  renderSalons(filteredSalons);
+}
+
+function filterSalonsByStatus(status) {
+  filteredSalons = allSalons.filter(s => !status || s.status === status);
+  renderSalons(filteredSalons);
 }
 
 // ── TOAST ──

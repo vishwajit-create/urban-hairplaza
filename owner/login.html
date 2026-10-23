@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B9JT7TX8H9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-B9JT7TX8H9');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salon Owner Login – Urban Hairplaza</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9137281869704150"
+     crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #C9A84C;
+      --gold-dark: #9A7B2C;
+      --black: #0D0D0D;
+      --card: #18191E;
+      --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(201,168,76,0.3);
+      --text: #F3F4F6;
+      --muted: #9CA3AF;
+    }
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border-gold);
+      border-radius: 16px;
+      padding: 42px 36px;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    }
+    .brand {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .brand-icon {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin: 0 auto 12px;
+      box-shadow: 0 6px 20px rgba(201,168,76,0.25);
+    }
+    .brand h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .brand .sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 13px 16px;
+      font-size: 15px;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s ease;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.05);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+    }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: #0D0D0D;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      margin-top: 10px;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-login:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .alert-err {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #F87171;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: none;
+    }
+    .footer-links {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .footer-links a { color: var(--gold); text-decoration: none; }
+    .footer-links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">💈</div>
+      <h1>Salon Owner Portal</h1>
+      <div class="sub">Urban Hairplaza Partner System</div>
+    </div>
+
+    <div class="alert-err" id="alert-box"></div>
+
+    <form id="owner-login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="identifier">Owner Mobile or Email</label>
+        <input type="text" id="identifier" required placeholder="e.g. 9876543210 or email" autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required placeholder="Enter your password" autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn-login" id="btn-submit">Sign In to Dashboard →</button>
+    </form>
+
+    <div class="footer-links">
+      <div>New salon owner? <a href="../register-salon.html">Register Your Salon Here</a></div>
+      <div><a href="../index.html" style="color:var(--muted);">← Return to Main Website</a></div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-check if already logged in
+    fetch('/api/owner/me')
+      .then(r => r.json())
+      .then(d => {
+        if (d.loggedIn) {
+          window.location.href = 'dashboard.html';
+        }
+      })
+      .catch(() => {});
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('alert-box');
+      errEl.style.display = 'none';
+
+      const btn = document.getElementById('btn-submit');
+      btn.disabled = true;
+      btn.textContent = 'Verifying credentials...';
+
+      const identifier = document.getElementById('identifier').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/owner/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Login failed. Please check credentials.');
+        }
+
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Dashboard →';
+      }
+    }
+  </script>
+</body>
+</html>

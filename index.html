@@ -30,9 +30,11 @@
         <span>🕐 Mon – Sun: 9:00 AM – 9:00 PM</span>
       </div>
       <div class="topbar-info">
-        <span><a href="account.html" style="color:var(--text-main); font-weight:600;">👤 My Bookings</a></span>
+        <span><a href="salons.html" style="color:var(--text-main); font-weight:600;">🔍 Find a Salon</a></span>
+        <span><a href="register-salon.html" style="color:var(--accent-amber); font-weight:700;">💈 Register Your Salon</a></span>
+        <span><a href="account.html" style="color:var(--text-main);">👤 My Bookings</a></span>
         <span>📞 <a href="tel:+916202692426">+91 6202 692 426</a></span>
-        <span><a href="admin/login.html" style="color:var(--text-muted);">Admin</a></span>
+        <span><a href="owner/login.html" style="color:var(--text-muted);">Owner Portal</a></span>
       </div>
     </div>
   </div>
@@ -50,16 +52,16 @@
 
       <nav class="nav-links">
         <a href="index.html" class="nav-link active">Home</a>
+        <a href="salons.html" class="nav-link">Explore Salons</a>
         <a href="services.html" class="nav-link">Services & Pricing</a>
         <a href="barbers.html" class="nav-link">Our Barbers</a>
         <a href="gallery.html" class="nav-link">Gallery</a>
         <a href="account.html" class="nav-link">My Bookings</a>
-        <a href="about.html" class="nav-link">About Us</a>
-        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="register-salon.html" class="nav-link" style="color:var(--accent-amber); font-weight:600;">+ Register Salon</a>
       </nav>
 
       <div class="nav-actions">
-        <a href="account.html" class="btn btn-outline btn-sm">👤 My Account</a>
+        <a href="salons.html" class="btn btn-secondary btn-sm">Find Salons</a>
         <a href="book.html" class="btn btn-primary btn-sm">Book Appointment</a>
         <button class="hamburger" id="hamburger" aria-label="Open mobile menu">
           <span></span><span></span><span></span>
@@ -71,16 +73,18 @@
   <!-- MOBILE DRAWER -->
   <div class="mobile-drawer" id="mobile-drawer">
     <a href="index.html" class="nav-link active">Home</a>
+    <a href="salons.html" class="nav-link">Explore Salons</a>
     <a href="services.html" class="nav-link">Services & Pricing</a>
     <a href="barbers.html" class="nav-link">Our Barbers</a>
     <a href="gallery.html" class="nav-link">Gallery</a>
     <a href="account.html" class="nav-link">My Bookings / Login</a>
-    <a href="about.html" class="nav-link">About Us</a>
+    <a href="register-salon.html" class="nav-link" style="color:var(--accent-amber); font-weight:700;">💈 Register Your Salon</a>
+    <a href="owner/login.html" class="nav-link">Salon Owner Portal</a>
     <a href="contact.html" class="nav-link">Contact</a>
     <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
-      <a href="account.html" class="btn btn-secondary btn-block">👤 My Bookings</a>
-      <a href="book.html" class="btn btn-primary btn-block">Book Appointment</a>
-      <a href="tel:+916202692426" class="btn btn-secondary btn-block">📞 Call Salon</a>
+      <a href="salons.html" class="btn btn-primary btn-block">🔍 Find a Salon</a>
+      <a href="book.html" class="btn btn-secondary btn-block">Book Appointment</a>
+      <a href="register-salon.html" class="btn btn-secondary btn-block">Register Salon</a>
     </div>
   </div>
 
@@ -88,16 +92,16 @@
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <span class="hero-tag">Barbershop in Simraha, Araria</span>
-        <h1 class="hero-title">Clean Haircuts & Traditional Barbering</h1>
+        <span class="hero-tag">Multi-Salon Booking Platform</span>
+        <h1 class="hero-title">Find Your Style. Book Your Salon.</h1>
         <p class="hero-desc">
-          Professional haircuts, beard trimming, royal shaves, and head massages in Simraha, Araria. Walk in today or book your time slot in advance to avoid waiting.
+          Discover top-rated barbershops and salons, compare prices, choose your favorite stylist, and lock your slot with ease. Or visit our flagship lounge in Simraha, Araria.
         </p>
 
         <div class="hero-actions">
-          <a href="book.html" class="btn btn-primary btn-lg">Book an Appointment</a>
-          <a href="services.html" class="btn btn-secondary btn-lg">View Price List</a>
-          <a href="https://wa.me/916202692426" target="_blank" class="btn btn-whatsapp btn-lg">WhatsApp</a>
+          <a href="salons.html" class="btn btn-primary btn-lg" style="background:#B45309; border-color:#B45309;">🔍 Find a Salon</a>
+          <a href="book.html" class="btn btn-primary btn-lg">Book Urban Hairplaza</a>
+          <a href="register-salon.html" class="btn btn-secondary btn-lg">Register Your Salon</a>
         </div>
 
         <div class="hero-info-pills">
@@ -115,6 +119,66 @@
 
       <div class="hero-img-wrap">
         <img src="images/gallery_shop_interior.png" alt="Urban Hairplaza Salon Interior">
+      </div>
+    </div>
+  </section>
+
+  <!-- POPULAR SALONS SHOWCASE -->
+  <section class="section-sm" style="background: #FFFFFF; border-bottom: 1px solid var(--border);">
+    <div class="container">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom: 24px;">
+        <div>
+          <span class="mono-tag">Verified Salons Network</span>
+          <h2 style="font-size: 1.8rem; margin-top: 4px;">Popular Salons Near You</h2>
+          <p class="section-subtitle" style="margin-top: 2px;">Browse salons, compare prices and services, and book your next appointment.</p>
+        </div>
+        <div>
+          <a href="salons.html" class="btn btn-outline btn-sm">View All Salons →</a>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <!-- Salon 1 -->
+        <div style="background:var(--bg-page); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <h3 style="font-size:1.2rem; color:var(--text-main);">Urban Hairplaza (Flagship)</h3>
+              <span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">★ 4.9 (45+)</span>
+            </div>
+            <div style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">📍 Simraha, Araria · 9:00 AM – 9:00 PM</div>
+            <div style="font-size:0.875rem; color:var(--text-body); margin:12px 0; background:#fff; padding:8px 12px; border-radius:4px; border:1px solid var(--border);">
+              ✂️ Haircuts · Beard grooming · Royal shaves · Facial cleanups
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Starting from</div>
+              <div style="font-weight:700; font-size:1.1rem; color:var(--text-main);">₹100</div>
+            </div>
+            <a href="book.html?salonId=salon-urban-hairplaza" class="btn btn-primary btn-sm">Book this salon →</a>
+          </div>
+        </div>
+
+        <!-- Salon 2 -->
+        <div style="background:var(--bg-page); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <h3 style="font-size:1.2rem; color:var(--text-main);">Royal Men's Studio</h3>
+              <span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">★ 4.8 (38)</span>
+            </div>
+            <div style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">📍 Boring Road, Patna · 9:30 AM – 9:00 PM</div>
+            <div style="font-size:0.875rem; color:var(--text-body); margin:12px 0; background:#fff; padding:8px 12px; border-radius:4px; border:1px solid var(--border);">
+              ✂️ Fades · Beard Sculpting · Head Massage · D-Tan Face Pack
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Starting from</div>
+              <div style="font-weight:700; font-size:1.1rem; color:var(--text-main);">₹150</div>
+            </div>
+            <a href="book.html?salonId=salon-royal-patna" class="btn btn-primary btn-sm">Book this salon →</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>

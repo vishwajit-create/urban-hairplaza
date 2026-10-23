@@ -133,6 +133,17 @@ const STATIC_PAGES = {
   '/login': path.join(__dirname, 'account.html'),
   '/login.html': path.join(__dirname, 'account.html'),
   '/my-bookings': path.join(__dirname, 'account.html'),
+  '/salons': path.join(__dirname, 'salons.html'),
+  '/salons.html': path.join(__dirname, 'salons.html'),
+  '/explore-salons': path.join(__dirname, 'salons.html'),
+  '/register-salon': path.join(__dirname, 'register-salon.html'),
+  '/register-salon.html': path.join(__dirname, 'register-salon.html'),
+  '/owner': path.join(__dirname, 'owner', 'login.html'),
+  '/owner/login': path.join(__dirname, 'owner', 'login.html'),
+  '/owner/login.html': path.join(__dirname, 'owner', 'login.html'),
+  '/owner/register': path.join(__dirname, 'register-salon.html'),
+  '/owner/dashboard': path.join(__dirname, 'owner', 'dashboard.html'),
+  '/owner/dashboard.html': path.join(__dirname, 'owner', 'dashboard.html'),
   '/pay': path.join(__dirname, 'pay.html'),
   '/pay.html': path.join(__dirname, 'pay.html'),
   '/book': path.join(__dirname, 'book.html'),
@@ -551,24 +562,462 @@ async function sendPaymentFailedNotifications(booking, reason = '', publicBase =
 
 // ── PUBLIC API ROUTES ────────────────────────────────────────────────────────
 
-// GET /api/services — List active services
+// GET /api/services — List active services (per salon or platform catalog)
 app.get('/api/services', async (req, res) => {
   try {
-    const services = await db.getServices();
+    const salonId = (req.query.salonId || req.query.salon || '').trim();
+    const services = salonId ? await db.getServicesBySalon(salonId) : await db.getServices();
     res.json(services);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load services' });
   }
 });
 
-// GET /api/barbers — List active barbers
-app.get('/api/barbers', (req, res) => {
-  res.json([
-    { id: 'any', name: 'Any Barber', title: 'Any Available Barber', role: 'Fastest Availability', exp: 'First available chair', avatar: '' },
-    { id: 'raj', name: 'Raj Kumar', title: 'Raj Kumar', role: 'Master Barber', exp: '12+ yrs · Fades & Scissor', avatar: 'images/barber_raj.png' },
-    { id: 'sameer', name: 'Sameer Khan', title: 'Sameer Khan', role: 'Senior Stylist', exp: '8+ yrs · Beard & Shave', avatar: 'images/barber_sameer.png' },
-    { id: 'amit', name: 'Amit Sharma', title: 'Amit Sharma', role: 'Grooming Expert', exp: '6+ yrs · Massage & Cleanups', avatar: 'images/barber_amit.png' }
-  ]);
+// GET /api/barbers — List active barbers / staff (per salon or flagship)
+app.get('/api/barbers', async (req, res) => {
+  try {
+    const salonId = (req.query.salonId || req.query.salon || '').trim();
+    if (salonId && salonId !== 'salon-urban-hairplaza') {
+      const staff = await db.getStaffBySalon(salonId);
+      const mapped = staff.map(s => ({
+        id: s.id,
+        name: s.name,
+        title: s.name,
+        role: s.role || 'Stylist',
+        exp: s.experience || 'Professional Barber',
+        avatar: ''
+      }));
+      return res.json([
+        { id: 'any', name: 'Any Barber', title: 'Any Available Barber', role: 'Fastest Availability', exp: 'First available chair', avatar: '' },
+        ...mapped
+      ]);
+    }
+
+    res.json([
+      { id: 'any', name: 'Any Barber', title: 'Any Available Barber', role: 'Fastest Availability', exp: 'First available chair', avatar: '' },
+      { id: 'raj', name: 'Raj Kumar', title: 'Raj Kumar', role: 'Master Barber', exp: '12+ yrs · Fades & Scissor', avatar: 'images/barber_raj.png' },
+      { id: 'sameer', name: 'Sameer Khan', title: 'Sameer Khan', role: 'Senior Stylist', exp: '8+ yrs · Beard & Shave', avatar: 'images/barber_sameer.png' },
+      { id: 'amit', name: 'Amit Sharma', title: 'Amit Sharma', role: 'Grooming Expert', exp: '6+ yrs · Massage & Cleanups', avatar: 'images/barber_amit.png' }
+    ]);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load barbers' });
+  }
+});
+
+// ── MULTI-TENANT SALONS PUBLIC DIRECTORY & DISCOVERY APIS ───────────────────
+
+// GET /api/salons — Public directory of approved salons
+app.get('/api/salons', async (req, res) => {
+  try {
+    const { search, city, area, service, status } = req.query;
+    const isAdmin = Boolean(req.session && req.session.isAdmin);
+    const salons = await db.getSalons({
+      search,
+      city,
+      area,
+      service,
+      status: (isAdmin && status) ? status : 'approved'
+    });
+    res.json(salons);
+  } catch (err) {
+    console.error('[API-SALONS] Error:', err);
+    res.status(500).json({ error: 'Failed to retrieve salons directory' });
+  }
+});
+
+// GET /api/salons/cities — Unique list of cities where approved salons exist
+app.get('/api/salons/cities', async (req, res) => {
+  try {
+    const salons = await db.getSalons({ status: 'approved' });
+    const citiesSet = new Set(['All']);
+    salons.forEach(s => {
+      if (s.city) citiesSet.add(s.city.trim());
+    });
+    res.json(Array.from(citiesSet));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load cities list' });
+  }
+});
+
+// GET /api/salons/:id — Salon profile details, its services and barbers
+app.get('/api/salons/:id', async (req, res) => {
+  try {
+    const salon = await db.getSalonById(req.params.id);
+    if (!salon) {
+      return res.status(404).json({ error: 'Salon profile not found' });
+    }
+    const [services, staff] = await Promise.all([
+      db.getServicesBySalon(salon.id),
+      db.getStaffBySalon(salon.id)
+    ]);
+    res.json({
+      success: true,
+      salon,
+      services,
+      staff
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load salon profile' });
+  }
+});
+
+// ── SALON OWNER REGISTRATION & AUTHENTICATION ───────────────────────────────
+
+// POST /api/salons/register — Salon owners register their salon
+app.post('/api/salons/register', rateLimit({ windowMs: 60000, max: 8, message: 'Too many registration attempts. Please wait.' }), async (req, res) => {
+  try {
+    const {
+      ownerName,
+      phone,
+      email,
+      password,
+      salonName,
+      address,
+      city,
+      area,
+      hours,
+      description,
+      servicesSummary,
+      startingPrice,
+      image
+    } = req.body;
+
+    if (!ownerName || !phone || !salonName || !address) {
+      return res.status(400).json({ error: 'Owner name, mobile phone, salon name, and address are required.' });
+    }
+
+    const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    // Check if phone is already registered as owner
+    const existingOwner = await db.getOwnerByPhone(cleanPhone);
+    if (existingOwner) {
+      return res.status(400).json({ error: 'A salon owner with this mobile number is already registered. Please sign in.' });
+    }
+
+    const salonId = `salon-${Date.now().toString(36)}-${Math.floor(100 + Math.random() * 900)}`;
+    const ownerId = `own-${Date.now().toString(36)}-${Math.floor(100 + Math.random() * 900)}`;
+    const cleanSlug = salonName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + cleanPhone.slice(-4);
+
+    const newSalon = {
+      id: salonId,
+      name: salonName.trim(),
+      slug: cleanSlug,
+      ownerId: ownerId,
+      phone: `+91${cleanPhone}`,
+      email: (email || '').trim().toLowerCase(),
+      address: address.trim(),
+      city: (city || 'Simraha').trim(),
+      area: (area || 'Araria').trim(),
+      hours: (hours || 'Daily: 9:00 AM – 8:30 PM').trim(),
+      rating: 5.0,
+      reviewsCount: 1,
+      startingPrice: Number(startingPrice) || 100,
+      image: image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=800&q=80',
+      description: (description || `Welcome to ${salonName.trim()}. Dedicated to top-quality grooming and style.`).trim(),
+      servicesSummary: (servicesSummary || 'Haircuts · Fade Styling · Beard Sculpting · Hot Towel Shave · Face Cleanup').trim(),
+      status: 'pending', // Pending admin verification
+      featured: false,
+      createdAt: new Date().toISOString()
+    };
+
+    const newOwner = {
+      id: ownerId,
+      name: ownerName.trim(),
+      phone: cleanPhone,
+      email: (email || '').trim().toLowerCase(),
+      passwordHash: password || 'owner123',
+      salonId: salonId,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    await db.saveSalon(newSalon);
+    await db.saveOwner(newOwner);
+
+    // Initial lead barber / staff
+    await db.saveStaff({
+      id: `STF-${Date.now().toString(36)}`,
+      salonId: salonId,
+      name: ownerName.trim(),
+      role: 'Master Stylist / Lead Barber',
+      experience: '5+ Years',
+      available: true
+    });
+
+    // Alert salon owner via SMS
+    sendRealSms(
+      cleanPhone,
+      `✂️ Urban Hairplaza Network: Registration for ${newSalon.name} received! Our team will verify and approve your salon listing shortly. Once approved, you can log in at /owner/login to manage your bookings.`
+    ).catch(() => {});
+
+    // Alert platform master admin
+    sendWhatsAppNotification(`📢 *New Salon Registration Pending Approval!*\nSalon: ${newSalon.name} (${newSalon.city})\nOwner: ${newOwner.name} (+91${cleanPhone})\nPlease review and verify in Admin Dashboard.`).catch(() => {});
+
+    res.json({
+      success: true,
+      salonId: salonId,
+      ownerId: ownerId,
+      message: 'Your salon has been registered successfully! It is currently pending admin verification and will go live once approved.'
+    });
+  } catch (err) {
+    console.error('[SALON-REGISTER] Error:', err);
+    res.status(500).json({ error: 'Failed to submit salon registration. Please try again.' });
+  }
+});
+
+// POST /api/owner/login — Salon owner private login
+app.post('/api/owner/login', rateLimit({ windowMs: 60000, max: 10, message: 'Too many login attempts. Please wait.' }), async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Mobile number/email and password are required.' });
+    }
+
+    const clean = identifier.trim();
+    const cleanPhone = clean.replace(/\D/g, '').slice(-10);
+    let owner = null;
+
+    if (cleanPhone.length === 10) {
+      owner = await db.getOwnerByPhone(cleanPhone);
+    }
+    if (!owner && clean.includes('@')) {
+      owner = await db.getOwnerByEmail(clean);
+    }
+
+    if (!owner) {
+      return res.status(401).json({ error: 'No salon owner account found with these credentials.' });
+    }
+
+    if (owner.passwordHash && owner.passwordHash !== password.trim()) {
+      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
+    }
+
+    const salon = await db.getSalonById(owner.salonId);
+
+    req.session.owner = {
+      id: owner.id,
+      name: owner.name,
+      phone: owner.phone,
+      email: owner.email,
+      salonId: owner.salonId
+    };
+
+    res.json({
+      success: true,
+      owner: req.session.owner,
+      salon
+    });
+  } catch (err) {
+    console.error('[OWNER-LOGIN] Error:', err);
+    res.status(500).json({ error: 'Owner login failed. Please try again.' });
+  }
+});
+
+// GET /api/owner/me — Check owner authentication status
+app.get('/api/owner/me', async (req, res) => {
+  if (req.session && req.session.owner) {
+    const salon = await db.getSalonById(req.session.owner.salonId);
+    return res.json({ loggedIn: true, owner: req.session.owner, salon });
+  }
+  res.json({ loggedIn: false, owner: null });
+});
+
+// POST /api/owner/logout — Salon owner log out
+app.post('/api/owner/logout', (req, res) => {
+  if (req.session) {
+    delete req.session.owner;
+  }
+  res.json({ success: true });
+});
+
+// ── SALON OWNER PRIVATE DASHBOARD APIS (SCOPED STRICTLY PER SALON) ───────────
+
+function requireOwner(req, res, next) {
+  if (req.session && req.session.owner && req.session.owner.salonId) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Salon owner login required.' });
+}
+
+// GET /api/owner/salon — Owner's salon profile
+app.get('/api/owner/salon', requireOwner, async (req, res) => {
+  try {
+    const salon = await db.getSalonById(req.session.owner.salonId);
+    if (!salon) return res.status(404).json({ error: 'Salon profile not found.' });
+    res.json({ success: true, salon });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load salon profile.' });
+  }
+});
+
+// PUT /api/owner/salon — Update owner's salon profile
+app.put('/api/owner/salon', requireOwner, async (req, res) => {
+  try {
+    const allowed = [
+      'name', 'phone', 'email', 'address', 'city', 'area',
+      'hours', 'startingPrice', 'image', 'description', 'servicesSummary'
+    ];
+    const updates = {};
+    for (const f of allowed) {
+      if (req.body[f] !== undefined) {
+        updates[f] = req.body[f];
+      }
+    }
+    const updated = await db.updateSalon(req.session.owner.salonId, updates);
+    res.json({ success: true, salon: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update salon profile.' });
+  }
+});
+
+// GET /api/owner/stats — Stats strictly for this salon
+app.get('/api/owner/stats', requireOwner, async (req, res) => {
+  try {
+    const salonId = req.session.owner.salonId;
+    const bookings = await db.getBookingsBySalon(salonId);
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const todayBookings = bookings.filter(b => b.date === todayStr && b.status !== 'cancelled');
+    const confirmed = bookings.filter(b => b.status === 'confirmed');
+    const completed = bookings.filter(b => b.status === 'completed');
+    const totalRevenue = bookings.reduce((sum, b) => {
+      if (b.status === 'cancelled') return sum;
+      return sum + (Number(b.price) || 0);
+    }, 0);
+
+    res.json({
+      success: true,
+      stats: {
+        totalBookings: bookings.length,
+        todayBookings: todayBookings.length,
+        confirmedBookings: confirmed.length,
+        completedBookings: completed.length,
+        totalRevenue: totalRevenue
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load stats.' });
+  }
+});
+
+// GET /api/owner/bookings — Bookings strictly for this salon (cannot view other salons)
+app.get('/api/owner/bookings', requireOwner, async (req, res) => {
+  try {
+    const salonId = req.session.owner.salonId;
+    const bookings = await db.getBookingsBySalon(salonId);
+    res.json({ success: true, count: bookings.length, bookings });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load bookings.' });
+  }
+});
+
+// PATCH /api/owner/bookings/:id — Update appointment status for this salon
+app.patch('/api/owner/bookings/:id', requireOwner, async (req, res) => {
+  try {
+    const salonId = req.session.owner.salonId;
+    const booking = await db.getBookingById(req.params.id);
+    if (!booking || (booking.salonId && booking.salonId !== salonId)) {
+      return res.status(403).json({ error: 'Access denied. You cannot modify bookings of another salon.' });
+    }
+
+    const { status, notes } = req.body;
+    const updates = {};
+    if (status) updates.status = status;
+    if (notes !== undefined) updates.notes = notes;
+
+    const updated = await db.updateBooking(booking.id, updates);
+    res.json({ success: true, booking: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update booking.' });
+  }
+});
+
+// GET /api/owner/services — Services for this salon
+app.get('/api/owner/services', requireOwner, async (req, res) => {
+  try {
+    const services = await db.getServicesBySalon(req.session.owner.salonId);
+    res.json({ success: true, services });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load services.' });
+  }
+});
+
+// POST /api/owner/services — Add service for this salon
+app.post('/api/owner/services', requireOwner, async (req, res) => {
+  try {
+    const { name, category, price, duration, desc, type, icon } = req.body;
+    if (!name || !price) {
+      return res.status(400).json({ error: 'Service name and price are required.' });
+    }
+    const newService = {
+      id: `SRV-${Date.now().toString(36)}`,
+      salonId: req.session.owner.salonId,
+      name: name.trim(),
+      category: category || 'Haircut',
+      type: type || 'inshop',
+      icon: icon || '✂️',
+      desc: desc || '',
+      price: Number(price) || 100,
+      duration: Number(duration) || 30
+    };
+    await db.saveService(newService);
+    res.json({ success: true, service: newService });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add service.' });
+  }
+});
+
+// DELETE /api/owner/services/:id
+app.delete('/api/owner/services/:id', requireOwner, async (req, res) => {
+  try {
+    await db.deleteService(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to remove service.' });
+  }
+});
+
+// GET /api/owner/staff — Staff for this salon
+app.get('/api/owner/staff', requireOwner, async (req, res) => {
+  try {
+    const staff = await db.getStaffBySalon(req.session.owner.salonId);
+    res.json({ success: true, staff });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load staff.' });
+  }
+});
+
+// POST /api/owner/staff — Add staff for this salon
+app.post('/api/owner/staff', requireOwner, async (req, res) => {
+  try {
+    const { name, role, experience } = req.body;
+    if (!name) return res.status(400).json({ error: 'Staff name is required.' });
+    const newStaff = {
+      id: `STF-${Date.now().toString(36)}`,
+      salonId: req.session.owner.salonId,
+      name: name.trim(),
+      role: role || 'Barber & Stylist',
+      experience: experience || '3+ Years',
+      available: true
+    };
+    await db.saveStaff(newStaff);
+    res.json({ success: true, staff: newStaff });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add staff.' });
+  }
+});
+
+// DELETE /api/owner/staff/:id
+app.delete('/api/owner/staff/:id', requireOwner, async (req, res) => {
+  try {
+    await db.deleteStaff(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to remove staff.' });
+  }
 });
 
 // ── USER AUTHENTICATION & PORTAL APIS (MOBILE / EMAIL OTP) ───────────────────
@@ -842,17 +1291,20 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 
-// GET /api/slots — Check availability per barber and per date
+// GET /api/slots — Check availability per barber, salon, and per date
 app.get('/api/slots', async (req, res) => {
-  const { date, barber } = req.query;
+  const { date, barber, salonId } = req.query;
   if (!date) {
     return res.status(400).json({ error: 'Query parameter date (YYYY-MM-DD) is required' });
   }
 
   try {
+    const targetSalonId = (salonId || 'salon-urban-hairplaza').trim();
     const bookings = await db.getBookings();
-    // Active bookings on this date (not cancelled and not expired payment_pending)
+    // Active bookings on this date for this specific salon (not cancelled and not expired payment_pending)
     const activeBookings = bookings.filter(b => {
+      const bSalon = b.salonId || 'salon-urban-hairplaza';
+      if (bSalon !== targetSalonId) return false;
       if (b.date !== date) return false;
       if (b.status === 'cancelled') return false;
       if (b.status === 'payment_pending') {
@@ -861,6 +1313,10 @@ app.get('/api/slots', async (req, res) => {
       }
       return true;
     });
+
+    // Check staff capacity for this salon
+    const staff = await db.getStaffBySalon(targetSalonId);
+    const maxCapacity = Math.max(staff.length || 3, 1);
 
     // Check past time if date is today (normalize to IST UTC+5.5)
     const now = new Date();
@@ -892,7 +1348,7 @@ app.get('/api/slots', async (req, res) => {
         const isBarberBusy = bookingsAtSlot.some(b => b.barber === barber);
         if (isBarberBusy) bookedSlots.push(slot);
       } else {
-        if (bookingsAtSlot.length >= 3) bookedSlots.push(slot);
+        if (bookingsAtSlot.length >= maxCapacity) bookedSlots.push(slot);
       }
     });
 
@@ -901,6 +1357,7 @@ app.get('/api/slots', async (req, res) => {
     res.json({
       date,
       barber: barber || 'Any',
+      salonId: targetSalonId,
       allSlots: OPERATING_SLOTS,
       bookedSlots,
       availableSlots
@@ -922,18 +1379,24 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
 
     const {
       name, phone, email, service, barber, date, time,
-      type, address, notes, price, duration
+      type, address, notes, price, duration, salonId
     } = bookingDetails;
 
     if (!name || !phone || !service || !date || !time) {
       return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
     }
 
+    const targetSalonId = (salonId || 'salon-urban-hairplaza').trim();
+    const targetSalon = await db.getSalonById(targetSalonId);
+    const targetSalonName = targetSalon ? targetSalon.name : 'Urban Hairplaza Flagship';
+
     const cleanReqPhone = phone.replace(/\D/g, '').slice(-10);
 
-    // Verify slot is still free
+    // Verify slot is still free for this salon
     const bookings = await db.getBookings();
     const bookingsAtSlot = bookings.filter(b => {
+      const bSalon = b.salonId || 'salon-urban-hairplaza';
+      if (bSalon !== targetSalonId) return false;
       if (b.date !== date || b.time !== time) return false;
       if (b.status === 'cancelled') return false;
       if (b.status === 'payment_pending') {
@@ -949,6 +1412,8 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
       return true;
     });
 
+    const targetStaff = await db.getStaffBySalon(targetSalonId);
+    const maxCapacity = Math.max(targetStaff.length || 3, 1);
     const chosenBarber = (barber && barber !== 'Any' && barber !== 'Any Barber') ? barber.trim() : 'Any Barber';
 
     if (chosenBarber !== 'Any Barber') {
@@ -957,8 +1422,8 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
         return res.status(400).json({ error: `${chosenBarber} is already booked at ${time} on ${date}. Please select another time slot or barber.` });
       }
     } else {
-      if (bookingsAtSlot.length >= 3) {
-        return res.status(400).json({ error: `All barbers are currently booked at ${time}. Please select another time.` });
+      if (bookingsAtSlot.length >= maxCapacity) {
+        return res.status(400).json({ error: `All barbers at ${targetSalonName} are currently booked at ${time}. Please select another time.` });
       }
     }
 
@@ -966,12 +1431,14 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
     let assignedBarber = chosenBarber;
     if (chosenBarber === 'Any Barber') {
       const busyBarbers = bookingsAtSlot.map(b => b.barber);
-      const freeBarber = VALID_BARBERS.find(b => !busyBarbers.includes(b));
-      assignedBarber = freeBarber || VALID_BARBERS[0];
+      const staffNames = targetStaff.map(s => s.name);
+      const availableBarbers = staffNames.length > 0 ? staffNames : VALID_BARBERS;
+      const freeBarber = availableBarbers.find(b => !busyBarbers.includes(b));
+      assignedBarber = freeBarber || availableBarbers[0] || 'Staff Stylist';
     }
 
     // Server-side service verification against database (prevents client price tampering)
-    const allServices = await db.getServices();
+    const allServices = await db.getServicesBySalon(targetSalonId);
     const matchedService = allServices.find(s =>
       s.name.toLowerCase() === service.trim().toLowerCase() || s.id === service.trim()
     );
@@ -984,6 +1451,8 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
 
     const newBooking = {
       id: orderId,
+      salonId: targetSalonId,
+      salonName: targetSalonName,
       name: name.trim(),
       phone: phone.trim(),
       email: (email || '').trim(),
@@ -1411,9 +1880,12 @@ app.post('/api/bookings', rateLimit({ windowMs: 60000, max: 10, message: 'Too ma
     }
 
     const isAdmin = Boolean(req.session && req.session.isAdmin);
+    const targetSalonId = (req.body.salonId || req.body.salon || 'salon-urban-hairplaza').trim();
+    const targetSalon = await db.getSalonById(targetSalonId);
+    const targetSalonName = targetSalon ? targetSalon.name : 'Urban Hairplaza Flagship';
 
     // Verify service price against DB (prevents tampering)
-    const allServices = await db.getServices();
+    const allServices = await db.getServicesBySalon(targetSalonId);
     const matched = allServices.find(s => s.name.toLowerCase() === service.trim().toLowerCase() || s.id === service.trim());
     const verifiedPrice = matched ? Number(matched.price) : (Number(price) || 150);
     const verifiedDuration = matched ? (parseInt(matched.duration) || 30) : (Number(duration) || 30);
@@ -1424,6 +1896,8 @@ app.post('/api/bookings', rateLimit({ windowMs: 60000, max: 10, message: 'Too ma
 
     const booking = {
       id: `DIR-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+      salonId: targetSalonId,
+      salonName: targetSalonName,
       name: name.trim(),
       phone: phone.trim(),
       email: (email || '').trim(),
@@ -1726,6 +2200,78 @@ app.delete('/api/admin/services/:id', requireAdmin, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete service' });
+  }
+});
+
+// ── ADMIN MULTI-TENANT SALONS MANAGEMENT ───────────────────────────────────
+
+// GET /api/admin/salons — All registered salons (pending, approved, suspended)
+app.get('/api/admin/salons', requireAdmin, async (req, res) => {
+  try {
+    const { status, search } = req.query;
+    const salons = await db.getSalons({ status: status || 'all', search });
+    res.json({ success: true, count: salons.length, salons });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load salons list' });
+  }
+});
+
+// PATCH /api/admin/salons/:id/status — Approve, suspend, or set status
+app.patch('/api/admin/salons/:id/status', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status || !['approved', 'pending', 'suspended'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be approved, pending, or suspended.' });
+    }
+
+    const salon = await db.getSalonById(id);
+    if (!salon) return res.status(404).json({ error: 'Salon not found.' });
+
+    const updated = await db.updateSalon(id, { status, updatedAt: new Date().toISOString() });
+
+    // Also update associated owner status if exists
+    if (salon.ownerId) {
+      await db.updateOwner(salon.ownerId, { status });
+    }
+
+    // Notify owner of approval via SMS
+    if (status === 'approved' && salon.phone) {
+      const publicBase = getPublicBaseUrl(req);
+      const cleanPhone = salon.phone.replace(/\D/g, '').slice(-10);
+      const smsMsg = `🎉 Congratulations! Your salon "${salon.name}" has been APPROVED on Urban Hairplaza! It is now live to customers. Access your dashboard: ${publicBase}/owner/login`;
+      sendRealSms(cleanPhone, smsMsg).catch(() => {});
+      sendWhatsAppNotification(`🎉 *Salon Approved!* ${salon.name} (${salon.phone}) is now live on the platform!`).catch(() => {});
+    }
+
+    res.json({ success: true, salon: updated });
+  } catch (err) {
+    console.error('[ADMIN-SALON-STATUS] Error:', err);
+    res.status(500).json({ error: 'Failed to update salon status' });
+  }
+});
+
+// DELETE /api/admin/salons/:id — Delete salon listing
+app.delete('/api/admin/salons/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (id === 'salon-urban-hairplaza') {
+      return res.status(400).json({ error: 'Cannot delete the flagship Urban Hairplaza salon.' });
+    }
+    await db.deleteSalon(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete salon' });
+  }
+});
+
+// GET /api/admin/owners — All salon owners
+app.get('/api/admin/owners', requireAdmin, async (req, res) => {
+  try {
+    const owners = await db.getOwners();
+    res.json({ success: true, count: owners.length, owners });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch salon owners' });
   }
 });
 

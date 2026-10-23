@@ -6,6 +6,34 @@
       "destination": "/api/index.js"
     },
     {
+      "source": "/salons",
+      "destination": "/salons.html"
+    },
+    {
+      "source": "/explore-salons",
+      "destination": "/salons.html"
+    },
+    {
+      "source": "/register-salon",
+      "destination": "/register-salon.html"
+    },
+    {
+      "source": "/owner",
+      "destination": "/owner/login.html"
+    },
+    {
+      "source": "/owner/login",
+      "destination": "/owner/login.html"
+    },
+    {
+      "source": "/owner/register",
+      "destination": "/register-salon.html"
+    },
+    {
+      "source": "/owner/dashboard",
+      "destination": "/owner/dashboard.html"
+    },
+    {
       "source": "/account",
       "destination": "/account.html"
     },
