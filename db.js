@@ -1076,30 +1076,28 @@ async function getSalons(filter = {}) {
   }
 
   // Ensure flagship salon is always present
-  if (salons.length === 0) {
-    salons = [
-      {
-        id: 'salon-urban-hairplaza',
-        name: 'Urban Hairplaza',
-        slug: 'urban-hairplaza-simraha',
-        ownerId: 'owner-master',
-        phone: '+916202692426',
-        email: 'urbanhairplaza@gmail.com',
-        address: 'Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar 854318',
-        city: 'Simraha',
-        area: 'Araria',
-        hours: 'Daily: 9:00 AM – 9:00 PM',
-        rating: 4.9,
-        reviewsCount: 148,
-        startingPrice: 100,
-        image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
-        description: 'Flagship grooming lounge and authentic barbershop offering tailored haircuts, beard sculpting, royal shaves, and doorstep home services in Simraha, Araria.',
-        servicesSummary: 'Haircuts · Fade & Taper · Beard Sculpting · Hot Towel Shave · Facials · Home Visit',
-        status: 'approved',
-        featured: true,
-        createdAt: '2025-01-01T00:00:00.000Z'
-      }
-    ];
+  if (!salons.some(s => s.id === 'salon-urban-hairplaza')) {
+    salons.unshift({
+      id: 'salon-urban-hairplaza',
+      name: 'Urban Hairplaza',
+      slug: 'urban-hairplaza-simraha',
+      ownerId: 'owner-master',
+      phone: '+916202692426',
+      email: 'urbanhairplaza@gmail.com',
+      address: 'Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar 854318',
+      city: 'Simraha',
+      area: 'Araria',
+      hours: 'Daily: 9:00 AM – 9:00 PM',
+      rating: 4.9,
+      reviewsCount: 148,
+      startingPrice: 100,
+      image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
+      description: 'Flagship grooming lounge and authentic barbershop offering tailored haircuts, beard sculpting, royal shaves, and doorstep home services in Simraha, Araria.',
+      servicesSummary: 'Haircuts · Fade & Taper · Beard Sculpting · Hot Towel Shave · Facials · Home Visit',
+      status: 'approved',
+      featured: true,
+      createdAt: '2025-01-01T00:00:00.000Z'
+    });
   }
 
   // Filtering
@@ -1228,17 +1226,24 @@ async function updateSalon(id, updates) {
       const setClauses = [];
       const values = [id];
       let i = 2;
+      let hasUpdatedAt = false;
       for (const [k, v] of Object.entries(updates)) {
         const col = k.replace(/[A-Z]/g, m => '_' + m.toLowerCase());
-        setClauses.push(`${col} = $${i++}`);
+        if (col === 'updated_at') {
+          hasUpdatedAt = true;
+        }
+        setClauses.push(`${col} = ${i++}`);
         values.push(v);
       }
-      setClauses.push(`updated_at = NOW()`);
+      if (!hasUpdatedAt) {
+        setClauses.push(`updated_at = NOW()`);
+      }
       if (setClauses.length > 0) {
         await pgPool.query(`UPDATE salons SET ${setClauses.join(', ')} WHERE id = $1`, values);
       }
     } catch (e) {
       console.error('[DB] Postgres updateSalon error:', e.message);
+      throw e;
     }
   }
 
@@ -1346,6 +1351,25 @@ async function updateOwner(id, updates) {
     Object.assign(owners[idx], updates);
     writeJSON(FILES.owners, owners);
   }
+
+  if (pgPool) {
+    try {
+      const setClauses = [];
+      const values = [id];
+      let i = 2;
+      for (const [k, v] of Object.entries(updates)) {
+        const col = k.replace(/[A-Z]/g, m => '_' + m.toLowerCase());
+        setClauses.push(`${col} = ${i++}`);
+        values.push(v);
+      }
+      if (setClauses.length > 0) {
+        await pgPool.query(`UPDATE salon_owners SET ${setClauses.join(', ')} WHERE id = $1`, values);
+      }
+    } catch (e) {
+      console.error('[DB] Postgres updateOwner error:', e.message);
+    }
+  }
+
   return getOwnerById(id);
 }
 

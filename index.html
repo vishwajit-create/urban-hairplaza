@@ -137,17 +137,17 @@
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-        <!-- Salon 1 -->
+      <div id="home-salons-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <!-- Dynamically loaded from /api/salons -->
         <div style="background:var(--bg-page); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
           <div>
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-              <h3 style="font-size:1.2rem; color:var(--text-main);">Urban Hairplaza (Flagship)</h3>
-              <span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">★ 4.9 (45+)</span>
+              <h3 style="font-size:1.2rem; color:var(--text-main);">Urban Hairplaza <span style="font-size:0.75rem; color:#92400E; background:#FEF3C7; padding:2px 6px; border-radius:4px; font-weight:600;">Flagship</span></h3>
+              <span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">★ 4.9 (148)</span>
             </div>
             <div style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">📍 Simraha, Araria · 9:00 AM – 9:00 PM</div>
             <div style="font-size:0.875rem; color:var(--text-body); margin:12px 0; background:#fff; padding:8px 12px; border-radius:4px; border:1px solid var(--border);">
-              ✂️ Haircuts · Beard grooming · Royal shaves · Facial cleanups
+              ✂️ Haircuts · Fade & Taper · Beard Sculpting · Hot Towel Shave
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
@@ -156,27 +156,6 @@
               <div style="font-weight:700; font-size:1.1rem; color:var(--text-main);">₹100</div>
             </div>
             <a href="book.html?salonId=salon-urban-hairplaza" class="btn btn-primary btn-sm">Book this salon →</a>
-          </div>
-        </div>
-
-        <!-- Salon 2 -->
-        <div style="background:var(--bg-page); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
-          <div>
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-              <h3 style="font-size:1.2rem; color:var(--text-main);">Royal Men's Studio</h3>
-              <span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">★ 4.8 (38)</span>
-            </div>
-            <div style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">📍 Boring Road, Patna · 9:30 AM – 9:00 PM</div>
-            <div style="font-size:0.875rem; color:var(--text-body); margin:12px 0; background:#fff; padding:8px 12px; border-radius:4px; border:1px solid var(--border);">
-              ✂️ Fades · Beard Sculpting · Head Massage · D-Tan Face Pack
-            </div>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-            <div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">Starting from</div>
-              <div style="font-weight:700; font-size:1.1rem; color:var(--text-main);">₹150</div>
-            </div>
-            <a href="book.html?salonId=salon-royal-patna" class="btn btn-primary btn-sm">Book this salon →</a>
           </div>
         </div>
       </div>
@@ -442,5 +421,62 @@
   </div>
 
   <script src="main.js"></script>
+  <script>
+    // Dynamically load approved network salons on the homepage
+    async function loadHomeSalons() {
+      const grid = document.getElementById('home-salons-grid');
+      if (!grid) return;
+      try {
+        const res = await fetch('/api/salons');
+        if (!res.ok) return;
+        const salons = await res.json();
+        if (!Array.isArray(salons) || salons.length === 0) return;
+
+        grid.innerHTML = salons.map(s => {
+          const isFlagship = s.id === 'salon-urban-hairplaza';
+          const rating = s.rating ? Number(s.rating).toFixed(1) : '4.9';
+          const reviews = s.reviewsCount || 40;
+          const startPrice = s.startingPrice || 100;
+          const summary = s.servicesSummary || 'Haircuts · Beard grooming · Styling';
+          const location = `${s.city || 'Simraha'}${s.area ? ', ' + s.area : ''}`;
+
+          return `
+            <div style="background:var(--bg-page); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.15s, box-shadow 0.15s;">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                  <h3 style="font-size:1.2rem; color:var(--text-main);">${escapeHtml(s.name)}${isFlagship ? ' <span style="font-size:0.75rem; color:#92400E; background:#FEF3C7; padding:2px 6px; border-radius:4px; font-weight:600;">Flagship</span>' : ''}</h3>
+                  <span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">★ ${rating} (${reviews})</span>
+                </div>
+                <div style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">📍 ${escapeHtml(location)} · ${escapeHtml(s.hours || 'Daily')}</div>
+                <div style="font-size:0.875rem; color:var(--text-body); margin:12px 0; background:#fff; padding:8px 12px; border-radius:4px; border:1px solid var(--border); line-height:1.4;">
+                  ✂️ ${escapeHtml(summary)}
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+                <div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Starting from</div>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--text-main);">₹${startPrice}</div>
+                </div>
+                <a href="book.html?salonId=${encodeURIComponent(s.id)}" class="btn btn-primary btn-sm">Book this salon →</a>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Failed to load salons on homepage:', e);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadHomeSalons);
+    } else {
+      loadHomeSalons();
+    }
+  </script>
 </body>
 </html>
