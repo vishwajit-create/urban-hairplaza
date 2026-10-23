@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salon Owner - Urban Hairplaza</title>
+  <script>
+    (function() {
+      var token = localStorage.getItem('uhp_owner_token');
+      if (token) {
+        window.location.replace('/owner/dashboard.html');
+      } else {
+        window.location.replace('/owner/login.html');
+      }
+    })();
+  </script>
+</head>
+<body style="background:#0b0f19; color:#C9A84C; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
+  <p>Loading Owner Portal…</p>
+</body>
+</html>

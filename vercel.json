@@ -19,10 +19,18 @@
     },
     {
       "source": "/owner",
-      "destination": "/owner/login.html"
+      "destination": "/owner/index.html"
+    },
+    {
+      "source": "/owner/",
+      "destination": "/owner/index.html"
     },
     {
       "source": "/owner/login",
+      "destination": "/owner/login.html"
+    },
+    {
+      "source": "/owner/login.html",
       "destination": "/owner/login.html"
     },
     {
@@ -31,6 +39,10 @@
     },
     {
       "source": "/owner/dashboard",
+      "destination": "/owner/dashboard.html"
+    },
+    {
+      "source": "/owner/dashboard.html",
       "destination": "/owner/dashboard.html"
     },
     {

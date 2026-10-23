@@ -316,7 +316,7 @@
     </div>
 
     <div class="header-actions">
-      <a href="../book.html" id="public-booking-link" target="_blank" class="btn btn-ghost btn-sm">
+      <a href="/book.html" id="public-booking-link" target="_blank" class="btn btn-ghost btn-sm">
         🌐 View Booking Page
       </a>
       <button onclick="handleLogout()" class="btn btn-danger btn-sm">
@@ -604,13 +604,28 @@
     let currentSalon = null;
     let currentOwner = null;
 
+    // ── AUTHENTICATED FETCH HELPER (TOKEN & COOKIE RESILIENT) ──
+    function getOwnerToken() {
+      return localStorage.getItem('uhp_owner_token') || '';
+    }
+
+    async function ownerFetch(url, options = {}) {
+      const token = getOwnerToken();
+      const headers = Object.assign({}, options.headers || {});
+      if (token && !headers['Authorization']) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      return fetch(url, { ...options, headers });
+    }
+
     // Check auth on page load
     async function initDashboard() {
       try {
         const res = await ownerFetch('/api/owner/me');
         const data = await res.json();
         if (!data.loggedIn || !data.owner) {
-          window.location.href = 'login.html';
+          localStorage.removeItem('uhp_owner_token');
+          window.location.href = '/owner/login.html';
           return;
         }
 
@@ -625,7 +640,8 @@
         populateProfileForm();
       } catch (e) {
         console.error('Failed to init owner dashboard:', e);
-        window.location.href = 'login.html';
+        localStorage.removeItem('uhp_owner_token');
+        window.location.href = '/owner/login.html';
       }
     }
 
@@ -643,7 +659,7 @@
       }
 
       if (currentSalon) {
-        document.getElementById('public-booking-link').href = `../book.html?salonId=${currentSalon.id}`;
+        document.getElementById('public-booking-link').href = `/book.html?salonId=${currentSalon.id}`;
       }
     }
 
@@ -929,8 +945,11 @@
     }
 
     async function handleLogout() {
-      await ownerFetch('/api/owner/logout', { method: 'POST' });
-      window.location.href = 'login.html';
+      try {
+        await ownerFetch('/api/owner/logout', { method: 'POST' });
+      } catch (e) {}
+      localStorage.removeItem('uhp_owner_token');
+      window.location.href = '/owner/login.html';
     }
 
     // Initialize

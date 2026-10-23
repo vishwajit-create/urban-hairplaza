@@ -181,18 +181,21 @@
     </form>
 
     <div class="footer-links">
-      <div>New salon owner? <a href="../register-salon.html">Register Your Salon Here</a></div>
-      <div><a href="../index.html" style="color:var(--muted);">← Return to Main Website</a></div>
+      <div>New salon owner? <a href="/register-salon.html">Register Your Salon Here</a></div>
+      <div><a href="/" style="color:var(--muted);">← Return to Main Website</a></div>
     </div>
   </div>
 
   <script>
-    // Auto-check if already logged in
-    fetch('/api/owner/me')
+    // Auto-check if already logged in with token
+    const ownerToken = localStorage.getItem('uhp_owner_token');
+    const ownerMeHeaders = ownerToken ? { 'Authorization': 'Bearer ' + ownerToken } : {};
+
+    fetch('/api/owner/me', { headers: ownerMeHeaders })
       .then(r => r.json())
       .then(d => {
-        if (d.loggedIn) {
-          window.location.href = 'dashboard.html';
+        if (d.loggedIn && d.owner) {
+          window.location.href = '/owner/dashboard.html';
         }
       })
       .catch(() => {});
@@ -224,7 +227,7 @@
         if (data.token) {
           localStorage.setItem('uhp_owner_token', data.token);
         }
-        window.location.href = 'dashboard.html';
+        window.location.href = '/owner/dashboard.html';
       } catch (err) {
         errEl.textContent = err.message;
         errEl.style.display = 'block';

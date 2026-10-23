@@ -196,7 +196,8 @@ const STATIC_PAGES = {
   '/explore-salons': path.join(__dirname, 'salons.html'),
   '/register-salon': path.join(__dirname, 'register-salon.html'),
   '/register-salon.html': path.join(__dirname, 'register-salon.html'),
-  '/owner': path.join(__dirname, 'owner', 'login.html'),
+  '/owner': path.join(__dirname, 'owner', 'index.html'),
+  '/owner/': path.join(__dirname, 'owner', 'index.html'),
   '/owner/login': path.join(__dirname, 'owner', 'login.html'),
   '/owner/login.html': path.join(__dirname, 'owner', 'login.html'),
   '/owner/register': path.join(__dirname, 'register-salon.html'),
@@ -943,23 +944,25 @@ app.post('/api/owner/logout', (req, res) => {
 // ── SALON OWNER PRIVATE DASHBOARD APIS (SCOPED STRICTLY PER SALON) ───────────
 
 function requireOwner(req, res, next) {
-  if (req.session && req.session.owner && req.session.owner.salonId) {
+  if (req.session && req.session.owner && ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId))) {
+    req.owner = req.session.owner;
     return next();
   }
   const token = extractToken(req);
   if (token) {
     const payload = verifyAuthToken(token);
     if (payload && payload.role === 'owner' && payload.salonId) {
+      const ownerInfo = {
+        id: payload.ownerId,
+        name: payload.name,
+        phone: payload.phone,
+        email: payload.email,
+        salonId: payload.salonId
+      };
       if (req.session) {
-        req.session.owner = {
-          id: payload.ownerId,
-          name: payload.name,
-          phone: payload.phone,
-          email: payload.email,
-          salonId: payload.salonId
-        };
+        req.session.owner = ownerInfo;
       }
-      req.ownerData = payload;
+      req.owner = ownerInfo;
       return next();
     }
   }
@@ -969,7 +972,7 @@ function requireOwner(req, res, next) {
 // GET /api/owner/salon — Owner's salon profile
 app.get('/api/owner/salon', requireOwner, async (req, res) => {
   try {
-    const salon = await db.getSalonById(req.session.owner.salonId);
+    const salon = await db.getSalonById(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)));
     if (!salon) return res.status(404).json({ error: 'Salon profile not found.' });
     res.json({ success: true, salon });
   } catch (err) {
@@ -990,7 +993,7 @@ app.put('/api/owner/salon', requireOwner, async (req, res) => {
         updates[f] = req.body[f];
       }
     }
-    const updated = await db.updateSalon(req.session.owner.salonId, updates);
+    const updated = await db.updateSalon(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)), updates);
     res.json({ success: true, salon: updated });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update salon profile.' });
@@ -1000,7 +1003,7 @@ app.put('/api/owner/salon', requireOwner, async (req, res) => {
 // GET /api/owner/stats — Stats strictly for this salon
 app.get('/api/owner/stats', requireOwner, async (req, res) => {
   try {
-    const salonId = req.session.owner.salonId;
+    const salonId = ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId));
     const bookings = await db.getBookingsBySalon(salonId);
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -1030,7 +1033,7 @@ app.get('/api/owner/stats', requireOwner, async (req, res) => {
 // GET /api/owner/bookings — Bookings strictly for this salon (cannot view other salons)
 app.get('/api/owner/bookings', requireOwner, async (req, res) => {
   try {
-    const salonId = req.session.owner.salonId;
+    const salonId = ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId));
     const bookings = await db.getBookingsBySalon(salonId);
     res.json({ success: true, count: bookings.length, bookings });
   } catch (err) {
@@ -1041,7 +1044,7 @@ app.get('/api/owner/bookings', requireOwner, async (req, res) => {
 // PATCH /api/owner/bookings/:id — Update appointment status for this salon
 app.patch('/api/owner/bookings/:id', requireOwner, async (req, res) => {
   try {
-    const salonId = req.session.owner.salonId;
+    const salonId = ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId));
     const booking = await db.getBookingById(req.params.id);
     if (!booking || (booking.salonId && booking.salonId !== salonId)) {
       return res.status(403).json({ error: 'Access denied. You cannot modify bookings of another salon.' });
@@ -1062,7 +1065,7 @@ app.patch('/api/owner/bookings/:id', requireOwner, async (req, res) => {
 // GET /api/owner/services — Services for this salon
 app.get('/api/owner/services', requireOwner, async (req, res) => {
   try {
-    const services = await db.getServicesBySalon(req.session.owner.salonId);
+    const services = await db.getServicesBySalon(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)));
     res.json({ success: true, services });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load services.' });
@@ -1078,7 +1081,7 @@ app.post('/api/owner/services', requireOwner, async (req, res) => {
     }
     const newService = {
       id: `SRV-${Date.now().toString(36)}`,
-      salonId: req.session.owner.salonId,
+      salonId: ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)),
       name: name.trim(),
       category: category || 'Haircut',
       type: type || 'inshop',
@@ -1107,7 +1110,7 @@ app.delete('/api/owner/services/:id', requireOwner, async (req, res) => {
 // GET /api/owner/staff — Staff for this salon
 app.get('/api/owner/staff', requireOwner, async (req, res) => {
   try {
-    const staff = await db.getStaffBySalon(req.session.owner.salonId);
+    const staff = await db.getStaffBySalon(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)));
     res.json({ success: true, staff });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load staff.' });
@@ -1121,7 +1124,7 @@ app.post('/api/owner/staff', requireOwner, async (req, res) => {
     if (!name) return res.status(400).json({ error: 'Staff name is required.' });
     const newStaff = {
       id: `STF-${Date.now().toString(36)}`,
-      salonId: req.session.owner.salonId,
+      salonId: ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)),
       name: name.trim(),
       role: role || 'Barber & Stylist',
       experience: experience || '3+ Years',
