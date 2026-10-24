@@ -198,6 +198,10 @@ async function initDB() {
           ALTER TABLE services ADD COLUMN IF NOT EXISTS salon_id VARCHAR(64) DEFAULT 'salon-urban-hairplaza';
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS salon_id VARCHAR(64) DEFAULT 'salon-urban-hairplaza';
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS salon_name VARCHAR(255);
+          ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
+          ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status VARCHAR(50);
+          ALTER TABLE bookings ADD COLUMN IF NOT EXISTS whatsapp_confirmed_at TIMESTAMPTZ;
+          ALTER TABLE bookings ADD COLUMN IF NOT EXISTS whatsapp_owner_notified_at TIMESTAMPTZ;
         `);
         console.log('[DB] PostgreSQL schema verified successfully.');
       } finally {
@@ -536,7 +540,23 @@ async function updateBooking(id, updates) {
       if (updates.barber !== undefined) { setClauses.push(`barber = $${i++}`); values.push(updates.barber); }
       if (updates.notes !== undefined) { setClauses.push(`notes = $${i++}`); values.push(updates.notes); }
       if (updates.advancePaid !== undefined) { setClauses.push(`advance_paid = $${i++}`); values.push(Number(updates.advancePaid)); }
-      if (updates.paymentVerifiedAt !== undefined) { setClauses.push(`payment_verified_at = $${i++}`); values.push(new Date(updates.paymentVerifiedAt)); }
+      if (updates.paymentVerifiedAt !== undefined) { setClauses.push(`payment_verified_at = ${i++}`); values.push(new Date(updates.paymentVerifiedAt)); }
+      if (updates.reminderSentAt !== undefined || updates.reminder_sent_at !== undefined) {
+        setClauses.push(`reminder_sent_at = ${i++}`);
+        values.push(updates.reminderSentAt || updates.reminder_sent_at);
+      }
+      if (updates.reminderStatus !== undefined || updates.reminder_status !== undefined) {
+        setClauses.push(`reminder_status = ${i++}`);
+        values.push(updates.reminderStatus || updates.reminder_status);
+      }
+      if (updates.whatsappConfirmedAt !== undefined || updates.whatsapp_confirmed_at !== undefined) {
+        setClauses.push(`whatsapp_confirmed_at = ${i++}`);
+        values.push(updates.whatsappConfirmedAt || updates.whatsapp_confirmed_at);
+      }
+      if (updates.whatsappOwnerNotifiedAt !== undefined || updates.whatsapp_owner_notified_at !== undefined) {
+        setClauses.push(`whatsapp_owner_notified_at = ${i++}`);
+        values.push(updates.whatsappOwnerNotifiedAt || updates.whatsapp_owner_notified_at);
+      }
 
       setClauses.push(`updated_at = NOW()`);
 

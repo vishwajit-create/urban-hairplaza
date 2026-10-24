@@ -746,7 +746,8 @@
                     <button onclick="updateBookingStatus('${b.id}', 'cancelled')" class="btn btn-sm btn-danger">Cancel</button>
                   ` : ''}
                   ${cleanPhone ? `
-                    <a href="https://wa.me/91${cleanPhone}" target="_blank" class="btn btn-sm btn-ghost" title="WhatsApp Client">💬</a>
+                    ${b.reminderSentAt ? '<span style="font-size:0.75rem; color:#34D399; font-weight:600; padding:4px 8px; border:1px solid rgba(52,211,153,0.3); border-radius:4px;">✓ Reminded</span>' : (isConfirmed ? '<button onclick="sendManualReminder(\'' + b.id + '\')" class="btn btn-sm btn-ghost" style="color:#34D399; border:1px solid rgba(52,211,153,0.25);">💬 Remind</button>' : '')}
+                  <a href="https://wa.me/91${cleanPhone}" target="_blank" class="btn btn-sm btn-ghost" title="Chat on WhatsApp">💬 Chat</a>
                   ` : ''}
                 </div>
               </td>
@@ -755,6 +756,26 @@
         }).join('');
       } catch (e) {
         console.error('Failed to load bookings:', e);
+      }
+    }
+
+    
+    async function sendManualReminder(id) {
+      if (!confirm('Send instant WhatsApp appointment reminder to client?')) return;
+      try {
+        const res = await ownerFetch('/api/appointments/' + id + '/send-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('✅ ' + data.message);
+          loadBookings();
+        } else {
+          alert('❌ ' + (data.error || 'Failed to send WhatsApp reminder'));
+        }
+      } catch (err) {
+        alert('Failed to connect to server: ' + err.message);
       }
     }
 
