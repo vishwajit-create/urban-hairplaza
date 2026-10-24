@@ -21,7 +21,7 @@
      crossorigin="anonymous"></script>
   <style>
     .directory-hero {
-      background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
+      background: linear-gradient(180deg, #FFFFFF 0%, var(--bg-subtle) 100%);
       border-bottom: 1px solid var(--border);
       padding: 48px 0 36px 0;
     }
@@ -29,8 +29,8 @@
       background: #FFFFFF;
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      padding: 18px;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
       margin-top: 24px;
       display: grid;
       grid-template-columns: 2fr 1.2fr 1.2fr auto;
@@ -51,7 +51,7 @@
       font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
       color: var(--text-muted);
     }
     .search-input-group input, .search-input-group select {
@@ -61,7 +61,7 @@
       font-family: inherit;
       font-size: 0.95rem;
       color: var(--text-main);
-      background: #FDFDFD;
+      background: #FFFFFF;
       outline: none;
       transition: border-color 0.15s ease;
     }
@@ -72,14 +72,14 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 18px;
       align-items: center;
     }
     .city-chip {
       background: #FFFFFF;
       border: 1px solid var(--border);
       padding: 6px 14px;
-      border-radius: 20px;
+      border-radius: var(--radius-full);
       font-size: 0.85rem;
       font-weight: 500;
       color: var(--text-body);
@@ -91,146 +91,11 @@
       color: #FFFFFF;
       border-color: var(--text-main);
     }
-    .salons-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 24px;
-      margin-top: 30px;
-    }
-    @media (max-width: 480px) {
-      .salons-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .salon-card {
-      background: #FFFFFF;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-      position: relative;
-    }
-    .salon-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-      border-color: #D1D5DB;
-    }
-    .salon-card-img-wrap {
-      height: 190px;
-      background: #1F2937;
-      position: relative;
-      overflow: hidden;
-    }
-    .salon-card-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-    .salon-card:hover .salon-card-img {
-      transform: scale(1.04);
-    }
-    .salon-badge-featured {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: #B45309;
-      color: #FFFFFF;
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 4px 10px;
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    }
-    .salon-badge-verified {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(17, 24, 39, 0.85);
-      color: #34D399;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 4px;
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .salon-card-body {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-    .salon-card-title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .salon-card-name {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--text-main);
-      line-height: 1.3;
-    }
-    .salon-rating {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: #FEF3C7;
-      color: #92400E;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .salon-card-loc {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      margin-top: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .salon-services-tagline {
-      font-size: 0.85rem;
-      color: var(--text-body);
-      margin: 12px 0;
-      background: var(--bg-subtle);
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      line-height: 1.4;
-    }
-    .salon-card-footer {
-      margin-top: auto;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .salon-price-start {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-    .salon-price-val {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
     .register-partner-banner {
-      background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
       color: #FFFFFF;
       border-radius: var(--radius-lg);
-      padding: 36px 30px;
+      padding: 40px 32px;
       margin-top: 50px;
       display: flex;
       justify-content: space-between;
@@ -246,14 +111,29 @@
   <div class="topbar">
     <div class="container topbar-inner">
       <div class="topbar-info">
-        <span>📍 Simraha · Araria · Bihar</span>
-        <span>🕐 Network Salons: 9:00 AM – 9:00 PM</span>
+        <span>
+          <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          Simraha · Araria · Bihar
+        </span>
+        <span>
+          <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Network Hours: 9:00 AM – 9:00 PM
+        </span>
       </div>
       <div class="topbar-info">
-        <span><a href="register-salon.html" style="color:var(--accent-amber); font-weight:700;">💈 Register Your Salon</a></span>
-        <span><a href="owner/login.html" style="color:var(--text-main); font-weight:600;">Salon Owner Login</a></span>
-        <span><a href="account.html" style="color:var(--text-main);">👤 My Account</a></span>
-        <span>📞 <a href="tel:+916202692426">+91 6202 692 426</a></span>
+        <a href="register-salon.html" style="font-weight:700; color:var(--accent);">
+          <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Register Your Salon
+        </a>
+        <a href="owner/login.html" style="color:var(--text-main); font-weight:600;">Owner Login</a>
+        <a href="account.html" style="color:var(--text-main);">
+          <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          My Bookings
+        </a>
+        <a href="tel:+916202692426">
+          <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          +91 6202 692 426
+        </a>
       </div>
     </div>
   </div>
@@ -262,7 +142,9 @@
   <header class="navbar">
     <div class="container nav-inner">
       <a href="index.html" class="nav-brand">
-        <div class="nav-brand-logo">✂️</div>
+        <div class="nav-brand-logo">
+          <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24" style="stroke:#FFFFFF;"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+        </div>
         <div>
           <div class="nav-brand-title">Urban Hairplaza</div>
           <div class="nav-brand-sub">Salon Network</div>
@@ -275,7 +157,7 @@
         <a href="services.html" class="nav-link">Services & Pricing</a>
         <a href="barbers.html" class="nav-link">Our Barbers</a>
         <a href="account.html" class="nav-link">My Bookings</a>
-        <a href="register-salon.html" class="nav-link" style="color:var(--accent-amber); font-weight:600;">+ List Salon</a>
+        <a href="register-salon.html" class="nav-link" style="color:var(--accent); font-weight:600;">+ List Salon</a>
         <a href="contact.html" class="nav-link">Contact</a>
       </nav>
 
@@ -295,36 +177,36 @@
     <a href="salons.html" class="nav-link active">Explore Salons</a>
     <a href="services.html" class="nav-link">Services & Pricing</a>
     <a href="barbers.html" class="nav-link">Our Barbers</a>
-    <a href="account.html" class="nav-link">My Bookings / Login</a>
-    <a href="register-salon.html" class="nav-link" style="color:var(--accent-amber); font-weight:700;">💈 Register Your Salon</a>
+    <a href="account.html" class="nav-link">My Bookings</a>
+    <a href="register-salon.html" class="nav-link" style="color:var(--accent); font-weight:700;">Register Your Salon</a>
     <a href="owner/login.html" class="nav-link">Salon Owner Portal</a>
     <a href="contact.html" class="nav-link">Contact</a>
     <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
       <a href="book.html" class="btn btn-primary btn-block">Book Appointment</a>
-      <a href="register-salon.html" class="btn btn-secondary btn-block">Register Your Salon</a>
+      <a href="register-salon.html" class="btn btn-secondary btn-block">Register Salon</a>
     </div>
   </div>
 
   <!-- DIRECTORY HERO -->
   <section class="directory-hero">
     <div class="container">
-      <span class="mono-tag">Multi-Salon Booking Platform</span>
-      <h1 class="hero-title" style="margin-top: 6px; font-size: clamp(2.2rem, 4.5vw, 3.2rem);">Find Your Style. Book Your Salon.</h1>
+      <span class="mono-tag">Salon Directory</span>
+      <h1 class="hero-title" style="margin-top: 8px;">Find Your Style. Book Your Salon.</h1>
       <p class="section-subtitle" style="max-width: 680px;">
-        Discover premier barbershops and salons near you. Compare services, verify verified reviews, pick your favorite stylist, and lock your slot online.
+        Discover verified barbershops and salons near you. Compare services, view real reviews, pick your favorite stylist, and lock your slot online.
       </p>
 
       <!-- SEARCH BAR -->
       <form id="search-form" class="search-panel" onsubmit="event.preventDefault(); applyFilter();">
         <div class="search-input-group">
           <label for="search-input">Search Salons</label>
-          <input type="text" id="search-input" placeholder="Salon name, landmark, or keyword...">
+          <input type="text" id="search-input" placeholder="Salon name, area, or keyword...">
         </div>
 
         <div class="search-input-group">
-          <label for="city-select">City / Area</label>
+          <label for="city-select">City / District</label>
           <select id="city-select" onchange="applyFilter()">
-            <option value="">All Cities</option>
+            <option value="">All Locations</option>
             <option value="Simraha">Simraha</option>
             <option value="Araria">Araria</option>
             <option value="Patna">Patna</option>
@@ -349,7 +231,8 @@
         <div>
           <label style="opacity:0; display:block; font-size:0.75rem; margin-bottom:4px;">Action</label>
           <button type="submit" class="btn btn-primary btn-block" style="padding: 10px 20px;">
-            🔍 Find Salons
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Find Salons
           </button>
         </div>
       </form>
@@ -367,34 +250,35 @@
   </section>
 
   <!-- SALONS LISTING SECTION -->
-  <section class="section" style="padding-top: 30px;">
+  <section class="section" style="padding-top: 36px;">
     <div class="container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-        <h2 style="font-size: 1.6rem; font-weight: 600;">Available Verified Salons (<span id="salons-count">...</span>)</h2>
-        <span style="font-size: 0.85rem; color: var(--text-muted);" id="filter-feedback">Showing all verified listings</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="font-size: 1.5rem; font-weight: 700;">Available Verified Salons (<span id="salons-count">...</span>)</h2>
+        <span style="font-size: 0.875rem; color: var(--text-muted);" id="filter-feedback">Showing all verified listings</span>
       </div>
 
       <!-- Salons Grid -->
       <div id="salons-container" class="salons-grid">
         <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
-          Loading available salons...
+          Loading verified salons...
         </div>
       </div>
 
       <!-- BANNER FOR SALON OWNERS -->
       <div class="register-partner-banner">
         <div>
-          <span style="color: #FBBF24; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">For Salon Owners & Barbers</span>
+          <span style="color: #F59E0B; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">For Salon Owners & Barbers</span>
           <h3 style="color: #FFFFFF; font-size: 1.6rem; margin-top: 6px;">Grow your salon with Urban Hairplaza</h3>
-          <p style="color: #9CA3AF; font-size: 0.95rem; margin-top: 4px; max-width: 580px;">
-            Join our platform. Get verified, accept advance online bookings, eliminate no-shows, and manage your staff & calendar with a dedicated dashboard.
+          <p style="color: #94A3B8; font-size: 0.95rem; margin-top: 6px; max-width: 580px; line-height:1.6;">
+            List your business. Get verified, accept advance online bookings, eliminate no-shows, and manage your staff & calendar with a dedicated owner dashboard.
           </p>
         </div>
         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-          <a href="register-salon.html" class="btn btn-secondary btn-lg" style="background:#FFFFFF; color:#111827; font-weight:700;">
-            Register Your Salon →
+          <a href="register-salon.html" class="btn btn-secondary btn-lg" style="background:#FFFFFF; color:#0F172A; font-weight:700;">
+            Register Your Salon
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </a>
-          <a href="owner/login.html" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,0.4); color:#FFFFFF;">
+          <a href="owner/login.html" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,0.3); color:#FFFFFF;">
             Owner Login
           </a>
         </div>
@@ -407,8 +291,8 @@
   <footer class="footer">
     <div class="container footer-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
       <p style="color:var(--text-muted); font-size:0.875rem;">© 2026 Urban Hairplaza Network. Multi-Salon Booking System.</p>
-      <div style="display:flex; gap:16px; font-size:0.85rem;">
-        <a href="register-salon.html" style="color:var(--accent-amber);">Register a Salon</a>
+      <div style="display:flex; gap:20px; font-size:0.875rem;">
+        <a href="register-salon.html" style="color:var(--accent); font-weight:600;">List Salon</a>
         <a href="owner/login.html" style="color:var(--text-muted);">Salon Owner Portal</a>
         <a href="privacy.html" style="color:var(--text-muted);">Privacy & Safety</a>
         <a href="admin/login.html" style="color:var(--text-muted);">Master Admin</a>
@@ -419,12 +303,33 @@
   <script>
     let allSalons = [];
 
+    // URL parameter parsing for incoming searches from homepage
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param) || '';
+    }
+
     async function loadSalons() {
       try {
         const res = await fetch('/api/salons');
         const salons = await res.json();
         allSalons = Array.isArray(salons) ? salons : [];
-        renderSalons(allSalons);
+
+        // Check if query params exist
+        const initialSearch = getQueryParam('search');
+        const initialCity = getQueryParam('city');
+        if (initialSearch) document.getElementById('search-input').value = initialSearch;
+        if (initialCity) {
+          const citySelect = document.getElementById('city-select');
+          for (let opt of citySelect.options) {
+            if (opt.value.toLowerCase() === initialCity.toLowerCase()) {
+              citySelect.value = opt.value;
+              break;
+            }
+          }
+        }
+
+        applyFilter();
       } catch (e) {
         console.error('Failed to load salons:', e);
         document.getElementById('salons-container').innerHTML = `
@@ -443,7 +348,9 @@
       if (salons.length === 0) {
         container.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; background: #FFFFFF; border: 1px dashed var(--border); border-radius: var(--radius-lg);">
-            <div style="font-size: 2.5rem; margin-bottom: 12px;">🔍</div>
+            <div style="width:48px; height:48px; border-radius:50%; background:var(--bg-muted); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px; color:var(--text-muted);">
+              <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
             <h3 style="font-size: 1.25rem;">No salons matched your search</h3>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">Try searching for a different city or clearing your filters.</p>
             <button onclick="resetFilters()" class="btn btn-secondary btn-sm" style="margin-top: 16px;">Reset All Filters</button>
@@ -460,36 +367,50 @@
         const reviews = salon.reviewsCount || 45;
         const startPrice = salon.startingPrice || 100;
         const summary = salon.servicesSummary || 'Haircuts · Beard Grooming · Styling';
+        const locationText = `${salon.area ? `${salon.area}, ` : ''}${salon.city || 'Simraha'}`;
 
         return `
           <div class="salon-card">
             <div class="salon-card-img-wrap">
-              <img src="${imgUrl}" alt="${salon.name}" class="salon-card-img" onerror="this.onerror=null; this.src='images/gallery_shop_interior.png';">
-              ${isFeatured ? '<span class="salon-badge-featured">⭐ Flagship</span>' : ''}
-              <span class="salon-badge-verified">✓ Verified</span>
+              <img src="${imgUrl}" alt="${escapeHtml(salon.name)}" class="salon-card-img" onerror="this.onerror=null; this.src='images/gallery_shop_interior.png';">
+              ${isFeatured ? '<span class="salon-badge-featured">Flagship</span>' : ''}
+              <span class="salon-badge-verified">
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Verified
+              </span>
             </div>
 
             <div class="salon-card-body">
               <div class="salon-card-title-row">
-                <h3 class="salon-card-name">${salon.name}</h3>
-                <div class="salon-rating">★ ${rating}</div>
+                <h3 class="salon-card-name">${escapeHtml(salon.name)}</h3>
+                <div class="salon-rating">
+                  <svg class="ui-icon ui-icon-xs ui-icon-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  ${rating}
+                </div>
               </div>
 
               <div class="salon-card-loc">
-                <span>📍</span>
-                <span>${salon.area ? `${salon.area}, ` : ''}${salon.city || 'Simraha'}</span>
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span>${escapeHtml(locationText)}</span>
               </div>
 
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-                🕐 ${salon.hours || '9:00 AM – 9:00 PM'} · 📞 ${salon.phone || '+91 6202 692 426'}
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; display:flex; gap:12px; align-items:center;">
+                <span style="display:inline-flex; align-items:center; gap:4px;">
+                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  ${escapeHtml(salon.hours || '9:00 AM – 9:00 PM')}
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:4px;">
+                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  ${escapeHtml(salon.phone || '+91 6202 692 426')}
+                </span>
               </div>
 
               <div class="salon-services-tagline">
-                ✂️ ${summary}
+                ${escapeHtml(summary)}
               </div>
 
-              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 16px;">
-                ${salon.description ? salon.description.slice(0, 110) + '...' : 'Premium styling, clean tools, and experienced barbers.'}
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 16px;">
+                ${escapeHtml(salon.description ? salon.description.slice(0, 110) + '...' : 'Premium styling, clean tools, and experienced barbers.')}
               </p>
 
               <div class="salon-card-footer">
@@ -497,11 +418,10 @@
                   <div class="salon-price-start">Starting from</div>
                   <div class="salon-price-val">₹${startPrice}</div>
                 </div>
-                <div style="display:flex; gap:8px;">
-                  <a href="book.html?salonId=${salon.id}" class="btn btn-primary btn-sm" style="font-weight:700;">
-                    Book Appointment →
-                  </a>
-                </div>
+                <a href="book.html?salonId=${encodeURIComponent(salon.id)}" class="btn btn-primary btn-sm">
+                  Book Appointment
+                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </a>
               </div>
             </div>
           </div>
@@ -553,11 +473,16 @@
       document.getElementById('city-select').value = '';
       document.getElementById('service-select').value = '';
       document.querySelectorAll('.city-chip').forEach((b, i) => {
-        if (i === 1) b.classList.add('active'); // All locations
+        if (i === 1) b.classList.add('active');
         else b.classList.remove('active');
       });
       renderSalons(allSalons);
       document.getElementById('filter-feedback').textContent = `Showing all verified listings`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // Mobile nav toggle
