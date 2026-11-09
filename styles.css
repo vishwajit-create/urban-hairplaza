@@ -1280,3 +1280,22 @@ p {
   .hero-search-form { flex-direction: column; align-items: stretch; }
   .search-divider { display: none; }
 }
+
+/* --- AI TRY-ON FLOATING WIDGET --- */
+@keyframes uhp-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  #uhp-open-btn {
+    bottom: 20px !important;
+    right: 16px !important;
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+  }
+  #uhp-modal-backdrop > div {
+    width: 98% !important;
+    height: 94vh !important;
+    border-radius: 12px !important;
+  }
+}
