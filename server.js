@@ -196,6 +196,25 @@ const STATIC_PAGES = {
   '/beauty-parlour/gallery.html': path.join(__dirname, 'beauty-parlour', 'gallery.html'),
   '/beauty-parlour/contact': path.join(__dirname, 'beauty-parlour', 'contact.html'),
   '/beauty-parlour/contact.html': path.join(__dirname, 'beauty-parlour', 'contact.html'),
+  '/beauty-parlour/book': path.join(__dirname, 'beauty-parlour', 'book.html'),
+  '/beauty-parlour/book.html': path.join(__dirname, 'beauty-parlour', 'book.html'),
+  '/beauty-parlour/parlours': path.join(__dirname, 'beauty-parlour', 'parlours.html'),
+  '/beauty-parlour/parlours.html': path.join(__dirname, 'beauty-parlour', 'parlours.html'),
+  '/beauty-parlour/register-parlour': path.join(__dirname, 'beauty-parlour', 'register-parlour.html'),
+  '/beauty-parlour/register-parlour.html': path.join(__dirname, 'beauty-parlour', 'register-parlour.html'),
+  '/beauty-parlour/register': path.join(__dirname, 'beauty-parlour', 'register-parlour.html'),
+  '/beauty-parlour/admin': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/login': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/login.html': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/dashboard': path.join(__dirname, 'beauty-parlour', 'admin', 'dashboard.html'),
+  '/beauty-parlour/admin/dashboard.html': path.join(__dirname, 'beauty-parlour', 'admin', 'dashboard.html'),
+  '/beauty-parlour/owner': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/login': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/login.html': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/dashboard': path.join(__dirname, 'beauty-parlour', 'owner', 'dashboard.html'),
+  '/beauty-parlour/owner/dashboard.html': path.join(__dirname, 'beauty-parlour', 'owner', 'dashboard.html'),
   '/account': path.join(__dirname, 'account.html'),
   '/account.html': path.join(__dirname, 'account.html'),
   '/login': path.join(__dirname, 'account.html'),
@@ -2730,6 +2749,537 @@ app.get(['/admin', '/admin/'], (req, res) => {
 
 // â”€â”€ INITIALIZATION & SERVER START â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 db.initDB().catch(err => console.error('[Init DB Error]', err));
+
+
+// ??????????????????????????????????????????????????????????????????????????????
+// ?? BEAUTY PARLOUR DEDICATED REST API (100% ISOLATED SUB-ECOSYSTEM)
+// ??????????????????????????????????????????????????????????????????????????????
+
+// Middleware: Beauty Parlour Admin Auth
+function requireParlourAdmin(req, res, next) {
+  const token = req.cookies?.uhp_parlour_admin_token || req.headers['x-parlour-admin-token'];
+  if (token) {
+    const verified = verifyAuthToken(token);
+    if (verified && verified.role === 'parlour_admin') {
+      req.parlourAdminUser = verified.user;
+      return next();
+    }
+  }
+  if (req.session && req.session.isParlourAdmin) {
+    return next();
+  }
+  // Check main admin session as fallback
+  if (req.session && req.session.isAdmin) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Parlour Admin login required.' });
+}
+
+// Middleware: Beauty Parlour Owner Auth
+async function requireParlourOwner(req, res, next) {
+  const token = req.cookies?.uhp_parlour_owner_token || req.headers['x-parlour-owner-token'];
+  if (token) {
+    const verified = verifyAuthToken(token);
+    if (verified && verified.role === 'parlour_owner') {
+      req.parlourOwner = await db.getParlourOwnerById(verified.ownerId);
+      if (req.parlourOwner) return next();
+    }
+  }
+  if (req.session && req.session.parlourOwnerId) {
+    req.parlourOwner = await db.getParlourOwnerById(req.session.parlourOwnerId);
+    if (req.parlourOwner) return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Parlour Owner login required.' });
+}
+
+// 1. GET /api/parlour/directory ? List all verified/approved beauty parlours
+app.get('/api/parlour/directory', async (req, res) => {
+  try {
+    const { city, search } = req.query;
+    let parlours = await db.getParlours({ status: 'approved' });
+    if (city) {
+      parlours = parlours.filter(p => p.city && p.city.toLowerCase().includes(city.toLowerCase().trim()));
+    }
+    if (search) {
+      const q = search.toLowerCase().trim();
+      parlours = parlours.filter(p =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.servicesSummary && p.servicesSummary.toLowerCase().includes(q)) ||
+        (p.city && p.city.toLowerCase().includes(q))
+      );
+    }
+    res.json(parlours);
+  } catch (err) {
+    console.error('[API-PARLOUR] directory error:', err);
+    res.status(500).json({ error: 'Failed to fetch beauty parlours' });
+  }
+});
+
+// 2. GET /api/parlour/services ? Get services for a specific beauty parlour
+app.get('/api/parlour/services', async (req, res) => {
+  try {
+    const parlourId = req.query.parlourId || 'parlour-urban-beauty';
+    const services = await db.getParlourServices(parlourId);
+    res.json(services);
+  } catch (err) {
+    console.error('[API-PARLOUR] services error:', err);
+    res.status(500).json({ error: 'Failed to fetch parlour services' });
+  }
+});
+
+// 3. GET /api/parlour/staff ? Get beauticians/staff for a specific beauty parlour
+app.get('/api/parlour/staff', async (req, res) => {
+  try {
+    const parlourId = req.query.parlourId || 'parlour-urban-beauty';
+    const staff = await db.getParlourStaff(parlourId);
+    res.json(staff);
+  } catch (err) {
+    console.error('[API-PARLOUR] staff error:', err);
+    res.status(500).json({ error: 'Failed to fetch parlour staff' });
+  }
+});
+
+// 4. GET /api/parlour/availability ? Isolated parlour slot checker
+app.get('/api/parlour/availability', async (req, res) => {
+  try {
+    const { parlourId, date, beautician } = req.query;
+    if (!date) return res.status(400).json({ error: 'Date is required.' });
+
+    const pId = parlourId || 'parlour-urban-beauty';
+    const allBookings = await db.getParlourBookings({ parlourId: pId });
+    const bookedSlots = allBookings
+      .filter(b => b.date === date && b.status !== 'cancelled' && (!beautician || beautician === 'Any Available' || b.beauticianName === beautician))
+      .map(b => b.time);
+
+    // Standard 9:00 AM ? 9:00 PM operating slots
+    const slots = [
+      '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+      '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+      '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+      '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
+      '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
+      '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM'
+    ];
+
+    const availability = slots.map(time => ({
+      time,
+      available: !bookedSlots.includes(time)
+    }));
+
+    res.json({ date, availability });
+  } catch (err) {
+    console.error('[API-PARLOUR] availability error:', err);
+    res.status(500).json({ error: 'Failed to compute availability' });
+  }
+});
+
+// 5. POST /api/parlour/bookings ? Dedicated Beauty Parlour appointment creation
+app.post('/api/parlour/bookings', async (req, res) => {
+  try {
+    const {
+      parlourId,
+      clientName,
+      clientPhone,
+      clientEmail,
+      serviceName,
+      beauticianName,
+      date,
+      time,
+      serviceType,
+      address,
+      notes,
+      price,
+      duration
+    } = req.body;
+
+    if (!clientName || !clientPhone || !serviceName || !date || !time) {
+      return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
+    }
+
+    const cleanPhone = clientPhone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    const pId = parlourId || 'parlour-urban-beauty';
+    const parlour = await db.getParlourById(pId);
+    const parlourName = parlour ? parlour.name : 'Urban Hairplaza Beauty Parlour';
+
+    const booking = await db.createParlourBooking({
+      parlourId: pId,
+      parlourName,
+      clientName: clientName.trim(),
+      clientPhone: cleanPhone,
+      clientEmail: (clientEmail || '').trim(),
+      serviceName: serviceName.trim(),
+      beauticianName: (beauticianName || 'Any Available').trim(),
+      date: date.trim(),
+      time: time.trim(),
+      serviceType: serviceType || 'inparlour',
+      address: (address || '').trim(),
+      notes: (notes || '').trim(),
+      price: Number(price) || 0,
+      duration: duration || '45 mins',
+      status: 'confirmed'
+    });
+
+    // Send WhatsApp notification to client
+    try {
+      const typeText = booking.serviceType === 'home' ? 'Home Visit' : 'In-Parlour';
+      const msg = `?? *New Booking Confirmed!*\n\nDear ${booking.clientName},\nYour appointment at *${parlourName}* is locked.\n\n?? *Service:* ${booking.serviceName}\n?? *Beautician:* ${booking.beauticianName}\n?? *Date:* ${booking.date}\n?? *Time:* ${booking.time}\n?? *Type:* ${typeText}\n?? *Total:* ?${booking.price}\n\n?? Helpline: +91 6202 692 426\nThank you for choosing ${parlourName}!`;
+      await sendWhatsAppNotification(msg, cleanPhone);
+    } catch (e) {
+      console.warn('[WhatsApp] Parlour client alert failed:', e.message);
+    }
+
+    res.json({
+      success: true,
+      id: booking.id,
+      booking,
+      message: 'Beauty Parlour appointment confirmed successfully!'
+    });
+  } catch (err) {
+    console.error('[API-PARLOUR] booking error:', err);
+    res.status(500).json({ error: 'Failed to create beauty appointment' });
+  }
+});
+
+// 6. POST /api/parlour/register ? Register new beauty parlour + owner
+app.post('/api/parlour/register', async (req, res) => {
+  try {
+    const {
+      parlourName,
+      ownerName,
+      phone,
+      email,
+      password,
+      city,
+      address,
+      description,
+      servicesSummary,
+      image
+    } = req.body;
+
+    if (!parlourName || !ownerName || !phone || !password || !city || !address) {
+      return res.status(400).json({ error: 'Parlour name, owner name, phone, password, city, and address are required.' });
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    // Check if phone or email already registered
+    const existing = await db.getParlourOwnerByPhone(cleanPhone);
+    if (existing) {
+      return res.status(409).json({ error: 'A beauty parlour owner with this phone number is already registered.' });
+    }
+
+    const parlourId = 'parlour-' + Date.now().toString(36);
+    const ownerId = 'owner-p-' + Date.now().toString(36);
+
+    const newParlour = await db.saveParlour({
+      id: parlourId,
+      name: parlourName.trim(),
+      slug: parlourName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      ownerId,
+      phone: cleanPhone,
+      email: (email || '').trim(),
+      city: city.trim(),
+      address: address.trim(),
+      description: (description || 'Professional ladies beauty parlour offering skin care, waxing, nail art, and bridal makeup.').trim(),
+      servicesSummary: (servicesSummary || 'Skin & Face ? Waxing ? Nails ? Bridal Makeup ? Hair Spa').trim(),
+      image: image || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
+      status: 'pending', // Requires admin approval
+      featured: false
+    });
+
+    const newOwner = await db.saveParlourOwner({
+      id: ownerId,
+      parlourId,
+      name: ownerName.trim(),
+      phone: cleanPhone,
+      email: (email || '').trim(),
+      passwordHash: password,
+      status: 'pending'
+    });
+
+    res.json({
+      success: true,
+      parlourId,
+      message: 'Your beauty parlour has been registered! Our admin will review and verify your listing within 24 hours.'
+    });
+  } catch (err) {
+    console.error('[API-PARLOUR] registration error:', err);
+    res.status(500).json({ error: 'Failed to register beauty parlour' });
+  }
+});
+
+// ??????????????????????????????????????????????????????????????????????????????
+// ?? PARLOUR OWNER PORTAL ENDPOINTS
+// ??????????????????????????????????????????????????????????????????????????????
+
+// POST /api/parlour/owner/login
+app.post('/api/parlour/owner/login', async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Mobile number/email and password are required.' });
+    }
+
+    const clean = identifier.trim();
+    const cleanPhone = clean.replace(/\D/g, '').slice(-10);
+    let owner = null;
+
+    if (cleanPhone.length === 10) {
+      owner = await db.getParlourOwnerByPhone(cleanPhone);
+    }
+    if (!owner && clean.includes('@')) {
+      owner = await db.getParlourOwnerByEmail(clean);
+    }
+
+    if (!owner) {
+      return res.status(401).json({ error: 'No beauty parlour owner account found with these credentials.' });
+    }
+
+    if (owner.passwordHash !== password) {
+      return res.status(401).json({ error: 'Incorrect password.' });
+    }
+
+    const token = createAuthToken({
+      role: 'parlour_owner',
+      ownerId: owner.id,
+      parlourId: owner.parlourId,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000
+    });
+
+    if (req.session) {
+      req.session.parlourOwnerId = owner.id;
+      req.session.parlourId = owner.parlourId;
+    }
+
+    res.cookie('uhp_parlour_owner_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    const parlour = await db.getParlourById(owner.parlourId);
+    res.json({
+      success: true,
+      token,
+      owner: { id: owner.id, name: owner.name, phone: owner.phone, parlourId: owner.parlourId },
+      parlour
+    });
+  } catch (err) {
+    console.error('[API-PARLOUR] owner login error:', err);
+    res.status(500).json({ error: 'Internal login error' });
+  }
+});
+
+// POST /api/parlour/owner/logout
+app.post('/api/parlour/owner/logout', (req, res) => {
+  if (req.session) {
+    delete req.session.parlourOwnerId;
+    delete req.session.parlourId;
+  }
+  res.clearCookie('uhp_parlour_owner_token');
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// GET /api/parlour/owner/me
+app.get('/api/parlour/owner/me', requireParlourOwner, async (req, res) => {
+  try {
+    const parlour = await db.getParlourById(req.parlourOwner.parlourId);
+    res.json({
+      owner: {
+        id: req.parlourOwner.id,
+        name: req.parlourOwner.name,
+        phone: req.parlourOwner.phone,
+        email: req.parlourOwner.email,
+        status: req.parlourOwner.status
+      },
+      parlour
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+// GET /api/parlour/owner/bookings
+app.get('/api/parlour/owner/bookings', requireParlourOwner, async (req, res) => {
+  try {
+    const bookings = await db.getParlourBookings({ parlourId: req.parlourOwner.parlourId });
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load bookings' });
+  }
+});
+
+// PATCH /api/parlour/owner/bookings/:id
+app.patch('/api/parlour/owner/bookings/:id', requireParlourOwner, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await db.getParlourBookingById(req.params.id);
+    if (!booking || booking.parlourId !== req.parlourOwner.parlourId) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    const updated = await db.updateParlourBooking(req.params.id, { status });
+    res.json({ success: true, booking: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update booking' });
+  }
+});
+
+// POST /api/parlour/owner/services ? Add service
+app.post('/api/parlour/owner/services', requireParlourOwner, async (req, res) => {
+  try {
+    const { category, name, description, price, duration } = req.body;
+    if (!name || !price) return res.status(400).json({ error: 'Name and price are required.' });
+
+    const service = await db.saveParlourService({
+      parlourId: req.parlourOwner.parlourId,
+      category: category || 'General',
+      name: name.trim(),
+      description: (description || '').trim(),
+      price: Number(price),
+      duration: duration || '30 mins'
+    });
+    res.json({ success: true, service });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add service' });
+  }
+});
+
+// DELETE /api/parlour/owner/services/:id
+app.delete('/api/parlour/owner/services/:id', requireParlourOwner, async (req, res) => {
+  try {
+    await db.deleteParlourService(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete service' });
+  }
+});
+
+// POST /api/parlour/owner/staff ? Add beautician
+app.post('/api/parlour/owner/staff', requireParlourOwner, async (req, res) => {
+  try {
+    const { name, role, experience, photo, bio } = req.body;
+    if (!name || !role) return res.status(400).json({ error: 'Name and role are required.' });
+
+    const staff = await db.saveParlourStaff({
+      parlourId: req.parlourOwner.parlourId,
+      name: name.trim(),
+      role: role.trim(),
+      experience: experience || '3+ Years',
+      photo: photo || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+      bio: (bio || '').trim(),
+      rating: 5.0
+    });
+    res.json({ success: true, staff });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add beautician' });
+  }
+});
+
+// DELETE /api/parlour/owner/staff/:id
+app.delete('/api/parlour/owner/staff/:id', requireParlourOwner, async (req, res) => {
+  try {
+    await db.deleteParlourStaff(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete staff' });
+  }
+});
+
+// ??????????????????????????????????????????????????????????????????????????????
+// ??? PARLOUR ADMIN PORTAL ENDPOINTS
+// ??????????????????????????????????????????????????????????????????????????????
+
+// POST /api/parlour/admin/login
+app.post('/api/parlour/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').trim();
+  const adminPass = (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025').trim();
+
+  if (safeCompare(username || '', adminUser) && safeCompare(password || '', adminPass)) {
+    const token = createAuthToken({
+      role: 'parlour_admin',
+      user: adminUser,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000
+    });
+
+    if (req.session) {
+      req.session.isParlourAdmin = true;
+      req.session.parlourAdminUser = adminUser;
+    }
+
+    res.cookie('uhp_parlour_admin_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    return res.json({ success: true, token, user: adminUser });
+  }
+  return res.status(401).json({ error: 'Invalid admin username or password.' });
+});
+
+// POST /api/parlour/admin/logout
+app.post('/api/parlour/admin/logout', (req, res) => {
+  if (req.session) {
+    delete req.session.isParlourAdmin;
+    delete req.session.parlourAdminUser;
+  }
+  res.clearCookie('uhp_parlour_admin_token');
+  res.json({ success: true, message: 'Logged out from Parlour Admin' });
+});
+
+// GET /api/parlour/admin/parlours ? List all parlours (pending & approved)
+app.get('/api/parlour/admin/parlours', requireParlourAdmin, async (req, res) => {
+  try {
+    const parlours = await db.getParlours();
+    res.json(parlours);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch parlours' });
+  }
+});
+
+// PATCH /api/parlour/admin/parlours/:id/status ? Approve or reject parlour
+app.patch('/api/parlour/admin/parlours/:id/status', requireParlourAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['approved', 'pending', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be approved, pending, or rejected.' });
+    }
+    const updated = await db.updateParlour(req.params.id, { status });
+    if (!updated) return res.status(404).json({ error: 'Parlour not found' });
+    res.json({ success: true, parlour: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update parlour status' });
+  }
+});
+
+// GET /api/parlour/admin/bookings ? All parlour bookings
+app.get('/api/parlour/admin/bookings', requireParlourAdmin, async (req, res) => {
+  try {
+    const bookings = await db.getParlourBookings();
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load parlour bookings' });
+  }
+});
+
+// DELETE /api/parlour/admin/bookings/:id
+app.delete('/api/parlour/admin/bookings/:id', requireParlourAdmin, async (req, res) => {
+  try {
+    await db.deleteParlourBooking(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete booking' });
+  }
+});
+
 
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {

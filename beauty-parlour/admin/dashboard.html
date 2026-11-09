@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – Beauty Parlour Management</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body { background: var(--bg-subtle); }
+    .dash-container { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-top: 4px; }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .dash-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .dash-tab {
+      padding: 8px 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .dash-tab.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+    }
+    .data-table-wrap {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th {
+      background: var(--bg-muted);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-approved { background: var(--success-bg); color: var(--success); }
+    .badge-pending  { background: #FEF3C7; color: #D97706; }
+    .badge-rejected { background: var(--danger-bg); color: var(--danger); }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <div class="nav-brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+        </div>
+        <div>
+          <div class="nav-brand-title">Beauty Parlour Admin</div>
+          <div class="nav-brand-sub">Verification &amp; Control</div>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <a href="../parlours.html" class="btn btn-secondary btn-sm" target="_blank">View Live Parlours ↗</a>
+        <button type="button" class="btn btn-outline btn-sm" id="logout-btn">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="dash-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <div>
+        <h1 style="font-size:1.6rem;">Admin Overview</h1>
+        <p style="color:var(--text-muted); font-size:0.92rem;">Independent management for verified beauty parlours &amp; appointments</p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Refresh</button>
+    </div>
+
+    <!-- METRICS -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Parlours</div>
+        <div class="stat-num" id="stat-total-parlours">-</div>
+      </div>
+      <div class="stat-card" style="border-left: 4px solid #D97706;">
+        <div class="stat-label">Pending Approval</div>
+        <div class="stat-num" id="stat-pending-parlours" style="color:#D97706;">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Bookings</div>
+        <div class="stat-num" id="stat-total-bookings">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Volume (₹)</div>
+        <div class="stat-num" id="stat-revenue" style="color:var(--accent);">-</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="dash-tabs">
+      <button type="button" class="dash-tab active" data-tab="parlours" onclick="showTab('parlours')">🏪 Parlours &amp; Approvals</button>
+      <button type="button" class="dash-tab" data-tab="bookings" onclick="showTab('bookings')">📅 Parlour Bookings</button>
+    </div>
+
+    <!-- TAB 1: PARLOURS -->
+    <div id="tab-parlours">
+      <div class="data-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Parlour Name</th>
+              <th>City / Location</th>
+              <th>Contact Phone</th>
+              <th>Services Summary</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="parlours-tbody">
+            <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">Loading parlours...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: BOOKINGS -->
+    <div id="tab-bookings" style="display:none;">
+      <div class="data-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>Parlour</th>
+              <th>Client</th>
+              <th>Service</th>
+              <th>Beautician</th>
+              <th>Schedule</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-tbody">
+            <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Loading bookings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let parloursList = [];
+    let bookingsList = [];
+
+    function showTab(tab) {
+      document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById('tab-parlours').style.display = tab === 'parlours' ? 'block' : 'none';
+      document.getElementById('tab-bookings').style.display = tab === 'bookings' ? 'block' : 'none';
+    }
+
+    async function loadAllData() {
+      const token = localStorage.getItem('uhp_parlour_admin_token');
+      const headers = token ? { 'x-parlour-admin-token': token } : {};
+
+      // 1. Load Parlours
+      try {
+        const resP = await fetch('/api/parlour/admin/parlours', { headers });
+        if (resP.status === 401) {
+          window.location.href = 'login.html';
+          return;
+        }
+        parloursList = await resP.json();
+        renderParlours();
+      } catch (e) {
+        console.error('Failed to load parlours:', e);
+      }
+
+      // 2. Load Bookings
+      try {
+        const resB = await fetch('/api/parlour/admin/bookings', { headers });
+        if (resB.ok) {
+          bookingsList = await resB.json();
+          renderBookings();
+        }
+      } catch (e) {
+        console.error('Failed to load bookings:', e);
+      }
+
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      const totalP = parloursList.length;
+      const pendingP = parloursList.filter(p => p.status === 'pending').length;
+      const totalB = bookingsList.length;
+      const rev = bookingsList.reduce((acc, b) => acc + (Number(b.price) || 0), 0);
+
+      document.getElementById('stat-total-parlours').textContent = totalP;
+      document.getElementById('stat-pending-parlours').textContent = pendingP;
+      document.getElementById('stat-total-bookings').textContent = totalB;
+      document.getElementById('stat-revenue').textContent = '₹' + rev.toLocaleString('en-IN');
+    }
+
+    function renderParlours() {
+      const tbody = document.getElementById('parlours-tbody');
+      if (!parloursList || parloursList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px;">No beauty parlours found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = parloursList.map(p => {
+        const isFlagship = p.id === 'parlour-urban-beauty';
+        const statusBadge = `<span class="badge badge-${p.status || 'pending'}">${p.status || 'pending'}</span>`;
+        let actions = '-';
+
+        if (!isFlagship) {
+          if (p.status === 'pending') {
+            actions = `
+              <button class="btn btn-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="setStatus('${p.id}', 'approved')">Approve ✓</button>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger); margin-left:6px;" onclick="setStatus('${p.id}', 'rejected')">Reject</button>
+            `;
+          } else if (p.status === 'approved') {
+            actions = `<button class="btn btn-outline btn-sm" onclick="setStatus('${p.id}', 'pending')">Suspend</button>`;
+          } else {
+            actions = `<button class="btn btn-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="setStatus('${p.id}', 'approved')">Re-Approve</button>`;
+          }
+        }
+
+        return `
+          <tr>
+            <td>
+              <strong>${escapeHtml(p.name)}</strong>
+              ${isFlagship ? '<span style="font-size:0.7rem; background:var(--accent-light); color:var(--accent); padding:2px 6px; border-radius:4px; margin-left:6px;">Flagship</span>' : ''}
+            </td>
+            <td>${escapeHtml(p.city || p.address)}</td>
+            <td><a href="tel:${escapeHtml(p.phone)}">${escapeHtml(p.phone)}</a></td>
+            <td style="max-width:240px; font-size:0.8rem; color:var(--text-muted);">${escapeHtml(p.servicesSummary || '-')}</td>
+            <td>${statusBadge}</td>
+            <td>${actions}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderBookings() {
+      const tbody = document.getElementById('bookings-tbody');
+      if (!bookingsList || bookingsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px;">No beauty bookings recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = bookingsList.map(b => {
+        return `
+          <tr>
+            <td><code>${b.id}</code></td>
+            <td><strong>${escapeHtml(b.parlourName || 'Urban Beauty')}</strong></td>
+            <td>
+              <div>${escapeHtml(b.clientName)}</div>
+              <a href="tel:${escapeHtml(b.clientPhone)}" style="font-size:0.8rem; color:var(--accent);">${escapeHtml(b.clientPhone)}</a>
+            </td>
+            <td>${escapeHtml(b.serviceName)}</td>
+            <td>${escapeHtml(b.beauticianName || 'Any')}</td>
+            <td>${escapeHtml(b.date)}<br><small style="color:var(--text-muted);">${escapeHtml(b.time)}</small></td>
+            <td><strong>₹${b.price}</strong></td>
+            <td><span class="badge badge-${b.status === 'confirmed' ? 'approved' : 'pending'}">${escapeHtml(b.status)}</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteBooking('${b.id}')">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function setStatus(id, status) {
+      if (!confirm(`Are you sure you want to mark this parlour as ${status}?`)) return;
+      const token = localStorage.getItem('uhp_parlour_admin_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-parlour-admin-token'] = token;
+
+      try {
+        const res = await fetch(`/api/parlour/admin/parlours/${encodeURIComponent(id)}/status`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ status })
+        });
+        if (res.ok) {
+          loadAllData();
+        } else {
+          alert('Failed to update status');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function deleteBooking(id) {
+      if (!confirm('Are you sure you want to delete this booking record?')) return;
+      const token = localStorage.getItem('uhp_parlour_admin_token');
+      const headers = token ? { 'x-parlour-admin-token': token } : {};
+
+      try {
+        const res = await fetch(`/api/parlour/admin/bookings/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers
+        });
+        if (res.ok) loadAllData();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      localStorage.removeItem('uhp_parlour_admin_token');
+      await fetch('/api/parlour/admin/logout', { method: 'POST' });
+      window.location.href = 'login.html';
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAllData);
+  </script>
+</body>
+</html>

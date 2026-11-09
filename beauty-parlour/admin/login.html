@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login – Beauty Parlour Management</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body {
+      background: var(--bg-subtle);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .login-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .login-box {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      max-width: 420px;
+      width: 100%;
+      padding: 36px;
+      box-shadow: var(--shadow-card);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <div class="nav-brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+        </div>
+        <div>
+          <div class="nav-brand-title">Beauty Parlour Admin</div>
+          <div class="nav-brand-sub">Management Portal</div>
+        </div>
+      </a>
+      <a href="../index.html" class="btn btn-secondary btn-sm">← Back to Site</a>
+    </div>
+  </header>
+
+  <div class="login-container">
+    <div class="login-box">
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="width:52px; height:52px; border-radius:50%; background:var(--bg-muted); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:1.4rem;">
+          🛡️
+        </div>
+        <h2>Parlour Admin Portal</h2>
+        <p style="color:var(--text-muted); font-size:0.88rem; margin-top:4px;">
+          Sign in to verify parlours and manage appointments
+        </p>
+      </div>
+
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label for="username">Admin Username</label>
+          <input type="text" id="username" placeholder="admin" required autofocus>
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-accent btn-block btn-lg" id="login-btn">
+          Sign In to Dashboard
+        </button>
+        <div id="login-error" style="display:none; color:var(--danger); background:var(--danger-bg); padding:10px; border-radius:var(--radius); font-size:0.85rem; margin-top:14px; text-align:center;"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errBox = document.getElementById('login-error');
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+      errBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/parlour/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          localStorage.setItem('uhp_parlour_admin_token', data.token);
+          window.location.href = 'dashboard.html';
+        } else {
+          errBox.textContent = data.error || 'Invalid credentials.';
+          errBox.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Sign In to Dashboard';
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        errBox.textContent = 'Failed to connect. Please try again.';
+        errBox.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Dashboard';
+      }
+    });
+  </script>
+</body>
+</html>

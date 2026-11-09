@@ -1,7 +1,7 @@
-/**
- * Urban Hairplaza – Unified Database Layer
+﻿/**
+ * Urban Hairplaza â€“ Unified Database Layer
  * Supports:
- *   1. Neon Cloud PostgreSQL (when DATABASE_URL is set) — Permanent enterprise storage
+ *   1. Neon Cloud PostgreSQL (when DATABASE_URL is set) â€” Permanent enterprise storage
  *   2. Local JSON Flat-Files (fallback when DATABASE_URL is not set)
  */
 
@@ -22,10 +22,15 @@ const FILES = {
   otps:         path.join(DATA_DIR, 'otps.json'),
   salons:       path.join(DATA_DIR, 'salons.json'),
   owners:       path.join(DATA_DIR, 'owners.json'),
-  staff:        path.join(DATA_DIR, 'staff.json')
+  staff:        path.join(DATA_DIR, 'staff.json'),
+  parlours:     path.join(DATA_DIR, 'parlours.json'),
+  parlour_services: path.join(DATA_DIR, 'parlour_services.json'),
+  parlour_staff:    path.join(DATA_DIR, 'parlour_staff.json'),
+  parlour_bookings: path.join(DATA_DIR, 'parlour_bookings.json'),
+  parlour_owners:   path.join(DATA_DIR, 'parlour_owners.json')
 };
 
-// ── JSON FILE HELPERS ────────────────────────────────────────────────────────
+// â”€â”€ JSON FILE HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function readJSON(file) {
   try {
     if (!fs.existsSync(file)) return [];
@@ -44,7 +49,7 @@ function writeJSON(file, data) {
   }
 }
 
-// ── POSTGRESQL POOL SETUP ───────────────────────────────────────────────────
+// â”€â”€ POSTGRESQL POOL SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let pgPool = null;
 const dbUrl = process.env.DATABASE_URL;
 
@@ -66,7 +71,7 @@ if (dbUrl && dbUrl.trim().startsWith('postgres')) {
   console.log('[DB] No DATABASE_URL found. Using local JSON flat-file storage.');
 }
 
-// ── DATABASE INITIALIZATION & SCHEMA CREATION ───────────────────────────────
+// â”€â”€ DATABASE INITIALIZATION & SCHEMA CREATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function initDB() {
   if (pgPool) {
     try {
@@ -159,7 +164,7 @@ async function initDB() {
             address TEXT,
             city VARCHAR(100) DEFAULT 'Simraha',
             area VARCHAR(100) DEFAULT 'Araria',
-            hours VARCHAR(255) DEFAULT '9:00 AM – 9:00 PM',
+            hours VARCHAR(255) DEFAULT '9:00 AM â€“ 9:00 PM',
             rating NUMERIC(3,2) DEFAULT 4.9,
             reviews_count INT DEFAULT 45,
             starting_price NUMERIC(10,2) DEFAULT 100,
@@ -201,7 +206,87 @@ async function initDB() {
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reminder_status VARCHAR(50);
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS whatsapp_confirmed_at TIMESTAMPTZ;
+          
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS whatsapp_owner_notified_at TIMESTAMPTZ;
+
+          CREATE TABLE IF NOT EXISTS parlours (
+            id VARCHAR(64) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            slug VARCHAR(255),
+            owner_id VARCHAR(64),
+            phone VARCHAR(50),
+            email VARCHAR(255),
+            address TEXT,
+            city VARCHAR(100),
+            area VARCHAR(100),
+            hours VARCHAR(100),
+            rating NUMERIC(3,1) DEFAULT 4.9,
+            reviews_count INT DEFAULT 1,
+            starting_price NUMERIC(10,2) DEFAULT 49,
+            image TEXT,
+            description TEXT,
+            services_summary TEXT,
+            status VARCHAR(50) DEFAULT 'pending',
+            featured BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          CREATE TABLE IF NOT EXISTS parlour_bookings (
+            id VARCHAR(64) PRIMARY KEY,
+            parlour_id VARCHAR(64) NOT NULL,
+            parlour_name VARCHAR(255),
+            client_name VARCHAR(255) NOT NULL,
+            client_phone VARCHAR(50) NOT NULL,
+            client_email VARCHAR(255),
+            service_name VARCHAR(255) NOT NULL,
+            beautician_name VARCHAR(255) DEFAULT 'Any Available',
+            date VARCHAR(50) NOT NULL,
+            time VARCHAR(50) NOT NULL,
+            service_type VARCHAR(50) DEFAULT 'inparlour',
+            address TEXT,
+            notes TEXT,
+            price NUMERIC(10,2) DEFAULT 0,
+            duration VARCHAR(50),
+            status VARCHAR(50) DEFAULT 'confirmed',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          CREATE TABLE IF NOT EXISTS parlour_services (
+            id VARCHAR(64) PRIMARY KEY,
+            parlour_id VARCHAR(64) NOT NULL,
+            category VARCHAR(100) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            price NUMERIC(10,2) NOT NULL,
+            duration VARCHAR(50),
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          CREATE TABLE IF NOT EXISTS parlour_staff (
+            id VARCHAR(64) PRIMARY KEY,
+            parlour_id VARCHAR(64) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            role VARCHAR(100) NOT NULL,
+            experience VARCHAR(50),
+            rating NUMERIC(3,1) DEFAULT 4.9,
+            photo TEXT,
+            bio TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          CREATE TABLE IF NOT EXISTS parlour_owners (
+            id VARCHAR(64) PRIMARY KEY,
+            parlour_id VARCHAR(64),
+            name VARCHAR(255) NOT NULL,
+            phone VARCHAR(50) NOT NULL,
+            email VARCHAR(255),
+            password_hash TEXT NOT NULL,
+            status VARCHAR(50) DEFAULT 'approved',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
         `);
         console.log('[DB] PostgreSQL schema verified successfully.');
       } finally {
@@ -215,18 +300,102 @@ async function initDB() {
   // Initialize JSON seed if file is empty
   if (!fs.existsSync(FILES.services) || readJSON(FILES.services).length === 0) {
     const defaultServices = [
-      { id: 'SRV-01', salonId: 'salon-urban-hairplaza', category: 'Haircut', type: 'inshop', icon: '✂️', name: 'Classic Tailored Haircut', desc: 'Precision scissor and clipper cut suited to your head shape, including rinse and hot towel neck finish.', price: 150, duration: 30 },
-      { id: 'SRV-02', salonId: 'salon-urban-hairplaza', category: 'Haircut', type: 'inshop', icon: '💈', name: 'Fade & Taper Styling', desc: 'Skin fade, low fade, drop fade, or taper cut with razor-sharp temple and neck line-up.', price: 200, duration: 35 },
-      { id: 'SRV-03', salonId: 'salon-urban-hairplaza', category: 'Beard', type: 'inshop', icon: '🪒', name: 'Beard Sculpting & Razor Line', desc: 'Detailed beard trimming, length shaping, organic oil conditioning, and straight-razor cheek line.', price: 100, duration: 20 },
-      { id: 'SRV-04', salonId: 'salon-urban-hairplaza', category: 'Shave', type: 'inshop', icon: '🧴', name: 'Royal Hot Towel Shave', desc: 'Pre-shave eucalyptus oil, steamed towels, rich warm lather, and traditional straight-edge razor shave.', price: 150, duration: 25 },
-      { id: 'SRV-05', salonId: 'salon-urban-hairplaza', category: 'Treatment', type: 'inshop', icon: '💆', name: 'Head & Scalp Revival Massage', desc: 'Deep pressure-point scalp massage with nourishing almond & mint oils to relieve stress and stimulate follicles.', price: 120, duration: 25 },
-      { id: 'SRV-06', salonId: 'salon-urban-hairplaza', category: 'Treatment', type: 'inshop', icon: '✨', name: 'Charcoal Detox Face Cleanup', desc: 'Exfoliating activated charcoal scrub, steam pore opening, blackhead extraction, and calming moisturizer.', price: 250, duration: 30 },
-      { id: 'SRV-07', salonId: 'salon-urban-hairplaza', category: 'Combos', type: 'inshop', icon: '👑', name: 'The Urban Plaza Full Package', desc: 'Signature haircut + full beard grooming + head massage + refreshing face cleanse.', price: 450, duration: 75 },
-      { id: 'SRV-08', salonId: 'salon-urban-hairplaza', category: 'Home Visit', type: 'home', icon: '🏠', name: 'Home Visit – Signature Haircut', desc: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', price: 250, duration: 45 },
-      { id: 'SRV-09', salonId: 'salon-urban-hairplaza', category: 'Home Visit', type: 'home', icon: '🏠', name: 'Home Visit – Complete Grooming Combo', desc: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', price: 500, duration: 90 },
+      { id: 'SRV-01', salonId: 'salon-urban-hairplaza', category: 'Haircut', type: 'inshop', icon: 'âœ‚ï¸', name: 'Classic Tailored Haircut', desc: 'Precision scissor and clipper cut suited to your head shape, including rinse and hot towel neck finish.', price: 150, duration: 30 },
+      { id: 'SRV-02', salonId: 'salon-urban-hairplaza', category: 'Haircut', type: 'inshop', icon: 'ðŸ’ˆ', name: 'Fade & Taper Styling', desc: 'Skin fade, low fade, drop fade, or taper cut with razor-sharp temple and neck line-up.', price: 200, duration: 35 },
+      { id: 'SRV-03', salonId: 'salon-urban-hairplaza', category: 'Beard', type: 'inshop', icon: 'ðŸª’', name: 'Beard Sculpting & Razor Line', desc: 'Detailed beard trimming, length shaping, organic oil conditioning, and straight-razor cheek line.', price: 100, duration: 20 },
+      { id: 'SRV-04', salonId: 'salon-urban-hairplaza', category: 'Shave', type: 'inshop', icon: 'ðŸ§´', name: 'Royal Hot Towel Shave', desc: 'Pre-shave eucalyptus oil, steamed towels, rich warm lather, and traditional straight-edge razor shave.', price: 150, duration: 25 },
+      { id: 'SRV-05', salonId: 'salon-urban-hairplaza', category: 'Treatment', type: 'inshop', icon: 'ðŸ’†', name: 'Head & Scalp Revival Massage', desc: 'Deep pressure-point scalp massage with nourishing almond & mint oils to relieve stress and stimulate follicles.', price: 120, duration: 25 },
+      { id: 'SRV-06', salonId: 'salon-urban-hairplaza', category: 'Treatment', type: 'inshop', icon: 'âœ¨', name: 'Charcoal Detox Face Cleanup', desc: 'Exfoliating activated charcoal scrub, steam pore opening, blackhead extraction, and calming moisturizer.', price: 250, duration: 30 },
+      { id: 'SRV-07', salonId: 'salon-urban-hairplaza', category: 'Combos', type: 'inshop', icon: 'ðŸ‘‘', name: 'The Urban Plaza Full Package', desc: 'Signature haircut + full beard grooming + head massage + refreshing face cleanse.', price: 450, duration: 75 },
+      { id: 'SRV-08', salonId: 'salon-urban-hairplaza', category: 'Home Visit', type: 'home', icon: 'ðŸ ', name: 'Home Visit â€“ Signature Haircut', desc: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', price: 250, duration: 45 },
+      { id: 'SRV-09', salonId: 'salon-urban-hairplaza', category: 'Home Visit', type: 'home', icon: 'ðŸ ', name: 'Home Visit â€“ Complete Grooming Combo', desc: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', price: 500, duration: 90 },
     ];
     writeJSON(FILES.services, defaultServices);
   }
+
+
+  // Seed Beauty Parlours (Flagship Beauty Parlour)
+  if (!fs.existsSync(FILES.parlours) || readJSON(FILES.parlours).length === 0) {
+    const defaultParlours = [
+      {
+        id: 'parlour-urban-beauty',
+        name: 'Urban Hairplaza Beauty Parlour',
+        slug: 'urban-beauty-parlour-simraha',
+        ownerId: 'owner-urban-beauty',
+        phone: '+916202692426',
+        email: 'urbanhairplazapvtltd@gmail.com',
+        address: 'Near Phanishwar Nath Renu Statue, Simraha, Araria ? 854331, Bihar',
+        city: 'Simraha',
+        area: 'Araria',
+        hours: 'Daily: 9:00 AM ? 9:00 PM',
+        rating: 4.9,
+        reviewsCount: 96,
+        startingPrice: 49,
+        image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
+        description: 'Premier ladies beauty parlour and bridal studio in Simraha, Araria. Specializing in skin brightening facials, waxing, nail art, and complete bridal transformations with sanitized tools and doorstep service.',
+        servicesSummary: 'Skin & Facial ? Waxing & Threading ? Nails & Gel Art ? Bridal Makeup ? Hair Spa',
+        status: 'approved',
+        featured: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+    writeJSON(FILES.parlours, defaultParlours);
+  }
+
+  // Seed Parlour Staff (Beauticians)
+  if (!fs.existsSync(FILES.parlour_staff) || readJSON(FILES.parlour_staff).length === 0) {
+    const defaultStaff = [
+      { id: 'STF-P01', parlourId: 'parlour-urban-beauty', name: 'Pooja Sharma', role: 'Senior Beautician & Skin Specialist', experience: '6+ Years', rating: 4.9, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80', bio: 'Certified skin therapist specialized in Ayurvedic facials, chemical peels, and de-tan therapy.' },
+      { id: 'STF-P02', parlourId: 'parlour-urban-beauty', name: 'Anjali Kumari', role: 'Lead Bridal & Makeup Artist', experience: '5+ Years', rating: 5.0, photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80', bio: 'Master HD & Airbrush artist with over 150+ bridal transformations across Bihar.' },
+      { id: 'STF-P03', parlourId: 'parlour-urban-beauty', name: 'Suman Verma', role: 'Nail Artist & Hair Spa Specialist', experience: '4+ Years', rating: 4.8, photo: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=400&q=80', bio: 'Expert in Gel/Acrylic extensions, intricate nail art, and organic keratin hair repair.' }
+    ];
+    writeJSON(FILES.parlour_staff, defaultStaff);
+  }
+
+  // Seed Parlour Services
+  if (!fs.existsSync(FILES.parlour_services) || readJSON(FILES.parlour_services).length === 0) {
+    const defaultServices = [
+      { id: 'PSRV-01', parlourId: 'parlour-urban-beauty', category: 'Skin & Face', name: 'Basic Facial', description: 'Deep cleansing, gentle scrub, steam, and fruit face pack.', price: 299, duration: '45 mins' },
+      { id: 'PSRV-02', parlourId: 'parlour-urban-beauty', category: 'Skin & Face', name: 'Gold Glow Facial', description: '24K gold dust brightening massage and nourishing serum.', price: 499, duration: '60 mins' },
+      { id: 'PSRV-03', parlourId: 'parlour-urban-beauty', category: 'Skin & Face', name: 'Diamond Anti-Aging Facial', description: 'Exfoliation, tightening mask, and ultrasonic infusion.', price: 699, duration: '75 mins' },
+      { id: 'PSRV-04', parlourId: 'parlour-urban-beauty', category: 'Skin & Face', name: 'D-Tan Cleanup', description: 'Instant sun-tan removal pack and skin brightening finish.', price: 299, duration: '40 mins' },
+      { id: 'PSRV-05', parlourId: 'parlour-urban-beauty', category: 'Waxing & Threading', name: 'Eyebrow Threading', description: 'Precision arch shaping and upper brow alignment.', price: 49, duration: '10 mins' },
+      { id: 'PSRV-06', parlourId: 'parlour-urban-beauty', category: 'Waxing & Threading', name: 'Full Face Threading', description: 'Eyebrow, upper lip, chin, and forehead clean-up.', price: 99, duration: '20 mins' },
+      { id: 'PSRV-07', parlourId: 'parlour-urban-beauty', category: 'Waxing & Threading', name: 'Full Arms & Legs Waxing', description: 'Honey wax hair removal with soothing post-wax aloe lotion.', price: 499, duration: '60 mins' },
+      { id: 'PSRV-08', parlourId: 'parlour-urban-beauty', category: 'Waxing & Threading', name: 'Full Body Waxing', description: 'Complete body waxing with sensitive skin Rica wax option.', price: 999, duration: '120 mins' },
+      { id: 'PSRV-09', parlourId: 'parlour-urban-beauty', category: 'Nails', name: 'Luxury Manicure & Pedicure', description: 'Dead skin exfoliation, cuticle care, hand & foot massage + polish.', price: 499, duration: '60 mins' },
+      { id: 'PSRV-10', parlourId: 'parlour-urban-beauty', category: 'Nails', name: 'Gel Nail Extensions', description: 'Durable gel tip sculpting, shape contouring, and top coat shine.', price: 699, duration: '60 mins' },
+      { id: 'PSRV-11', parlourId: 'parlour-urban-beauty', category: 'Nails', name: 'Custom Nail Art (Full Set)', description: 'Floral, glitter, chrome, or french tip custom art.', price: 299, duration: '45 mins' },
+      { id: 'PSRV-12', parlourId: 'parlour-urban-beauty', category: 'Bridal & Makeup', name: 'Party HD Makeup', description: 'HD camera-ready makeup, false lashes, and setting spray.', price: 999, duration: '45 mins' },
+      { id: 'PSRV-13', parlourId: 'parlour-urban-beauty', category: 'Bridal & Makeup', name: 'Engagement Glam Makeup', description: 'Semi-bridal look with contouring, eye glam, and hair setting.', price: 1999, duration: '90 mins' },
+      { id: 'PSRV-14', parlourId: 'parlour-urban-beauty', category: 'Bridal & Makeup', name: 'Complete Bridal Makeup', description: 'HD bridal base, jewelry styling, dupatta draping, and Juda.', price: 3999, duration: '150 mins' },
+      { id: 'PSRV-15', parlourId: 'parlour-urban-beauty', category: 'Bridal & Makeup', name: 'Airbrush Royal Bridal Package', description: 'Flawless water-resistant airbrush makeup for high-definition photography.', price: 5999, duration: '180 mins' },
+      { id: 'PSRV-16', parlourId: 'parlour-urban-beauty', category: 'Hair Services', name: 'Haircut & Blow-dry (Women)', description: 'Layer cut, feather cut, or bob cut with volume blow-dry.', price: 299, duration: '30 mins' },
+      { id: 'PSRV-17', parlourId: 'parlour-urban-beauty', category: 'Hair Services', name: 'Organic Protein Hair Spa', description: 'Deep hair nourishing cream, scalp massage, and steam therapy.', price: 499, duration: '45 mins' },
+      { id: 'PSRV-18', parlourId: 'parlour-urban-beauty', category: 'Hair Services', name: 'Keratin Frizz-Free Treatment', description: 'Long-lasting protein infusion for silky smooth manageable hair.', price: 2999, duration: '180 mins' },
+      { id: 'PSRV-19', parlourId: 'parlour-urban-beauty', category: 'Special Packages', name: 'Basic Bridal Package', description: 'Cleanup, threading, waxing, HD makeup, and saree draping combo.', price: 3499, duration: '200 mins' },
+      { id: 'PSRV-20', parlourId: 'parlour-urban-beauty', category: 'Special Packages', name: 'Royal Queen Bridal Package', description: 'Gold facial, full body waxing, gel manicure, airbrush bridal makeup & Juda.', price: 7999, duration: '300 mins' }
+    ];
+    writeJSON(FILES.parlour_services, defaultServices);
+  }
+
+  // Seed Parlour Owner
+  if (!fs.existsSync(FILES.parlour_owners) || readJSON(FILES.parlour_owners).length === 0) {
+    const defaultOwners = [
+      {
+        id: 'owner-urban-beauty',
+        parlourId: 'parlour-urban-beauty',
+        name: 'Pooja Sharma',
+        phone: '6202692426',
+        email: 'beauty@urbanhairplaza.com',
+        passwordHash: 'urban@beauty2026',
+        status: 'approved',
+        createdAt: new Date().toISOString()
+      }
+    ];
+    writeJSON(FILES.parlour_owners, defaultOwners);
+  }
+
 
   // Seed Salons (Urban Hairplaza flagship + verified network salons)
   if (!fs.existsSync(FILES.salons) || readJSON(FILES.salons).length === 0) {
@@ -241,13 +410,13 @@ async function initDB() {
         address: 'Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar 854318',
         city: 'Simraha',
         area: 'Araria',
-        hours: 'Daily: 9:00 AM – 9:00 PM',
+        hours: 'Daily: 9:00 AM â€“ 9:00 PM',
         rating: 4.9,
         reviewsCount: 148,
         startingPrice: 100,
         image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
         description: 'Flagship grooming lounge and authentic barbershop offering tailored haircuts, beard sculpting, royal shaves, and doorstep home services in Simraha, Araria.',
-        servicesSummary: 'Haircuts · Fade & Taper · Beard Sculpting · Hot Towel Shave · Facials · Home Visit',
+        servicesSummary: 'Haircuts Â· Fade & Taper Â· Beard Sculpting Â· Hot Towel Shave Â· Facials Â· Home Visit',
         status: 'approved',
         featured: true,
         createdAt: '2025-01-01T00:00:00.000Z'
@@ -262,13 +431,13 @@ async function initDB() {
         address: 'Near Crossing, Boring Road, Patna, Bihar 800001',
         city: 'Patna',
         area: 'Boring Road',
-        hours: 'Mon – Sun: 10:00 AM – 8:30 PM',
+        hours: 'Mon â€“ Sun: 10:00 AM â€“ 8:30 PM',
         rating: 4.8,
         reviewsCount: 96,
         startingPrice: 150,
         image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=800&q=80',
-        description: 'Contemporary luxury men’s grooming lounge specializing in executive haircuts, beard crafting, scalp treatments, and bridal groom styling.',
-        servicesSummary: 'Executive Cut · Beard Crafting · Hair Spa · Detan Cleanup',
+        description: 'Contemporary luxury menâ€™s grooming lounge specializing in executive haircuts, beard crafting, scalp treatments, and bridal groom styling.',
+        servicesSummary: 'Executive Cut Â· Beard Crafting Â· Hair Spa Â· Detan Cleanup',
         status: 'approved',
         featured: false,
         createdAt: '2025-02-10T00:00:00.000Z'
@@ -283,13 +452,13 @@ async function initDB() {
         address: 'Hospital Road, Line Bazar, Purnia, Bihar 854301',
         city: 'Purnia',
         area: 'Line Bazar',
-        hours: 'Tue – Sun: 9:30 AM – 8:00 PM',
+        hours: 'Tue â€“ Sun: 9:30 AM â€“ 8:00 PM',
         rating: 4.7,
         reviewsCount: 52,
         startingPrice: 120,
         image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
         description: 'Trendy barbershop known for skin fades, modern beard styling, and revitalizing head massage therapy.',
-        servicesSummary: 'Skin Fades · Beard Sculpting · Head Massage',
+        servicesSummary: 'Skin Fades Â· Beard Sculpting Â· Head Massage',
         status: 'pending',
         featured: false,
         createdAt: '2025-03-01T00:00:00.000Z'
@@ -355,7 +524,7 @@ async function initDB() {
   if (!fs.existsSync(FILES.otps)) writeJSON(FILES.otps, []);
 }
 
-// ── BOOKINGS METHODS ────────────────────────────────────────────────────────
+// â”€â”€ BOOKINGS METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function getBookings() {
   if (pgPool) {
     try {
@@ -585,7 +754,7 @@ async function deleteBooking(id) {
   return true;
 }
 
-// ── TRANSACTIONS METHODS ────────────────────────────────────────────────────
+// â”€â”€ TRANSACTIONS METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function saveTransaction(txn) {
   const transactions = readJSON(FILES.transactions);
   const newTxn = {
@@ -674,7 +843,7 @@ async function getTransactions() {
   return readJSON(FILES.transactions);
 }
 
-// ── USERS / CLIENT PROFILES METHODS ─────────────────────────────────────────
+// â”€â”€ USERS / CLIENT PROFILES METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function upsertUser({ name, phone = '', email = '', spent = 0 }) {
   const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
   const cleanEmail = email ? String(email).trim().toLowerCase() : '';
@@ -775,7 +944,7 @@ async function getUsers() {
   return readJSON(FILES.users);
 }
 
-// ── SERVICES METHODS ────────────────────────────────────────────────────────
+// â”€â”€ SERVICES METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function getServices() {
   if (pgPool) {
     try {
@@ -794,7 +963,7 @@ async function getServices() {
             desc: r.description,
             description: r.description,
             badge: r.badge,
-            icon: isHome ? '🏠' : '✂️',
+            icon: isHome ? 'ðŸ ' : 'âœ‚ï¸',
             type: isHome ? 'home' : 'inshop'
           };
         });
@@ -803,8 +972,8 @@ async function getServices() {
         const hasHome = services.some(s => s.type === 'home');
         if (!hasHome) {
           services.push(
-            { id: 'home-haircut', name: 'Home Visit – Signature Haircut', category: 'Home Visit', duration: '45 min', price: 250, desc: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', description: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', badge: 'Doorstep', icon: '🏠', type: 'home' },
-            { id: 'home-combo', name: 'Home Visit – Complete Grooming Combo', category: 'Home Visit', duration: '90 min', price: 500, desc: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', description: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', badge: 'Doorstep', icon: '🏠', type: 'home' }
+            { id: 'home-haircut', name: 'Home Visit â€“ Signature Haircut', category: 'Home Visit', duration: '45 min', price: 250, desc: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', description: 'Professional barber arrives at your doorstep with sanitized tools and sterile setup.', badge: 'Doorstep', icon: 'ðŸ ', type: 'home' },
+            { id: 'home-combo', name: 'Home Visit â€“ Complete Grooming Combo', category: 'Home Visit', duration: '90 min', price: 500, desc: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', description: 'Full haircut, beard styling, and soothing scalp massage in the comfort of your home.', badge: 'Doorstep', icon: 'ðŸ ', type: 'home' }
           );
         }
 
@@ -905,7 +1074,7 @@ async function deleteService(id) {
   return true;
 }
 
-// ── ENQUIRIES METHODS ───────────────────────────────────────────────────────
+// â”€â”€ ENQUIRIES METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function getEnquiries() {
   if (pgPool) {
     try {
@@ -967,7 +1136,7 @@ async function deleteEnquiry(id) {
   return true;
 }
 
-// ── OTP AUTH & USER BOOKINGS ────────────────────────────────────────────────
+// â”€â”€ OTP AUTH & USER BOOKINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function saveOtp(identifier, otp, type = 'phone') {
   const cleanId = identifier.trim().toLowerCase();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -1058,7 +1227,7 @@ async function getUserBookings(phone, email) {
   });
 }
 
-// ── MULTI-TENANT SALONS METHODS ─────────────────────────────────────────────
+// â”€â”€ MULTI-TENANT SALONS METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getSalons(filter = {}) {
   let salons = [];
@@ -1107,13 +1276,13 @@ async function getSalons(filter = {}) {
       address: 'Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar 854318',
       city: 'Simraha',
       area: 'Araria',
-      hours: 'Daily: 9:00 AM – 9:00 PM',
+      hours: 'Daily: 9:00 AM â€“ 9:00 PM',
       rating: 4.9,
       reviewsCount: 148,
       startingPrice: 100,
       image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
       description: 'Flagship grooming lounge and authentic barbershop offering tailored haircuts, beard sculpting, royal shaves, and doorstep home services in Simraha, Araria.',
-      servicesSummary: 'Haircuts · Fade & Taper · Beard Sculpting · Hot Towel Shave · Facials · Home Visit',
+      servicesSummary: 'Haircuts Â· Fade & Taper Â· Beard Sculpting Â· Hot Towel Shave Â· Facials Â· Home Visit',
       status: 'approved',
       featured: true,
       createdAt: '2025-01-01T00:00:00.000Z'
@@ -1212,7 +1381,7 @@ async function saveSalon(salon) {
         salon.address || '',
         salon.city || 'Simraha',
         salon.area || 'Araria',
-        salon.hours || 'Daily: 9:00 AM – 9:00 PM',
+        salon.hours || 'Daily: 9:00 AM â€“ 9:00 PM',
         Number(salon.rating) || 4.9,
         Number(salon.reviewsCount) || 40,
         Number(salon.startingPrice) || 100,
@@ -1284,7 +1453,7 @@ async function deleteSalon(id) {
   return true;
 }
 
-// ── SALON OWNERS METHODS ───────────────────────────────────────────────────
+// â”€â”€ SALON OWNERS METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getOwners() {
   if (pgPool) {
@@ -1393,7 +1562,7 @@ async function updateOwner(id, updates) {
   return getOwnerById(id);
 }
 
-// ── SALON STAFF METHODS ────────────────────────────────────────────────────
+// â”€â”€ SALON STAFF METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getStaffBySalon(salonId) {
   const allStaff = readJSON(FILES.staff);
@@ -1426,7 +1595,7 @@ async function deleteStaff(id) {
   return true;
 }
 
-// ── SALON SERVICES METHODS ─────────────────────────────────────────────────
+// â”€â”€ SALON SERVICES METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getServicesBySalon(salonId) {
   const allServices = await getServices();
@@ -1440,7 +1609,7 @@ async function getServicesBySalon(salonId) {
   return allServices.map(s => ({ ...s, salonId }));
 }
 
-// ── SALON BOOKINGS METHODS ─────────────────────────────────────────────────
+// â”€â”€ SALON BOOKINGS METHODS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getBookingsBySalon(salonId) {
   const allBookings = await getBookings();
@@ -1450,7 +1619,240 @@ async function getBookingsBySalon(salonId) {
   return allBookings.filter(b => b.salonId === salonId);
 }
 
+
+// ?? BEAUTY PARLOUR METHODS (COMPLETELY ISOLATED) ???????????????????????????
+
+async function getParlours(filter = {}) {
+  const all = readJSON(FILES.parlours);
+  return all.filter(p => {
+    if (filter.status && p.status !== filter.status) return false;
+    if (filter.city && p.city && !p.city.toLowerCase().includes(filter.city.toLowerCase())) return false;
+    return true;
+  });
+}
+
+async function getParlourById(id) {
+  const all = await getParlours();
+  return all.find(p => p.id === id) || null;
+}
+
+async function saveParlour(parlour) {
+  const all = readJSON(FILES.parlours);
+  const now = new Date().toISOString();
+  const newP = {
+    id: parlour.id || 'parlour-' + Date.now().toString(36),
+    rating: parlour.rating || 4.9,
+    reviewsCount: parlour.reviewsCount || 1,
+    startingPrice: parlour.startingPrice || 49,
+    status: parlour.status || 'pending',
+    createdAt: parlour.createdAt || now,
+    updatedAt: now,
+    ...parlour
+  };
+  all.push(newP);
+  writeJSON(FILES.parlours, all);
+  return newP;
+}
+
+async function updateParlour(id, updates) {
+  const all = readJSON(FILES.parlours);
+  const idx = all.findIndex(p => p.id === id);
+  if (idx === -1) return null;
+  all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
+  writeJSON(FILES.parlours, all);
+  return all[idx];
+}
+
+async function deleteParlour(id) {
+  let all = readJSON(FILES.parlours);
+  all = all.filter(p => p.id !== id);
+  writeJSON(FILES.parlours, all);
+  return true;
+}
+
+async function getParlourServices(parlourId) {
+  const all = readJSON(FILES.parlour_services);
+  if (!parlourId) return all;
+  const filtered = all.filter(s => s.parlourId === parlourId);
+  if (filtered.length === 0 && parlourId !== 'parlour-urban-beauty') {
+    // Return standard template if custom services not yet defined
+    return all.filter(s => s.parlourId === 'parlour-urban-beauty').map(s => ({ ...s, parlourId }));
+  }
+  return filtered;
+}
+
+async function saveParlourService(service) {
+  const all = readJSON(FILES.parlour_services);
+  const newS = {
+    id: service.id || 'PSRV-' + Date.now().toString(36).toUpperCase(),
+    createdAt: new Date().toISOString(),
+    ...service
+  };
+  all.push(newS);
+  writeJSON(FILES.parlour_services, all);
+  return newS;
+}
+
+async function updateParlourService(id, updates) {
+  const all = readJSON(FILES.parlour_services);
+  const idx = all.findIndex(s => s.id === id);
+  if (idx === -1) return null;
+  all[idx] = { ...all[idx], ...updates };
+  writeJSON(FILES.parlour_services, all);
+  return all[idx];
+}
+
+async function deleteParlourService(id) {
+  let all = readJSON(FILES.parlour_services);
+  all = all.filter(s => s.id !== id);
+  writeJSON(FILES.parlour_services, all);
+  return true;
+}
+
+async function getParlourStaff(parlourId) {
+  const all = readJSON(FILES.parlour_staff);
+  if (!parlourId) return all;
+  const filtered = all.filter(s => s.parlourId === parlourId);
+  if (filtered.length === 0 && parlourId !== 'parlour-urban-beauty') {
+    return all.filter(s => s.parlourId === 'parlour-urban-beauty').map(s => ({ ...s, parlourId }));
+  }
+  return filtered;
+}
+
+async function saveParlourStaff(staff) {
+  const all = readJSON(FILES.parlour_staff);
+  const newStf = {
+    id: staff.id || 'STF-P' + Date.now().toString(36).toUpperCase(),
+    createdAt: new Date().toISOString(),
+    ...staff
+  };
+  all.push(newStf);
+  writeJSON(FILES.parlour_staff, all);
+  return newStf;
+}
+
+async function deleteParlourStaff(id) {
+  let all = readJSON(FILES.parlour_staff);
+  all = all.filter(s => s.id !== id);
+  writeJSON(FILES.parlour_staff, all);
+  return true;
+}
+
+async function getParlourBookings(filter = {}) {
+  const all = readJSON(FILES.parlour_bookings);
+  return all.filter(b => {
+    if (filter.parlourId && b.parlourId !== filter.parlourId) return false;
+    if (filter.status && b.status !== filter.status) return false;
+    if (filter.phone && b.clientPhone !== filter.phone) return false;
+    return true;
+  });
+}
+
+async function getParlourBookingById(id) {
+  const all = readJSON(FILES.parlour_bookings);
+  return all.find(b => b.id === id) || null;
+}
+
+async function createParlourBooking(booking) {
+  const all = readJSON(FILES.parlour_bookings);
+  const newB = {
+    id: booking.id || 'BP-' + Date.now().toString(36).toUpperCase(),
+    status: booking.status || 'confirmed',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...booking
+  };
+  all.unshift(newB);
+  writeJSON(FILES.parlour_bookings, all);
+  return newB;
+}
+
+async function updateParlourBooking(id, updates) {
+  const all = readJSON(FILES.parlour_bookings);
+  const idx = all.findIndex(b => b.id === id);
+  if (idx === -1) return null;
+  all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
+  writeJSON(FILES.parlour_bookings, all);
+  return all[idx];
+}
+
+async function deleteParlourBooking(id) {
+  let all = readJSON(FILES.parlour_bookings);
+  all = all.filter(b => b.id !== id);
+  writeJSON(FILES.parlour_bookings, all);
+  return true;
+}
+
+async function getParlourOwners() {
+  return readJSON(FILES.parlour_owners);
+}
+
+async function getParlourOwnerById(id) {
+  const all = await getParlourOwners();
+  return all.find(o => o.id === id) || null;
+}
+
+async function getParlourOwnerByPhone(phone) {
+  const clean = (phone || '').replace(/\D/g, '').slice(-10);
+  const all = await getParlourOwners();
+  return all.find(o => (o.phone || '').replace(/\D/g, '').slice(-10) === clean) || null;
+}
+
+async function getParlourOwnerByEmail(email) {
+  if (!email) return null;
+  const all = await getParlourOwners();
+  return all.find(o => (o.email || '').toLowerCase() === email.toLowerCase().trim()) || null;
+}
+
+async function saveParlourOwner(owner) {
+  const all = readJSON(FILES.parlour_owners);
+  const newO = {
+    id: owner.id || 'owner-p-' + Date.now().toString(36),
+    status: owner.status || 'pending',
+    createdAt: new Date().toISOString(),
+    ...owner
+  };
+  all.push(newO);
+  writeJSON(FILES.parlour_owners, all);
+  return newO;
+}
+
+async function updateParlourOwner(id, updates) {
+  const all = readJSON(FILES.parlour_owners);
+  const idx = all.findIndex(o => o.id === id);
+  if (idx === -1) return null;
+  all[idx] = { ...all[idx], ...updates };
+  writeJSON(FILES.parlour_owners, all);
+  return all[idx];
+}
+
+
 module.exports = {
+  // Beauty Parlour Exports
+  getParlours,
+  getParlourById,
+  saveParlour,
+  updateParlour,
+  deleteParlour,
+  getParlourServices,
+  saveParlourService,
+  updateParlourService,
+  deleteParlourService,
+  getParlourStaff,
+  saveParlourStaff,
+  deleteParlourStaff,
+  getParlourBookings,
+  getParlourBookingById,
+  createParlourBooking,
+  updateParlourBooking,
+  deleteParlourBooking,
+  getParlourOwners,
+  getParlourOwnerById,
+  getParlourOwnerByPhone,
+  getParlourOwnerByEmail,
+  saveParlourOwner,
+  updateParlourOwner,
+
   initDB,
   getBookings,
   getBookingById,

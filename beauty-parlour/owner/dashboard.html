@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parlour Owner Dashboard – Urban Hairplaza</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body { background: var(--bg-subtle); }
+    .dash-container { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-top: 4px; }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .dash-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .dash-tab {
+      padding: 8px 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .dash-tab.active {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+    }
+    .data-table-wrap {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      background: var(--bg-muted);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-approved { background: var(--success-bg); color: var(--success); }
+    .badge-pending  { background: #FEF3C7; color: #D97706; }
+    .badge-cancelled{ background: var(--danger-bg); color: var(--danger); }
+    .action-box {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-top: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <div class="nav-brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+        </div>
+        <div>
+          <div class="nav-brand-title" id="nav-parlour-title">Parlour Owner Dashboard</div>
+          <div class="nav-brand-sub" id="nav-owner-sub">Partner Control Center</div>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <a href="../index.html" class="btn btn-secondary btn-sm" target="_blank">View Site ↗</a>
+        <button type="button" class="btn btn-outline btn-sm" id="owner-logout-btn">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="dash-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+      <div>
+        <h1 style="font-size:1.6rem;" id="owner-welcome">Welcome to Your Dashboard</h1>
+        <p style="color:var(--text-muted); font-size:0.92rem;" id="owner-parlour-meta">Loading parlour details...</p>
+      </div>
+      <div id="parlour-status-badge"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Appointments</div>
+        <div class="stat-num" id="stat-bookings">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Services</div>
+        <div class="stat-num" id="stat-services">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Beauticians / Staff</div>
+        <div class="stat-num" id="stat-staff">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Revenue (₹)</div>
+        <div class="stat-num" id="stat-revenue" style="color:var(--accent);">-</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="dash-tabs">
+      <button type="button" class="dash-tab active" data-tab="bookings" onclick="showTab('bookings')">📅 Appointments</button>
+      <button type="button" class="dash-tab" data-tab="services" onclick="showTab('services')">💅 Manage Services</button>
+      <button type="button" class="dash-tab" data-tab="staff" onclick="showTab('staff')">👩 Beauticians &amp; Staff</button>
+    </div>
+
+    <!-- TAB 1: APPOINTMENTS -->
+    <div id="tab-bookings">
+      <div class="data-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Service</th>
+              <th>Beautician</th>
+              <th>Date &amp; Time</th>
+              <th>Type</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-tbody">
+            <tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Loading bookings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: SERVICES -->
+    <div id="tab-services" style="display:none;">
+      <div class="data-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Service Name</th>
+              <th>Duration</th>
+              <th>Price</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="services-tbody">
+            <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">Loading services...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add service box -->
+      <div class="action-box">
+        <h3 style="margin-bottom:14px; font-size:1.1rem;">+ Add New Beauty Service</h3>
+        <form id="add-service-form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="srv-cat" style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+              <option value="Skin & Face">Skin &amp; Face</option>
+              <option value="Waxing & Threading">Waxing &amp; Threading</option>
+              <option value="Nails">Nails</option>
+              <option value="Bridal & Makeup">Bridal &amp; Makeup</option>
+              <option value="Hair Services">Hair Services</option>
+              <option value="Special Packages">Special Packages</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Service Name *</label>
+            <input type="text" id="srv-name" placeholder="e.g. Lotus Herbal Facial" required style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <div class="form-group">
+            <label>Duration</label>
+            <input type="text" id="srv-dur" placeholder="45 mins" value="45 mins" style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <div class="form-group">
+            <label>Price (₹) *</label>
+            <input type="number" id="srv-price" placeholder="499" required style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-accent btn-sm">+ Add Service to Menu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 3: BEAUTICIANS -->
+    <div id="tab-staff" style="display:none;">
+      <div class="data-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Beautician Name</th>
+              <th>Role / Title</th>
+              <th>Experience</th>
+              <th>Rating</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="staff-tbody">
+            <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">Loading beauticians...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add staff box -->
+      <div class="action-box">
+        <h3 style="margin-bottom:14px; font-size:1.1rem;">+ Add New Beautician / Staff Member</h3>
+        <form id="add-staff-form" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+          <div class="form-group">
+            <label>Beautician Full Name *</label>
+            <input type="text" id="stf-name" placeholder="e.g. Soniya Verma" required style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <div class="form-group">
+            <label>Role / Specialty *</label>
+            <input type="text" id="stf-role" placeholder="e.g. Bridal Specialist" required style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <div class="form-group">
+            <label>Experience</label>
+            <input type="text" id="stf-exp" placeholder="4+ Years" value="3+ Years" style="padding:10px; border:1px solid var(--border); border-radius:var(--radius);">
+          </div>
+          <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-accent btn-sm">+ Add Beautician</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentOwner = null;
+    let currentParlour = null;
+    let parlourBookings = [];
+    let parlourServices = [];
+    let parlourStaff = [];
+
+    function showTab(tab) {
+      document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById('tab-bookings').style.display = tab === 'bookings' ? 'block' : 'none';
+      document.getElementById('tab-services').style.display = tab === 'services' ? 'block' : 'none';
+      document.getElementById('tab-staff').style.display = tab === 'staff' ? 'block' : 'none';
+    }
+
+    async function loadDashboard() {
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = token ? { 'x-parlour-owner-token': token } : {};
+
+      try {
+        const resMe = await fetch('/api/parlour/owner/me', { headers });
+        if (resMe.status === 401) {
+          window.location.href = 'login.html';
+          return;
+        }
+        const data = await resMe.json();
+        currentOwner = data.owner;
+        currentParlour = data.parlour;
+
+        document.getElementById('nav-parlour-title').textContent = currentParlour ? currentParlour.name : 'Owner Dashboard';
+        document.getElementById('owner-welcome').textContent = `Welcome, ${currentOwner.name}!`;
+        document.getElementById('owner-parlour-meta').textContent = currentParlour ? `${currentParlour.address || currentParlour.city} · Phone: ${currentOwner.phone}` : '';
+
+        const status = (currentParlour && currentParlour.status) || currentOwner.status || 'pending';
+        document.getElementById('parlour-status-badge').innerHTML = `
+          <span class="badge badge-${status}">Status: ${status.toUpperCase()}</span>
+        `;
+
+        await Promise.all([loadBookings(), loadServices(), loadStaff()]);
+      } catch (err) {
+        console.error('Failed to load owner dashboard:', err);
+      }
+    }
+
+    async function loadBookings() {
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = token ? { 'x-parlour-owner-token': token } : {};
+
+      try {
+        const res = await fetch('/api/parlour/owner/bookings', { headers });
+        parlourBookings = await res.json();
+        renderBookings();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderBookings() {
+      const tbody = document.getElementById('bookings-tbody');
+      document.getElementById('stat-bookings').textContent = parlourBookings.length;
+      const rev = parlourBookings.reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+      document.getElementById('stat-revenue').textContent = '₹' + rev.toLocaleString('en-IN');
+
+      if (!parlourBookings || parlourBookings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px;">No appointments yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = parlourBookings.map(b => {
+        return `
+          <tr>
+            <td><code>${b.id}</code></td>
+            <td>
+              <strong>${escapeHtml(b.clientName)}</strong><br>
+              <a href="tel:${escapeHtml(b.clientPhone)}" style="font-size:0.8rem; color:var(--accent);">${escapeHtml(b.clientPhone)}</a>
+            </td>
+            <td>${escapeHtml(b.serviceName)}</td>
+            <td>${escapeHtml(b.beauticianName || 'Any')}</td>
+            <td>${escapeHtml(b.date)}<br><small style="color:var(--text-muted);">${escapeHtml(b.time)}</small></td>
+            <td><small>${b.serviceType === 'home' ? '🏠 Home Visit' : '🌸 In-Parlour'}</small></td>
+            <td><strong>₹${b.price}</strong></td>
+            <td><span class="badge badge-${b.status === 'confirmed' ? 'approved' : 'cancelled'}">${escapeHtml(b.status)}</span></td>
+            <td>
+              ${b.status !== 'completed' ? `<button class="btn btn-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="updateBookingStatus('${b.id}', 'completed')">Done ✓</button>` : '<span>Completed</span>'}
+              ${b.status !== 'cancelled' ? `<button class="btn btn-outline btn-sm" style="color:var(--danger); margin-left:4px;" onclick="updateBookingStatus('${b.id}', 'cancelled')">Cancel</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function loadServices() {
+      if (!currentParlour) return;
+      try {
+        const res = await fetch('/api/parlour/services?parlourId=' + encodeURIComponent(currentParlour.id));
+        parlourServices = await res.json();
+        document.getElementById('stat-services').textContent = parlourServices.length;
+
+        const tbody = document.getElementById('services-tbody');
+        if (!parlourServices.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No services added yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = parlourServices.map(s => `
+          <tr>
+            <td><span class="badge badge-approved" style="background:var(--bg-muted); color:var(--text-main);">${escapeHtml(s.category || 'General')}</span></td>
+            <td><strong>${escapeHtml(s.name)}</strong></td>
+            <td>${escapeHtml(s.duration || '45 mins')}</td>
+            <td><strong>₹${s.price}</strong></td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteService('${s.id}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadStaff() {
+      if (!currentParlour) return;
+      try {
+        const res = await fetch('/api/parlour/staff?parlourId=' + encodeURIComponent(currentParlour.id));
+        parlourStaff = await res.json();
+        document.getElementById('stat-staff').textContent = parlourStaff.length;
+
+        const tbody = document.getElementById('staff-tbody');
+        if (!parlourStaff.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No beauticians listed.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = parlourStaff.map(st => `
+          <tr>
+            <td><strong>${escapeHtml(st.name)}</strong></td>
+            <td>${escapeHtml(st.role)}</td>
+            <td>${escapeHtml(st.experience || 'Experienced')}</td>
+            <td>⭐ ${st.rating || 5.0}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteStaff('${st.id}')">Remove</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Handlers
+    async function updateBookingStatus(id, status) {
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-parlour-owner-token'] = token;
+
+      try {
+        const res = await fetch(`/api/parlour/owner/bookings/${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ status })
+        });
+        if (res.ok) loadBookings();
+      } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('add-service-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-parlour-owner-token'] = token;
+
+      const category = document.getElementById('srv-cat').value;
+      const name = document.getElementById('srv-name').value.trim();
+      const duration = document.getElementById('srv-dur').value.trim();
+      const price = document.getElementById('srv-price').value.trim();
+
+      try {
+        const res = await fetch('/api/parlour/owner/services', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ category, name, duration, price })
+        });
+        if (res.ok) {
+          document.getElementById('add-service-form').reset();
+          loadServices();
+        }
+      } catch (e) { console.error(e); }
+    });
+
+    async function deleteService(id) {
+      if (!confirm('Delete this service?')) return;
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = token ? { 'x-parlour-owner-token': token } : {};
+
+      try {
+        const res = await fetch(`/api/parlour/owner/services/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers
+        });
+        if (res.ok) loadServices();
+      } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('add-staff-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-parlour-owner-token'] = token;
+
+      const name = document.getElementById('stf-name').value.trim();
+      const role = document.getElementById('stf-role').value.trim();
+      const experience = document.getElementById('stf-exp').value.trim();
+
+      try {
+        const res = await fetch('/api/parlour/owner/staff', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name, role, experience })
+        });
+        if (res.ok) {
+          document.getElementById('add-staff-form').reset();
+          loadStaff();
+        }
+      } catch (e) { console.error(e); }
+    });
+
+    async function deleteStaff(id) {
+      if (!confirm('Remove this beautician?')) return;
+      const token = localStorage.getItem('uhp_parlour_owner_token');
+      const headers = token ? { 'x-parlour-owner-token': token } : {};
+
+      try {
+        const res = await fetch(`/api/parlour/owner/staff/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers
+        });
+        if (res.ok) loadStaff();
+      } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('owner-logout-btn').addEventListener('click', async () => {
+      localStorage.removeItem('uhp_parlour_owner_token');
+      await fetch('/api/parlour/owner/logout', { method: 'POST' });
+      window.location.href = 'login.html';
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+  </script>
+</body>
+</html>
