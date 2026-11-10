@@ -37,7 +37,7 @@ body {
   justify-content: center;
   padding: 24px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 body::before {
   content: '';
@@ -51,15 +51,15 @@ body::before {
   background: var(--card);
   border: 1px solid var(--border-gold);
   border-radius: 16px;
-  padding: 48px 40px;
+  padding: 44px 36px;
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   position: relative;
   box-shadow: 0 24px 80px rgba(0,0,0,0.6);
 }
 .brand {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 28px;
 }
 .brand-icon {
   width: 60px; height: 60px;
@@ -98,6 +98,13 @@ input {
 }
 input:focus { outline: none; border-color: var(--gold); background: rgba(201,168,76,0.04); }
 input::placeholder { color: rgba(255,255,255,0.2); }
+.otp-input {
+  letter-spacing: 8px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'DM Mono', monospace;
+}
 .btn-login {
   width: 100%;
   background: var(--gold);
@@ -114,23 +121,48 @@ input::placeholder { color: rgba(255,255,255,0.2); }
 }
 .btn-login:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.35); }
 .btn-login:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+.btn-secondary {
+  width: 100%;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
 .error-msg {
   background: rgba(201,76,76,0.12);
   border: 1px solid rgba(201,76,76,0.3);
   color: #E87070;
   border-radius: 8px;
   padding: 12px 16px;
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 18px;
   display: none;
+  line-height: 1.4;
 }
-.footer-note {
-  text-align: center;
-  font-size: 12px;
+.success-msg {
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #2ECC71;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-bottom: 18px;
+  display: none;
+  line-height: 1.4;
+}
+.info-text {
+  font-size: 13px;
   color: var(--muted);
-  margin-top: 28px;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
-.footer-note a { color: var(--gold); }
 .badge {
   display: inline-flex;
   align-items: center;
@@ -143,8 +175,35 @@ input::placeholder { color: rgba(255,255,255,0.2); }
   letter-spacing: 2px;
   padding: 5px 12px;
   border-radius: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
+.auth-view { display: none; }
+.auth-view.active { display: block; }
+.action-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+}
+.text-link {
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 13px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+.text-link:hover { text-decoration: underline; }
+.footer-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 24px;
+}
+.footer-note a { color: var(--gold); text-decoration: none; }
+.footer-note a:hover { text-decoration: underline; }
 </style>
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9137281869704150"
@@ -154,26 +213,89 @@ input::placeholder { color: rgba(255,255,255,0.2); }
 <div class="login-card">
   <div class="brand">
     <div class="brand-icon">✂️</div>
-    <div class="badge">🔐 Admin Access</div>
+    <div class="badge" id="card-badge">🔐 Admin Access</div>
     <h1>Urban Hairplaza</h1>
-    <div class="sub">Admin Dashboard</div>
+    <div class="sub">Admin Management</div>
   </div>
 
-  <div class="error-msg" id="error-msg">
-    ❌ Invalid username or password. Please try again.
+  <div class="error-msg" id="error-msg"></div>
+  <div class="success-msg" id="success-msg"></div>
+
+  <!-- VIEW 1: USERNAME & PASSWORD -->
+  <div class="auth-view active" id="view-credentials">
+    <form id="credentials-form">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="admin" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-login" id="login-btn">Continue to Verification →</button>
+      <div class="action-links">
+        <button type="button" class="text-link" id="link-forgot-pass">Forgot Password?</button>
+        <span style="font-size:11px;color:var(--muted);">2FA Protected</span>
+      </div>
+    </form>
   </div>
 
-  <form id="login-form">
-    <div class="form-group">
-      <label>Username</label>
-      <input type="text" id="username" placeholder="admin" autocomplete="username" required>
+  <!-- VIEW 2: 2FA OTP & MAGIC LINK -->
+  <div class="auth-view" id="view-otp">
+    <div class="info-text">
+      A 6-digit security OTP and an instant 1-click magic link were dispatched to your administrator email (<strong id="otp-masked-email" style="color:#fff;">...</strong>).
     </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" required>
+    <form id="otp-form">
+      <div class="form-group">
+        <label>Enter 6-Digit Code</label>
+        <input type="text" id="otp-code" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" required>
+      </div>
+      <button type="submit" class="btn-login" id="otp-btn">Verify & Sign In →</button>
+      <div class="action-links">
+        <button type="button" class="text-link" id="resend-otp-btn">Resend Code</button>
+        <span id="resend-countdown" style="font-size:12px;color:var(--muted);"></span>
+      </div>
+      <button type="button" class="btn-secondary" id="back-to-credentials-btn">← Back to Username / Password</button>
+    </form>
+  </div>
+
+  <!-- VIEW 3: FORGOT PASSWORD REQUEST -->
+  <div class="auth-view" id="view-forgot">
+    <div class="info-text">
+      Enter your administrator username or registered email. We will send you an OTP code and a 1-click password reset link.
     </div>
-    <button type="submit" class="btn-login" id="login-btn">Sign In →</button>
-  </form>
+    <form id="forgot-form">
+      <div class="form-group">
+        <label>Admin Username or Email</label>
+        <input type="text" id="forgot-identifier" placeholder="admin or darbhanga619@gmail.com" required>
+      </div>
+      <button type="submit" class="btn-login" id="forgot-btn">Send Reset Link & OTP →</button>
+      <button type="button" class="btn-secondary" id="back-from-forgot-btn">← Back to Sign In</button>
+    </form>
+  </div>
+
+  <!-- VIEW 4: RESET PASSWORD ENTRY -->
+  <div class="auth-view" id="view-reset">
+    <div class="info-text" id="reset-info-text">
+      Enter the reset code sent to your email, along with your new secure password.
+    </div>
+    <form id="reset-form">
+      <div class="form-group" id="reset-otp-group">
+        <label>Reset OTP Code</label>
+        <input type="text" id="reset-otp" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>New Password (min 6 characters)</label>
+        <input type="password" id="new-password" placeholder="••••••••••••" minlength="6" required>
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" id="confirm-password" placeholder="••••••••••••" minlength="6" required>
+      </div>
+      <button type="submit" class="btn-login" id="reset-btn">Save New Password →</button>
+      <button type="button" class="btn-secondary" id="back-from-reset-btn">← Back to Sign In</button>
+    </form>
+  </div>
 
   <div class="footer-note">
     <a href="/">← Back to Website</a>
@@ -181,7 +303,41 @@ input::placeholder { color: rgba(255,255,255,0.2); }
 </div>
 
 <script>
-// Check if already logged in
+// State
+let currentUsername = '';
+let currentResetToken = '';
+let resendTimer = null;
+
+const errorEl = document.getElementById('error-msg');
+const successEl = document.getElementById('success-msg');
+const cardBadge = document.getElementById('card-badge');
+
+function showError(msg) {
+  successEl.style.display = 'none';
+  errorEl.textContent = '❌ ' + msg;
+  errorEl.style.display = 'block';
+}
+
+function showSuccess(msg) {
+  errorEl.style.display = 'none';
+  successEl.textContent = '✓ ' + msg;
+  successEl.style.display = 'block';
+}
+
+function clearMessages() {
+  errorEl.style.display = 'none';
+  successEl.style.display = 'none';
+}
+
+function switchView(viewId, badgeText = '🔐 Admin Access') {
+  clearMessages();
+  document.querySelectorAll('.auth-view').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById(viewId);
+  if (target) target.classList.add('active');
+  cardBadge.textContent = badgeText;
+}
+
+// 1. Check if already logged in via saved token
 const savedToken = localStorage.getItem('uhp_admin_token');
 const meHeaders = savedToken ? { 'Authorization': 'Bearer ' + savedToken } : {};
 
@@ -190,43 +346,247 @@ fetch('/api/admin/me', { headers: meHeaders })
   .then(d => { if (d.authenticated) window.location.href = '/admin/dashboard.html'; })
   .catch(() => {});
 
-document.getElementById('login-form').addEventListener('submit', async (e) => {
+// 2. Handle URL parameters (e.g. ?reset_token=xyz)
+const urlParams = new URLSearchParams(window.location.search);
+const resetTokenParam = urlParams.get('reset_token');
+if (resetTokenParam) {
+  currentResetToken = resetTokenParam;
+  switchView('view-reset', '🔑 Reset Password');
+  document.getElementById('reset-otp-group').style.display = 'none';
+  document.getElementById('reset-info-text').textContent = 'Secure reset token recognized from email. Enter your new password below:';
+}
+
+// 3. Step 1: Submit Credentials
+document.getElementById('credentials-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  clearMessages();
   const btn = document.getElementById('login-btn');
-  const errEl = document.getElementById('error-msg');
-  errEl.style.display = 'none';
+  const userVal = document.getElementById('username').value.trim();
+  const passVal = document.getElementById('password').value;
+
   btn.disabled = true;
-  btn.textContent = 'Signing in…';
+  btn.textContent = 'Validating credentials…';
 
   try {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: document.getElementById('username').value.trim(),
-        password: document.getElementById('password').value
-      })
+      body: JSON.stringify({ username: userVal, password: passVal })
     });
     const data = await res.json();
+
     if (res.ok && data.success) {
+      if (data.requiresOtp) {
+        currentUsername = data.username || userVal;
+        document.getElementById('otp-masked-email').textContent = data.emailMasked || 'admin email';
+        switchView('view-otp', '🛡️ 2FA Verification');
+        showSuccess('Verification code sent to your email! Enter it below or click the magic link.');
+        startResendCountdown(60);
+        document.getElementById('otp-code').focus();
+      } else if (data.token) {
+        localStorage.setItem('uhp_admin_token', data.token);
+        window.location.href = '/admin/dashboard.html';
+      }
+    } else {
+      showError(data.error || 'Invalid username or password.');
+    }
+  } catch (err) {
+    showError('Server connection error. Make sure server is reachable.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Continue to Verification →';
+  }
+});
+
+// 4. Step 2: Verify OTP
+document.getElementById('otp-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMessages();
+  const btn = document.getElementById('otp-btn');
+  const otpVal = document.getElementById('otp-code').value.trim();
+
+  if (otpVal.length !== 6) {
+    return showError('Please enter a valid 6-digit verification code.');
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying OTP…';
+
+  try {
+    const res = await fetch('/api/admin/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUsername, otp: otpVal })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showSuccess('Authenticated successfully! Redirecting...');
       if (data.token) {
         localStorage.setItem('uhp_admin_token', data.token);
       }
-      window.location.href = '/admin/dashboard.html';
+      setTimeout(() => {
+        window.location.href = '/admin/dashboard.html';
+      }, 600);
     } else {
-      errEl.textContent = data.error ? '❌ ' + data.error : '❌ Invalid username or password. Please try again.';
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Sign In →';
+      showError(data.error || 'Invalid or expired OTP code.');
     }
-  } catch {
-    errEl.textContent = '❌ Server error. Make sure the server is reachable.';
-    errEl.style.display = 'block';
+  } catch (err) {
+    showError('Server error while verifying OTP.');
+  } finally {
     btn.disabled = false;
-    btn.textContent = 'Sign In →';
+    btn.textContent = 'Verify & Sign In →';
   }
 });
-document.getElementById('username').focus();
+
+// 5. Resend OTP
+document.getElementById('resend-otp-btn').addEventListener('click', async () => {
+  if (resendTimer) return;
+  clearMessages();
+  try {
+    const res = await fetch('/api/admin/resend-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUsername })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showSuccess('New verification code dispatched to your email.');
+      startResendCountdown(60);
+    } else {
+      showError(data.error || 'Failed to resend code.');
+    }
+  } catch (err) {
+    showError('Error resending OTP.');
+  }
+});
+
+function startResendCountdown(seconds) {
+  const btn = document.getElementById('resend-otp-btn');
+  const cd = document.getElementById('resend-countdown');
+  btn.style.opacity = '0.5';
+  btn.style.pointerEvents = 'none';
+
+  let remaining = seconds;
+  cd.textContent = `(${remaining}s)`;
+  if (resendTimer) clearInterval(resendTimer);
+
+  resendTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(resendTimer);
+      resendTimer = null;
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+      cd.textContent = '';
+    } else {
+      cd.textContent = `(${remaining}s)`;
+    }
+  }, 1000);
+}
+
+// 6. Navigation buttons
+document.getElementById('back-to-credentials-btn').addEventListener('click', () => {
+  switchView('view-credentials', '🔐 Admin Access');
+});
+
+document.getElementById('link-forgot-pass').addEventListener('click', () => {
+  switchView('view-forgot', '🔑 Reset Password');
+  document.getElementById('forgot-identifier').focus();
+});
+
+document.getElementById('back-from-forgot-btn').addEventListener('click', () => {
+  switchView('view-credentials', '🔐 Admin Access');
+});
+
+document.getElementById('back-from-reset-btn').addEventListener('click', () => {
+  switchView('view-credentials', '🔐 Admin Access');
+});
+
+// 7. Forgot Password Submit
+document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMessages();
+  const btn = document.getElementById('forgot-btn');
+  const idVal = document.getElementById('forgot-identifier').value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Sending reset email…';
+
+  try {
+    const res = await fetch('/api/admin/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: idVal })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      switchView('view-reset', '🔑 Enter New Password');
+      document.getElementById('reset-otp-group').style.display = 'block';
+      showSuccess(data.message || 'Reset OTP sent to your administrator email.');
+      document.getElementById('reset-otp').focus();
+    } else {
+      showError(data.error || 'Failed to process request.');
+    }
+  } catch (err) {
+    showError('Server error sending reset instructions.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Link & OTP →';
+  }
+});
+
+// 8. Reset Password Submit
+document.getElementById('reset-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMessages();
+  const btn = document.getElementById('reset-btn');
+  const newPass = document.getElementById('new-password').value;
+  const confirmPass = document.getElementById('confirm-password').value;
+  const otpVal = document.getElementById('reset-otp').value.trim();
+
+  if (newPass !== confirmPass) {
+    return showError('Passwords do not match. Please verify.');
+  }
+  if (newPass.length < 6) {
+    return showError('Password must be at least 6 characters.');
+  }
+  if (!currentResetToken && (!otpVal || otpVal.length !== 6)) {
+    return showError('Please enter the 6-digit reset OTP sent to your email.');
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating password…';
+
+  try {
+    const payload = {
+      newPassword: newPass,
+      token: currentResetToken || undefined,
+      otp: otpVal || undefined
+    };
+
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      switchView('view-credentials', '🔐 Admin Access');
+      showSuccess('Password updated successfully! Please log in with your new password.');
+      document.getElementById('password').value = '';
+    } else {
+      showError(data.error || 'Failed to update password.');
+    }
+  } catch (err) {
+    showError('Server error while resetting password.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save New Password →';
+  }
+});
 </script>
 </body>
 </html>
