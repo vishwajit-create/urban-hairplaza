@@ -422,11 +422,11 @@ async function sendRealEmail(email, subject, html) {
   }
 
   // 2. Gmail SMTP / Custom SMTP via Nodemailer
-  const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
-  const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+  const smtpUser = process.env.ADMIN_2FA_SMTP_USER || process.env.AUTH_EMAIL_USER || process.env.GMAIL_USER || process.env.SMTP_USER;
+  const smtpPass = process.env.ADMIN_2FA_SMTP_PASS || process.env.AUTH_EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
   if (nodemailer && smtpUser && smtpPass) {
     try {
-      const isGmail = Boolean(process.env.GMAIL_USER || (smtpUser && smtpUser.includes('@gmail.com')));
+      const isGmail = Boolean(process.env.ADMIN_2FA_SMTP_USER || process.env.GMAIL_USER || (smtpUser && smtpUser.includes('@gmail.com')));
       const transporter = nodemailer.createTransport(
         isGmail ? {
           service: 'gmail',
@@ -2422,6 +2422,10 @@ function requireAdmin(req, res, next) {
 }
 
 // ── ADMIN AUTH ROUTES WITH 2FA, MAGIC LINK & PASSWORD RESET ─────────
+function getAdminEmail() {
+  return (process.env.ADMIN_2FA_RECIPIENT || process.env.ADMIN_AUTH_EMAIL || process.env.ADMIN_EMAIL || process.env.ADMIN_2FA_SMTP_USER || process.env.GMAIL_USER || 'darbhanga619@gmail.com').trim();
+}
+
 // Protected with brute-force rate limiter (max 15 attempts per 15 min per IP) and timing-safe comparison
 app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Too many login attempts. Please wait 15 minutes.' }), async (req, res) => {
   try {
@@ -2449,7 +2453,7 @@ app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, mess
     const baseUrl = (process.env.BASE_URL || `${protocol}://${host}`).replace(/\/+$/, '');
     const magicLink = `${baseUrl}/api/admin/magic-login?token=${magicToken}`;
 
-    const adminEmail = (process.env.ADMIN_EMAIL || process.env.GMAIL_USER || 'darbhanga619@gmail.com').trim();
+    const adminEmail = getAdminEmail();
 
     const htmlContent = `
       <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;background:#111111;color:#f0f0f0;border:1px solid #333333;border-radius:12px;overflow:hidden;">
@@ -2559,7 +2563,7 @@ app.post('/api/admin/resend-otp', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, 
     const host = req.get('host') || ('localhost:' + (process.env.PORT || 7890));
     const baseUrl = (process.env.BASE_URL || `${protocol}://${host}`).replace(/\/+$/, '');
     const magicLink = `${baseUrl}/api/admin/magic-login?token=${magicToken}`;
-    const adminEmail = (process.env.ADMIN_EMAIL || process.env.GMAIL_USER || 'darbhanga619@gmail.com').trim();
+    const adminEmail = getAdminEmail();
 
     const htmlContent = `
       <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;background:#111111;color:#f0f0f0;border:1px solid #333333;border-radius:12px;overflow:hidden;">
@@ -2660,7 +2664,7 @@ app.post('/api/admin/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max
   try {
     const { identifier } = req.body;
     const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
-    const adminEmail = (process.env.ADMIN_EMAIL || process.env.GMAIL_USER || 'darbhanga619@gmail.com').trim();
+    const adminEmail = getAdminEmail();
 
     const cleanInput = typeof identifier === 'string' ? identifier.trim().toLowerCase() : '';
     const matchUser = cleanInput === adminUser.toLowerCase();
@@ -2724,7 +2728,7 @@ app.post('/api/admin/reset-password', rateLimit({ windowMs: 15 * 60 * 1000, max:
   try {
     const { token, otp, newPassword } = req.body;
     const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
-    const adminEmail = (process.env.ADMIN_EMAIL || process.env.GMAIL_USER || 'darbhanga619@gmail.com').trim();
+    const adminEmail = getAdminEmail();
 
     if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long.' });
