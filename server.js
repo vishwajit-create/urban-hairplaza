@@ -1,5 +1,5 @@
 /**
- * Urban Hairplaza – Production Backend Server
+ * Urban Hairplaza â€“ Production Backend Server
  * Technology: Node.js + Express + Neon PostgreSQL / JSON Fallback
  * Features:
  *   - Per-barber & general slot availability engine
@@ -30,7 +30,7 @@ function safeCompare(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-// ── STATELESS AUTH TOKEN (HMAC SHA-256) FOR SERVERLESS / MULTI-INSTANCE RESILIENCE ──
+// â”€â”€ STATELESS AUTH TOKEN (HMAC SHA-256) FOR SERVERLESS / MULTI-INSTANCE RESILIENCE â”€â”€
 const AUTH_SECRET = process.env.SESSION_SECRET || 'urban-hairplaza-secret-2026';
 
 function createAuthToken(payload) {
@@ -113,7 +113,7 @@ function getPublicBaseUrl(req) {
   return 'https://salonbooking-rho.vercel.app';
 }
 
-// ── OPERATING TIME SLOTS (9:00 AM – 9:00 PM) ──────────────────────────────
+// â”€â”€ OPERATING TIME SLOTS (9:00 AM â€“ 9:00 PM) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const OPERATING_SLOTS = [
   '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
   '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
@@ -125,7 +125,7 @@ const OPERATING_SLOTS = [
 
 const VALID_BARBERS = ['Raj Kumar', 'Sameer Khan', 'Amit Sharma'];
 
-// ── SECURITY HEADERS & DEFENSES ──────────────────────────────────────────────
+// â”€â”€ SECURITY HEADERS & DEFENSES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -159,7 +159,7 @@ function rateLimit({ windowMs = 60000, max = 20, message = 'Too many requests. P
   };
 }
 
-// ── MIDDLEWARE ───────────────────────────────────────────────────────────────
+// â”€â”€ MIDDLEWARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -182,10 +182,39 @@ app.use(session({
 app.use(express.static(path.join(__dirname)));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use('/beauty-parlour', express.static(path.join(__dirname, 'beauty-parlour')));
 
 const STATIC_PAGES = {
   '/': path.join(__dirname, 'index.html'),
   '/index.html': path.join(__dirname, 'index.html'),
+  '/beauty-parlour': path.join(__dirname, 'beauty-parlour', 'index.html'),
+  '/beauty-parlour/': path.join(__dirname, 'beauty-parlour', 'index.html'),
+  '/beauty-parlour/index.html': path.join(__dirname, 'beauty-parlour', 'index.html'),
+  '/beauty-parlour/services': path.join(__dirname, 'beauty-parlour', 'services.html'),
+  '/beauty-parlour/services.html': path.join(__dirname, 'beauty-parlour', 'services.html'),
+  '/beauty-parlour/gallery': path.join(__dirname, 'beauty-parlour', 'gallery.html'),
+  '/beauty-parlour/gallery.html': path.join(__dirname, 'beauty-parlour', 'gallery.html'),
+  '/beauty-parlour/contact': path.join(__dirname, 'beauty-parlour', 'contact.html'),
+  '/beauty-parlour/contact.html': path.join(__dirname, 'beauty-parlour', 'contact.html'),
+  '/beauty-parlour/book': path.join(__dirname, 'beauty-parlour', 'book.html'),
+  '/beauty-parlour/book.html': path.join(__dirname, 'beauty-parlour', 'book.html'),
+  '/beauty-parlour/parlours': path.join(__dirname, 'beauty-parlour', 'parlours.html'),
+  '/beauty-parlour/parlours.html': path.join(__dirname, 'beauty-parlour', 'parlours.html'),
+  '/beauty-parlour/register-parlour': path.join(__dirname, 'beauty-parlour', 'register-parlour.html'),
+  '/beauty-parlour/register-parlour.html': path.join(__dirname, 'beauty-parlour', 'register-parlour.html'),
+  '/beauty-parlour/register': path.join(__dirname, 'beauty-parlour', 'register-parlour.html'),
+  '/beauty-parlour/admin': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/login': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/login.html': path.join(__dirname, 'beauty-parlour', 'admin', 'login.html'),
+  '/beauty-parlour/admin/dashboard': path.join(__dirname, 'beauty-parlour', 'admin', 'dashboard.html'),
+  '/beauty-parlour/admin/dashboard.html': path.join(__dirname, 'beauty-parlour', 'admin', 'dashboard.html'),
+  '/beauty-parlour/owner': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/login': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/login.html': path.join(__dirname, 'beauty-parlour', 'owner', 'login.html'),
+  '/beauty-parlour/owner/dashboard': path.join(__dirname, 'beauty-parlour', 'owner', 'dashboard.html'),
+  '/beauty-parlour/owner/dashboard.html': path.join(__dirname, 'beauty-parlour', 'owner', 'dashboard.html'),
   '/account': path.join(__dirname, 'account.html'),
   '/account.html': path.join(__dirname, 'account.html'),
   '/login': path.join(__dirname, 'account.html'),
@@ -244,7 +273,7 @@ for (const [route, filePath] of Object.entries(STATIC_PAGES)) {
   });
 }
 
-// ── NOTIFICATION DISPATCHERS (SMS, EMAIL & WHATSAPP) ─────────────────────────
+// â”€â”€ NOTIFICATION DISPATCHERS (SMS, EMAIL & WHATSAPP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Nodemailer optional import (falls back gracefully if not available)
 let nodemailer = null;
@@ -254,7 +283,7 @@ try {
   console.warn('[Email] nodemailer module not loaded, SMTP fallback disabled.');
 }
 
-// ── REAL SMS DISPATCHER (Textbee / Fast2SMS / Twilio / 2Factor) ───────────────
+// â”€â”€ REAL SMS DISPATCHER (Textbee / Fast2SMS / Twilio / 2Factor) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function sendRealSms(phone, message) {
   if (!phone || !message) return false;
 
@@ -362,10 +391,10 @@ async function sendRealSms(phone, message) {
 }
 
 async function sendRealSmsOtp(phone, otp) {
-  return sendRealSms(phone, `✂️ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`);
+  return sendRealSms(phone, `âœ‚ï¸ Your Urban Hairplaza verification OTP is: ${otp}. Valid for 10 minutes. Do not share this code.`);
 }
 
-// ── REAL EMAIL DISPATCHER (Resend / Gmail SMTP / Brevo) ───────────────────────
+// â”€â”€ REAL EMAIL DISPATCHER (Resend / Gmail SMTP / Brevo) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function sendRealEmail(email, subject, html) {
   if (!email || !email.includes('@')) return false;
 
@@ -452,7 +481,7 @@ async function sendRealEmailOtp(email, otp) {
   const htmlTemplate = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <div style="background: linear-gradient(135deg, #1c1d22 0%, #121316 100%); padding: 30px 24px; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2);">
-        <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">✂️ URBAN HAIRPLAZA</h1>
+        <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">âœ‚ï¸ URBAN HAIRPLAZA</h1>
         <p style="color: #8e8e93; margin: 8px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Luxury Grooming Lounge</p>
       </div>
       <div style="padding: 32px 24px; text-align: center;">
@@ -460,17 +489,17 @@ async function sendRealEmailOtp(email, otp) {
         <div style="display: inline-block; background: rgba(212,175,55,0.12); border: 2px dashed #d4af37; border-radius: 12px; padding: 14px 28px; margin: 12px 0 20px 0;">
           <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #e6c65b; font-family: monospace;">${otp}</span>
         </div>
-        <p style="font-size: 13px; color: #8e8e93; margin: 0;">⏱️ This code expires in <strong>10 minutes</strong>. Never share your OTP with anyone.</p>
+        <p style="font-size: 13px; color: #8e8e93; margin: 0;">â±ï¸ This code expires in <strong>10 minutes</strong>. Never share your OTP with anyone.</p>
       </div>
       <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
-        <p style="font-size: 12px; color: #636366; margin: 0;">📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar · +91 6202 692 426</p>
+        <p style="font-size: 12px; color: #636366; margin: 0;">ðŸ“ Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar Â· +91 6202 692 426</p>
       </div>
     </div>
   `;
-  return sendRealEmail(email, `✂️ Your Urban Hairplaza Verification Code: ${otp}`, htmlTemplate);
+  return sendRealEmail(email, `âœ‚ï¸ Your Urban Hairplaza Verification Code: ${otp}`, htmlTemplate);
 }
 
-// ── MULTI-PROVIDER WHATSAPP NOTIFICATION ENGINE ─────────────────────────────
+// â”€â”€ MULTI-PROVIDER WHATSAPP NOTIFICATION ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 global.whatsappLogs = global.whatsappLogs || [];
 
 async function sendWhatsAppNotification(message, destinationPhone, options = {}) {
@@ -599,20 +628,20 @@ async function sendWhatsAppNotification(message, destinationPhone, options = {})
 
 function buildWhatsAppMessage(booking) {
   const balance = Math.max(0, (booking.price || 0) - (booking.advancePaid || 0));
-  return `✂️ *Urban Hairplaza Booking Confirmation*\n` +
+  return `âœ‚ï¸ *Urban Hairplaza Booking Confirmation*\n` +
     `--------------------------------\n` +
     `*Booking ID:* #${booking.id}\n` +
     `*Client:* ${booking.name} (${booking.phone})\n` +
     `*Service:* ${booking.service}\n` +
     `*Barber:* ${booking.barber || 'Assigned Stylist'}\n` +
     `*Date & Time:* ${booking.date} at ${booking.time}\n` +
-    `*Mode:* ${booking.type === 'home' ? '🏠 Home Visit' : '🏢 In-Shop'}\n` +
-    `*Total Fee:* ₹${booking.price}\n` +
-    `*Advance Paid:* ₹${booking.advancePaid || 0}\n` +
-    `*Balance Due:* ₹${balance}\n` +
-    `*Status:* Confirmed ✅\n` +
+    `*Mode:* ${booking.type === 'home' ? 'ðŸ  Home Visit' : 'ðŸ¢ In-Shop'}\n` +
+    `*Total Fee:* â‚¹${booking.price}\n` +
+    `*Advance Paid:* â‚¹${booking.advancePaid || 0}\n` +
+    `*Balance Due:* â‚¹${balance}\n` +
+    `*Status:* Confirmed âœ…\n` +
     `--------------------------------\n` +
-    `📍 Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar`;
+    `ðŸ“ Near Phanishwar Nath Renu Statue, Simraha, Araria, Bihar`;
 }
 
 function buildCustomerBookingWhatsApp(booking, salon, publicBase = 'https://salonbooking-rho.vercel.app') {
@@ -622,20 +651,20 @@ function buildCustomerBookingWhatsApp(booking, salon, publicBase = 'https://salo
   const salonMap = salon?.mapsUrl || 'https://maps.google.com/?q=Near+Phanishwar+Nath+Renu+Statue+Simraha+Araria';
   const salonPhone = salon?.phone || '+91 6202 692 426';
 
-  return `✂️ *Urban Hairplaza – Slot Confirmed!* ✅\n` +
+  return `âœ‚ï¸ *Urban Hairplaza â€“ Slot Confirmed!* âœ…\n` +
     `--------------------------------\n` +
     `Hello *${booking.name}*, your appointment has been successfully locked!\n\n` +
-    `📋 *Booking ID:* #${booking.id}\n` +
-    `🏬 *Salon:* ${salonName}\n` +
-    `💈 *Service:* ${booking.service}\n` +
-    `✂️ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
-    `📅 *Date & Time:* ${booking.date} at ${booking.time}\n` +
-    `📍 *Location:* ${booking.type === 'home' ? '🏠 Home Visit Address: ' + (booking.address || 'Address on file') : '🏢 In-Shop (' + salonAddr + ')'}\n` +
-    `💰 *Advance Paid:* ₹${booking.advancePaid || 50} (Secured)\n` +
-    `💵 *Balance Due at Salon:* ₹${balanceDue}\n\n` +
-    `🗺️ *Google Maps Directions:*\n` +
+    `ðŸ“‹ *Booking ID:* #${booking.id}\n` +
+    `ðŸ¬ *Salon:* ${salonName}\n` +
+    `ðŸ’ˆ *Service:* ${booking.service}\n` +
+    `âœ‚ï¸ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
+    `ðŸ“… *Date & Time:* ${booking.date} at ${booking.time}\n` +
+    `ðŸ“ *Location:* ${booking.type === 'home' ? 'ðŸ  Home Visit Address: ' + (booking.address || 'Address on file') : 'ðŸ¢ In-Shop (' + salonAddr + ')'}\n` +
+    `ðŸ’° *Advance Paid:* â‚¹${booking.advancePaid || 50} (Secured)\n` +
+    `ðŸ’µ *Balance Due at Salon:* â‚¹${balanceDue}\n\n` +
+    `ðŸ—ºï¸ *Google Maps Directions:*\n` +
     `${salonMap}\n\n` +
-    `📱 *Manage appointment or view receipt anytime:*\n` +
+    `ðŸ“± *Manage appointment or view receipt anytime:*\n` +
     `${publicBase}/account.html\n\n` +
     `Need help or running late? Call ${salonPhone}.`;
 }
@@ -645,18 +674,18 @@ function buildOwnerBookingAlertWhatsApp(booking, salon, publicBase = 'https://sa
   const balanceDue = Math.max(0, (Number(booking.price) || 0) - (Number(booking.advancePaid) || 0));
   const salonName = salon?.name || booking.salonName || 'Urban Hairplaza';
 
-  return `🔔 *New Booking Confirmed for ${salonName}!* 💈\n` +
+  return `ðŸ”” *New Booking Confirmed for ${salonName}!* ðŸ’ˆ\n` +
     `--------------------------------\n` +
     `*Booking ID:* #${booking.id}\n` +
     `*Client:* ${booking.name} (+91 ${cleanClientPhone})\n` +
     `*Service:* ${booking.service}\n` +
     `*Stylist:* ${booking.barber || 'First Available'}\n` +
     `*Date & Time:* ${booking.date} at ${booking.time}\n` +
-    `*Mode:* ${booking.type === 'home' ? '🏠 Home Visit' : '🏢 In-Shop'}\n` +
-    `*Advance Secured:* ₹${booking.advancePaid || 50}\n` +
-    `*Balance to Collect:* ₹${balanceDue}\n` +
+    `*Mode:* ${booking.type === 'home' ? 'ðŸ  Home Visit' : 'ðŸ¢ In-Shop'}\n` +
+    `*Advance Secured:* â‚¹${booking.advancePaid || 50}\n` +
+    `*Balance to Collect:* â‚¹${balanceDue}\n` +
     `--------------------------------\n` +
-    `👉 View and manage in your Owner Portal:\n` +
+    `ðŸ‘‰ View and manage in your Owner Portal:\n` +
     `${publicBase}/owner/dashboard.html`;
 }
 
@@ -666,14 +695,14 @@ function buildReminderWhatsApp(booking, salon, hoursText = '2 hours') {
   const salonMap = salon?.mapsUrl || 'https://maps.google.com/?q=Near+Phanishwar+Nath+Renu+Statue+Simraha+Araria';
   const salonPhone = salon?.phone || '+91 6202 692 426';
 
-  return `⏰ *Reminder: Haircut in ${hoursText}!* ✂️\n` +
+  return `â° *Reminder: Haircut in ${hoursText}!* âœ‚ï¸\n` +
     `--------------------------------\n` +
     `Hello *${booking.name}*, this is a friendly reminder for your appointment today at *${salonName}*!\n\n` +
-    `💈 *Service:* ${booking.service}\n` +
-    `✂️ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
-    `🕒 *Appointment Time:* Today at *${booking.time}*\n` +
-    `📍 *Address:* ${salonAddr}\n\n` +
-    `🗺️ *Tap for directions:* ${salonMap}\n\n` +
+    `ðŸ’ˆ *Service:* ${booking.service}\n` +
+    `âœ‚ï¸ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
+    `ðŸ•’ *Appointment Time:* Today at *${booking.time}*\n` +
+    `ðŸ“ *Address:* ${salonAddr}\n\n` +
+    `ðŸ—ºï¸ *Tap for directions:* ${salonMap}\n\n` +
     `Your chair is reserved. Please arrive 5 minutes before your time slot. If you need to make any changes, please call ${salonPhone}. See you soon!`;
 }
 
@@ -760,7 +789,7 @@ setInterval(() => {
   checkAndSendUpcomingReminders().catch(e => console.warn('[WhatsApp Cron Error]', e.message));
 }, 10 * 60 * 1000);
 
-// ── COMPREHENSIVE NOTIFICATION ENGINES ───────────────────────────────────────
+// â”€â”€ COMPREHENSIVE NOTIFICATION ENGINES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // 1. SLOT BOOKED CONFIRMATION NOTIFICATION
 async function sendBookingConfirmationNotifications(booking, publicBase = 'https://salonbooking-rho.vercel.app') {
@@ -777,7 +806,7 @@ async function sendBookingConfirmationNotifications(booking, publicBase = 'https
   const salonAddr = salon?.address || 'Near Phanishwar Nath Renu Statue, Simraha, Araria';
 
   // A. SMS Confirmation via Textbee
-  const smsText = `✂️ ${salonName}: Your slot is CONFIRMED! #${booking.id}. Service: ${booking.service}, Stylist: ${booking.barber || 'Assigned Stylist'}, Date: ${booking.date} at ${booking.time}. Advance Paid: ₹${booking.advancePaid || 50}. Balance Due: ₹${balanceDue}. Location: ${salonAddr}. Manage: ${publicBase}/account.html. See you soon!`;
+  const smsText = `âœ‚ï¸ ${salonName}: Your slot is CONFIRMED! #${booking.id}. Service: ${booking.service}, Stylist: ${booking.barber || 'Assigned Stylist'}, Date: ${booking.date} at ${booking.time}. Advance Paid: â‚¹${booking.advancePaid || 50}. Balance Due: â‚¹${balanceDue}. Location: ${salonAddr}. Manage: ${publicBase}/account.html. See you soon!`;
   sendRealSms(cleanPhone, smsText).catch(e => console.warn('[SMS-Conf-Error]', e.message));
 
   // B. WhatsApp Confirmation to Customer
@@ -800,7 +829,7 @@ async function sendBookingConfirmationNotifications(booking, publicBase = 'https
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(212,175,55,0.3); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #1c1d22 0%, #121316 100%); padding: 28px 24px; text-align: center; border-bottom: 1px solid rgba(212,175,55,0.2);">
-          <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700;">✂️ ${salonName.toUpperCase()}</h1>
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px; font-weight: 700;">âœ‚ï¸ ${salonName.toUpperCase()}</h1>
           <p style="color: #8e8e93; margin: 6px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Appointment Confirmed</p>
         </div>
         <div style="padding: 26px 24px;">
@@ -813,20 +842,20 @@ async function sendBookingConfirmationNotifications(booking, publicBase = 'https
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Service</td><td style="padding: 8px 0; font-weight: 600; color: #fff; text-align: right;">${booking.service}</td></tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Barber</td><td style="padding: 8px 0; font-weight: 600; color: #fff; text-align: right;">${booking.barber || 'Assigned Stylist'}</td></tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Date & Time</td><td style="padding: 8px 0; font-weight: 600; color: #fff; text-align: right;">${booking.date} at ${booking.time}</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Advance Paid</td><td style="padding: 8px 0; font-weight: 700; color: #34d399; text-align: right;">₹${booking.advancePaid || 50} (Paid)</td></tr>
-            <tr><td style="padding: 8px 0; color: #9ca3af;">Balance Due at Salon</td><td style="padding: 8px 0; font-weight: 700; color: #fff; text-align: right;">₹${balanceDue}</td></tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);"><td style="padding: 8px 0; color: #9ca3af;">Advance Paid</td><td style="padding: 8px 0; font-weight: 700; color: #34d399; text-align: right;">â‚¹${booking.advancePaid || 50} (Paid)</td></tr>
+            <tr><td style="padding: 8px 0; color: #9ca3af;">Balance Due at Salon</td><td style="padding: 8px 0; font-weight: 700; color: #fff; text-align: right;">â‚¹${balanceDue}</td></tr>
           </table>
 
           <div style="text-align: center; margin-top: 24px;">
-            <a href="${publicBase}/account.html" style="background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%); color: #000; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">View Appointment & Receipt →</a>
+            <a href="${publicBase}/account.html" style="background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%); color: #000; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none; display: inline-block;">View Appointment & Receipt â†’</a>
           </div>
         </div>
         <div style="background: #0a0a0c; padding: 16px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #636366;">
-          📍 ${salonAddr} · 📞 ${salon?.phone || '+91 6202 692 426'}
+          ðŸ“ ${salonAddr} Â· ðŸ“ž ${salon?.phone || '+91 6202 692 426'}
         </div>
       </div>
     `;
-    sendRealEmail(booking.email, `✂️ Appointment Confirmed #${booking.id} – ${salonName}`, emailHtml).catch(e => console.warn('[Email-Conf-Error]', e.message));
+    sendRealEmail(booking.email, `âœ‚ï¸ Appointment Confirmed #${booking.id} â€“ ${salonName}`, emailHtml).catch(e => console.warn('[Email-Conf-Error]', e.message));
   }
 }
 
@@ -838,18 +867,18 @@ async function sendPaymentFailedNotifications(booking, reason = '', publicBase =
   const payLink = `${publicBase}/pay?order_id=${booking.id}`;
 
   // A. SMS with direct payment link via Textbee
-  const smsText = `✂️ Urban Hairplaza: Payment for appointment #${booking.id} (${booking.service}) was not completed. Complete your ₹50 advance payment now to lock your chair: ${payLink} (Held for 15 mins). Need help? Call +916202692426.`;
+  const smsText = `âœ‚ï¸ Urban Hairplaza: Payment for appointment #${booking.id} (${booking.service}) was not completed. Complete your â‚¹50 advance payment now to lock your chair: ${payLink} (Held for 15 mins). Need help? Call +916202692426.`;
   sendRealSms(cleanPhone, smsText).catch(e => console.warn('[SMS-Fail-Error]', e.message));
 
   // B. WhatsApp message with payment link
-  const waMsg = `⚠️ *Urban Hairplaza – Payment Incomplete*\n` +
+  const waMsg = `âš ï¸ *Urban Hairplaza â€“ Payment Incomplete*\n` +
     `--------------------------------\n` +
-    `Hello *${booking.name}*, we noticed your advance payment of ₹50 for appointment *#${booking.id}* (${booking.service}) did not go through or was interrupted.\n\n` +
-    `👉 *Click here to complete payment and lock your chair:*\n` +
+    `Hello *${booking.name}*, we noticed your advance payment of â‚¹50 for appointment *#${booking.id}* (${booking.service}) did not go through or was interrupted.\n\n` +
+    `ðŸ‘‰ *Click here to complete payment and lock your chair:*\n` +
     `${payLink}\n\n` +
-    `📅 *Reserved Slot:* ${booking.date} at ${booking.time}\n` +
-    `✂️ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
-    `📍 *Location:* Simraha, Araria\n\n` +
+    `ðŸ“… *Reserved Slot:* ${booking.date} at ${booking.time}\n` +
+    `âœ‚ï¸ *Stylist:* ${booking.barber || 'Assigned Stylist'}\n` +
+    `ðŸ“ *Location:* Simraha, Araria\n\n` +
     `Your chair is temporarily held for 15 minutes. Complete payment to guarantee your slot.\n` +
     `Questions? Call +91 6202 692 426.`;
 
@@ -862,15 +891,15 @@ async function sendPaymentFailedNotifications(booking, reason = '', publicBase =
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; background: #0f1013; color: #f5f5f7; border-radius: 16px; border: 1px solid rgba(239,68,68,0.3); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #221212 0%, #150a0a 100%); padding: 28px 24px; text-align: center; border-bottom: 1px solid rgba(239,68,68,0.2);">
-          <h1 style="color: #f87171; margin: 0; font-size: 22px; font-weight: 700;">⚠️ Payment Incomplete</h1>
-          <p style="color: #d1d5db; margin: 6px 0 0 0; font-size: 13px;">Urban Hairplaza · Appointment #${booking.id}</p>
+          <h1 style="color: #f87171; margin: 0; font-size: 22px; font-weight: 700;">âš ï¸ Payment Incomplete</h1>
+          <p style="color: #d1d5db; margin: 6px 0 0 0; font-size: 13px;">Urban Hairplaza Â· Appointment #${booking.id}</p>
         </div>
         <div style="padding: 26px 24px;">
-          <p style="font-size: 15px; color: #e5e7eb; margin: 0 0 16px 0;">Hello ${booking.name}, your advance payment of ₹50 for <strong>${booking.service}</strong> on <strong>${booking.date} at ${booking.time}</strong> could not be completed.</p>
+          <p style="font-size: 15px; color: #e5e7eb; margin: 0 0 16px 0;">Hello ${booking.name}, your advance payment of â‚¹50 for <strong>${booking.service}</strong> on <strong>${booking.date} at ${booking.time}</strong> could not be completed.</p>
           <p style="font-size: 14px; color: #9ca3af; margin: 0 0 24px 0;">Your chair is temporarily held for the next 15 minutes. Please complete payment using the link below to confirm your appointment:</p>
 
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${payLink}" style="background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%); color: #000; font-weight: 700; padding: 14px 28px; border-radius: 10px; font-size: 15px; text-decoration: none; display: inline-block;">💳 Complete ₹50 Payment Now →</a>
+            <a href="${payLink}" style="background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%); color: #000; font-weight: 700; padding: 14px 28px; border-radius: 10px; font-size: 15px; text-decoration: none; display: inline-block;">ðŸ’³ Complete â‚¹50 Payment Now â†’</a>
           </div>
 
           <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">Or copy this link in your browser: <br><span style="color:#e6c65b; word-break:break-all;">${payLink}</span></p>
@@ -880,13 +909,13 @@ async function sendPaymentFailedNotifications(booking, reason = '', publicBase =
         </div>
       </div>
     `;
-    sendRealEmail(booking.email, `⚠️ Complete Payment for Appointment #${booking.id} – Urban Hairplaza`, emailHtml).catch(e => console.warn('[Email-Fail-Error]', e.message));
+    sendRealEmail(booking.email, `âš ï¸ Complete Payment for Appointment #${booking.id} â€“ Urban Hairplaza`, emailHtml).catch(e => console.warn('[Email-Fail-Error]', e.message));
   }
 }
 
-// ── PUBLIC API ROUTES ────────────────────────────────────────────────────────
+// â”€â”€ PUBLIC API ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// GET /api/services — List active services (per salon or platform catalog)
+// GET /api/services â€” List active services (per salon or platform catalog)
 app.get('/api/services', async (req, res) => {
   try {
     const salonId = (req.query.salonId || req.query.salon || '').trim();
@@ -897,7 +926,7 @@ app.get('/api/services', async (req, res) => {
   }
 });
 
-// GET /api/barbers — List active barbers / staff (per salon or flagship)
+// GET /api/barbers â€” List active barbers / staff (per salon or flagship)
 app.get('/api/barbers', async (req, res) => {
   try {
     const salonId = (req.query.salonId || req.query.salon || '').trim();
@@ -919,18 +948,18 @@ app.get('/api/barbers', async (req, res) => {
 
     res.json([
       { id: 'any', name: 'Any Barber', title: 'Any Available Barber', role: 'Fastest Availability', exp: 'First available chair', avatar: '' },
-      { id: 'raj', name: 'Raj Kumar', title: 'Raj Kumar', role: 'Master Barber', exp: '12+ yrs · Fades & Scissor', avatar: 'images/barber_raj.png' },
-      { id: 'sameer', name: 'Sameer Khan', title: 'Sameer Khan', role: 'Senior Stylist', exp: '8+ yrs · Beard & Shave', avatar: 'images/barber_sameer.png' },
-      { id: 'amit', name: 'Amit Sharma', title: 'Amit Sharma', role: 'Grooming Expert', exp: '6+ yrs · Massage & Cleanups', avatar: 'images/barber_amit.png' }
+      { id: 'raj', name: 'Raj Kumar', title: 'Raj Kumar', role: 'Master Barber', exp: '12+ yrs Â· Fades & Scissor', avatar: 'images/barber_raj.png' },
+      { id: 'sameer', name: 'Sameer Khan', title: 'Sameer Khan', role: 'Senior Stylist', exp: '8+ yrs Â· Beard & Shave', avatar: 'images/barber_sameer.png' },
+      { id: 'amit', name: 'Amit Sharma', title: 'Amit Sharma', role: 'Grooming Expert', exp: '6+ yrs Â· Massage & Cleanups', avatar: 'images/barber_amit.png' }
     ]);
   } catch (e) {
     res.status(500).json({ error: 'Failed to load barbers' });
   }
 });
 
-// ── MULTI-TENANT SALONS PUBLIC DIRECTORY & DISCOVERY APIS ───────────────────
+// â”€â”€ MULTI-TENANT SALONS PUBLIC DIRECTORY & DISCOVERY APIS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// GET /api/salons — Public directory of approved salons
+// GET /api/salons â€” Public directory of approved salons
 app.get('/api/salons', async (req, res) => {
   try {
     const { search, city, area, service, status } = req.query;
@@ -956,7 +985,7 @@ app.get('/api/salons', async (req, res) => {
   }
 });
 
-// GET /api/salons/cities — Unique list of cities where approved salons exist
+// GET /api/salons/cities â€” Unique list of cities where approved salons exist
 app.get('/api/salons/cities', async (req, res) => {
   try {
     const salons = await db.getSalons({ status: 'approved' });
@@ -970,7 +999,7 @@ app.get('/api/salons/cities', async (req, res) => {
   }
 });
 
-// GET /api/salons/:id — Salon profile details, its services and barbers
+// GET /api/salons/:id â€” Salon profile details, its services and barbers
 app.get('/api/salons/:id', async (req, res) => {
   try {
     const salon = await db.getSalonById(req.params.id);
@@ -992,9 +1021,9 @@ app.get('/api/salons/:id', async (req, res) => {
   }
 });
 
-// ── SALON OWNER REGISTRATION & AUTHENTICATION ───────────────────────────────
+// â”€â”€ SALON OWNER REGISTRATION & AUTHENTICATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// POST /api/salons/register — Salon owners register their salon
+// POST /api/salons/register â€” Salon owners register their salon
 app.post('/api/salons/register', rateLimit({ windowMs: 60000, max: 8, message: 'Too many registration attempts. Please wait.' }), async (req, res) => {
   try {
     const {
@@ -1042,13 +1071,13 @@ app.post('/api/salons/register', rateLimit({ windowMs: 60000, max: 8, message: '
       address: address.trim(),
       city: (city || 'Simraha').trim(),
       area: (area || 'Araria').trim(),
-      hours: (hours || 'Daily: 9:00 AM – 8:30 PM').trim(),
+      hours: (hours || 'Daily: 9:00 AM â€“ 8:30 PM').trim(),
       rating: 5.0,
       reviewsCount: 1,
       startingPrice: Number(startingPrice) || 100,
       image: image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=800&q=80',
       description: (description || `Welcome to ${salonName.trim()}. Dedicated to top-quality grooming and style.`).trim(),
-      servicesSummary: (servicesSummary || 'Haircuts · Fade Styling · Beard Sculpting · Hot Towel Shave · Face Cleanup').trim(),
+      servicesSummary: (servicesSummary || 'Haircuts Â· Fade Styling Â· Beard Sculpting Â· Hot Towel Shave Â· Face Cleanup').trim(),
       status: 'pending', // Pending admin verification
       featured: false,
       createdAt: new Date().toISOString()
@@ -1081,11 +1110,11 @@ app.post('/api/salons/register', rateLimit({ windowMs: 60000, max: 8, message: '
     // Alert salon owner via SMS
     sendRealSms(
       cleanPhone,
-      `✂️ Urban Hairplaza Network: Registration for ${newSalon.name} received! Our team will verify and approve your salon listing shortly. Once approved, you can log in at /owner/login to manage your bookings.`
+      `âœ‚ï¸ Urban Hairplaza Network: Registration for ${newSalon.name} received! Our team will verify and approve your salon listing shortly. Once approved, you can log in at /owner/login to manage your bookings.`
     ).catch(() => {});
 
     // Alert platform master admin
-    sendWhatsAppNotification(`📢 *New Salon Registration Pending Approval!*\nSalon: ${newSalon.name} (${newSalon.city})\nOwner: ${newOwner.name} (+91${cleanPhone})\nPlease review and verify in Admin Dashboard.`).catch(() => {});
+    sendWhatsAppNotification(`ðŸ“¢ *New Salon Registration Pending Approval!*\nSalon: ${newSalon.name} (${newSalon.city})\nOwner: ${newOwner.name} (+91${cleanPhone})\nPlease review and verify in Admin Dashboard.`).catch(() => {});
 
     res.json({
       success: true,
@@ -1099,7 +1128,7 @@ app.post('/api/salons/register', rateLimit({ windowMs: 60000, max: 8, message: '
   }
 });
 
-// POST /api/owner/login — Salon owner private login
+// POST /api/owner/login â€” Salon owner private login
 app.post('/api/owner/login', rateLimit({ windowMs: 60000, max: 10, message: 'Too many login attempts. Please wait.' }), async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -1165,7 +1194,7 @@ app.post('/api/owner/login', rateLimit({ windowMs: 60000, max: 10, message: 'Too
   }
 });
 
-// GET /api/owner/me — Check owner authentication status
+// GET /api/owner/me â€” Check owner authentication status
 app.get('/api/owner/me', async (req, res) => {
   let owner = req.session && req.session.owner;
   if (!owner) {
@@ -1191,7 +1220,7 @@ app.get('/api/owner/me', async (req, res) => {
   res.json({ loggedIn: false, owner: null });
 });
 
-// POST /api/owner/logout — Salon owner log out
+// POST /api/owner/logout â€” Salon owner log out
 app.post('/api/owner/logout', (req, res) => {
   res.clearCookie('uhp_owner_token');
   if (req.session) {
@@ -1200,7 +1229,7 @@ app.post('/api/owner/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// ── SALON OWNER PRIVATE DASHBOARD APIS (SCOPED STRICTLY PER SALON) ───────────
+// â”€â”€ SALON OWNER PRIVATE DASHBOARD APIS (SCOPED STRICTLY PER SALON) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function requireOwner(req, res, next) {
   if (req.session && req.session.owner && ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId))) {
@@ -1228,7 +1257,7 @@ function requireOwner(req, res, next) {
   return res.status(401).json({ error: 'Unauthorized. Salon owner login required.' });
 }
 
-// GET /api/owner/salon — Owner's salon profile
+// GET /api/owner/salon â€” Owner's salon profile
 app.get('/api/owner/salon', requireOwner, async (req, res) => {
   try {
     const salon = await db.getSalonById(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)));
@@ -1239,7 +1268,7 @@ app.get('/api/owner/salon', requireOwner, async (req, res) => {
   }
 });
 
-// PUT /api/owner/salon — Update owner's salon profile
+// PUT /api/owner/salon â€” Update owner's salon profile
 app.put('/api/owner/salon', requireOwner, async (req, res) => {
   try {
     const allowed = [
@@ -1259,7 +1288,7 @@ app.put('/api/owner/salon', requireOwner, async (req, res) => {
   }
 });
 
-// GET /api/owner/stats — Stats strictly for this salon
+// GET /api/owner/stats â€” Stats strictly for this salon
 app.get('/api/owner/stats', requireOwner, async (req, res) => {
   try {
     const salonId = ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId));
@@ -1289,7 +1318,7 @@ app.get('/api/owner/stats', requireOwner, async (req, res) => {
   }
 });
 
-// GET /api/owner/bookings — Bookings strictly for this salon (cannot view other salons)
+// GET /api/owner/bookings â€” Bookings strictly for this salon (cannot view other salons)
 app.get('/api/owner/bookings', requireOwner, async (req, res) => {
   try {
     const salonId = ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId));
@@ -1300,7 +1329,7 @@ app.get('/api/owner/bookings', requireOwner, async (req, res) => {
   }
 });
 
-// PATCH /api/owner/bookings/:id — Update appointment status for this salon
+// PATCH /api/owner/bookings/:id â€” Update appointment status for this salon
 app.patch('/api/owner/bookings/:id', requireOwner, async (req, res) => {
   try {
     const salonId = ((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId));
@@ -1321,7 +1350,7 @@ app.patch('/api/owner/bookings/:id', requireOwner, async (req, res) => {
   }
 });
 
-// GET /api/owner/services — Services for this salon
+// GET /api/owner/services â€” Services for this salon
 app.get('/api/owner/services', requireOwner, async (req, res) => {
   try {
     const services = await db.getServicesBySalon(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)));
@@ -1331,7 +1360,7 @@ app.get('/api/owner/services', requireOwner, async (req, res) => {
   }
 });
 
-// POST /api/owner/services — Add service for this salon
+// POST /api/owner/services â€” Add service for this salon
 app.post('/api/owner/services', requireOwner, async (req, res) => {
   try {
     const { name, category, price, duration, desc, type, icon } = req.body;
@@ -1344,7 +1373,7 @@ app.post('/api/owner/services', requireOwner, async (req, res) => {
       name: name.trim(),
       category: category || 'Haircut',
       type: type || 'inshop',
-      icon: icon || '✂️',
+      icon: icon || 'âœ‚ï¸',
       desc: desc || '',
       price: Number(price) || 100,
       duration: Number(duration) || 30
@@ -1366,7 +1395,7 @@ app.delete('/api/owner/services/:id', requireOwner, async (req, res) => {
   }
 });
 
-// GET /api/owner/staff — Staff for this salon
+// GET /api/owner/staff â€” Staff for this salon
 app.get('/api/owner/staff', requireOwner, async (req, res) => {
   try {
     const staff = await db.getStaffBySalon(((req.owner && req.owner.salonId) || (req.session && req.session.owner && req.session.owner.salonId)));
@@ -1376,7 +1405,7 @@ app.get('/api/owner/staff', requireOwner, async (req, res) => {
   }
 });
 
-// POST /api/owner/staff — Add staff for this salon
+// POST /api/owner/staff â€” Add staff for this salon
 app.post('/api/owner/staff', requireOwner, async (req, res) => {
   try {
     const { name, role, experience } = req.body;
@@ -1406,9 +1435,9 @@ app.delete('/api/owner/staff/:id', requireOwner, async (req, res) => {
   }
 });
 
-// ── USER AUTHENTICATION & PORTAL APIS (MOBILE / EMAIL OTP) ───────────────────
+// â”€â”€ USER AUTHENTICATION & PORTAL APIS (MOBILE / EMAIL OTP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// POST /api/auth/send-otp — Send 6-digit OTP to mobile or email
+// POST /api/auth/send-otp â€” Send 6-digit OTP to mobile or email
 app.post('/api/auth/send-otp', rateLimit({ windowMs: 60000, max: 10, message: 'Too many OTP attempts. Please wait a minute.' }), async (req, res) => {
   try {
     const { identifier, name } = req.body;
@@ -1442,7 +1471,7 @@ app.post('/api/auth/send-otp', rateLimit({ windowMs: 60000, max: 10, message: 'T
       if (smsSent) deliveryChannels.push('SMS');
 
       // 2. Also send via WhatsApp
-      const msg = `✂️ *Urban Hairplaza Verification*\nYour OTP is: *${otp}*\nValid for 10 minutes. Do not share this code.`;
+      const msg = `âœ‚ï¸ *Urban Hairplaza Verification*\nYour OTP is: *${otp}*\nValid for 10 minutes. Do not share this code.`;
       const waSent = await sendWhatsAppNotification(msg, `91${cleanPhone}`).then(() => true).catch(() => false);
       if (waSent) deliveryChannels.push('WhatsApp');
     } else {
@@ -1467,7 +1496,7 @@ app.post('/api/auth/send-otp', rateLimit({ windowMs: 60000, max: 10, message: 'T
   }
 });
 
-// POST /api/auth/verify-otp — Verify OTP and set user session
+// POST /api/auth/verify-otp â€” Verify OTP and set user session
 app.post('/api/auth/verify-otp', rateLimit({ windowMs: 60000, max: 20, message: 'Too many verification attempts. Please wait.' }), async (req, res) => {
   try {
     const { identifier, otp, name } = req.body;
@@ -1520,7 +1549,7 @@ app.post('/api/auth/verify-otp', rateLimit({ windowMs: 60000, max: 20, message: 
   }
 });
 
-// GET /api/user/me — Check current login state
+// GET /api/user/me â€” Check current login state
 app.get('/api/user/me', (req, res) => {
   if (req.session && req.session.user) {
     return res.json({ loggedIn: true, user: req.session.user });
@@ -1528,7 +1557,7 @@ app.get('/api/user/me', (req, res) => {
   res.json({ loggedIn: false, user: null });
 });
 
-// GET /api/textbee/status — Diagnostic endpoint to check Textbee configuration
+// GET /api/textbee/status â€” Diagnostic endpoint to check Textbee configuration
 app.get('/api/textbee/status', async (req, res) => {
   const queryKey = typeof req.query.apiKey === 'string' ? req.query.apiKey.trim() : '';
   const rawKey = queryKey || (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
@@ -1615,7 +1644,7 @@ app.get('/api/textbee/status', async (req, res) => {
   });
 });
 
-// GET /api/user/bookings — Get authenticated user's booking history
+// GET /api/user/bookings â€” Get authenticated user's booking history
 app.get('/api/user/bookings', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.status(401).json({ error: 'Please log in to view your bookings.' });
@@ -1636,7 +1665,7 @@ app.get('/api/user/bookings', async (req, res) => {
   }
 });
 
-// POST /api/user/cancel-booking — Cancel an upcoming appointment
+// POST /api/user/cancel-booking â€” Cancel an upcoming appointment
 app.post('/api/user/cancel-booking', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.status(401).json({ error: 'Unauthorized.' });
@@ -1671,13 +1700,13 @@ app.post('/api/user/cancel-booking', async (req, res) => {
   }
 });
 
-// POST /api/auth/logout — Log out user
+// POST /api/auth/logout â€” Log out user
 app.post('/api/auth/logout', (req, res) => {
   req.session.user = null;
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 
-// GET /api/slots — Check availability per barber, salon, and per date
+// GET /api/slots â€” Check availability per barber, salon, and per date
 app.get('/api/slots', async (req, res) => {
   const { date, barber, salonId } = req.query;
   if (!date) {
@@ -1754,7 +1783,7 @@ app.get('/api/slots', async (req, res) => {
   }
 });
 
-// POST /api/create-payment-order — Initiate Cashfree advance payment order
+// POST /api/create-payment-order â€” Initiate Cashfree advance payment order
 app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, message: 'Too many booking attempts. Please wait a moment.' }), async (req, res) => {
   let createdBookingId = null;
   try {
@@ -1830,7 +1859,7 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
     );
     const verifiedPrice = matchedService ? Number(matchedService.price) : (Number(price) || 150);
     const verifiedDuration = matchedService ? (parseInt(matchedService.duration) || 30) : (Number(duration) || 30);
-    const advance = 50; // Strictly enforce standard ₹50 deposit on server
+    const advance = 50; // Strictly enforce standard â‚¹50 deposit on server
 
     const orderId = `UHP-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
     createdBookingId = orderId;
@@ -1941,7 +1970,7 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
   }
 });
 
-// POST /api/verify-payment — Verify Cashfree payment completion & log transaction
+// POST /api/verify-payment â€” Verify Cashfree payment completion & log transaction
 app.post('/api/verify-payment', async (req, res) => {
   try {
     const { order_id, is_simulation } = req.body;
@@ -2043,7 +2072,7 @@ app.post('/api/verify-payment', async (req, res) => {
   }
 });
 
-// POST /api/payment-failed — Triggered when checkout fails, closes, or is cancelled
+// POST /api/payment-failed â€” Triggered when checkout fails, closes, or is cancelled
 app.post('/api/payment-failed', async (req, res) => {
   try {
     const { order_id, reason } = req.body;
@@ -2078,7 +2107,7 @@ app.post('/api/payment-failed', async (req, res) => {
   }
 });
 
-// GET /api/booking-details/:id — Safe booking details for payment retry page
+// GET /api/booking-details/:id â€” Safe booking details for payment retry page
 app.get('/api/booking-details/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -2113,7 +2142,7 @@ app.get('/api/booking-details/:id', async (req, res) => {
   }
 });
 
-// POST /api/retry-payment — Generate a fresh Cashfree payment session for retry
+// POST /api/retry-payment â€” Generate a fresh Cashfree payment session for retry
 app.post('/api/retry-payment', rateLimit({ windowMs: 60000, max: 15, message: 'Too many requests. Please wait a moment.' }), async (req, res) => {
   try {
     const { order_id } = req.body;
@@ -2218,7 +2247,7 @@ app.post('/api/retry-payment', rateLimit({ windowMs: 60000, max: 15, message: 'T
   }
 });
 
-// POST /api/cashfree-webhook — Handle asynchronous Cashfree payment notifications
+// POST /api/cashfree-webhook â€” Handle asynchronous Cashfree payment notifications
 app.post('/api/cashfree-webhook', async (req, res) => {
   try {
     const data = req.body?.data || req.body;
@@ -2257,7 +2286,7 @@ app.post('/api/cashfree-webhook', async (req, res) => {
   }
 });
 
-// POST /api/bookings — Direct reservation (for walk-in, admin, or pay at shop)
+// POST /api/bookings â€” Direct reservation (for walk-in, admin, or pay at shop)
 app.post('/api/bookings', rateLimit({ windowMs: 60000, max: 10, message: 'Too many booking requests. Please wait a moment.' }), async (req, res) => {
   try {
     const { name, phone, email, service, barber, date, time, type, address, notes, price, duration, advancePaid } = req.body;
@@ -2338,7 +2367,7 @@ app.post('/api/bookings', rateLimit({ windowMs: 60000, max: 10, message: 'Too ma
   }
 });
 
-// POST /api/enquiries — Submit contact message (with anti-spam rate limiting)
+// POST /api/enquiries â€” Submit contact message (with anti-spam rate limiting)
 app.post('/api/enquiries', rateLimit({ windowMs: 60000, max: 5, message: 'Please wait before sending another enquiry.' }), async (req, res) => {
   try {
     const { name, phone, email, subject, message } = req.body;
@@ -2360,7 +2389,7 @@ app.post('/api/enquiries', rateLimit({ windowMs: 60000, max: 5, message: 'Please
     await db.saveEnquiry(enquiry);
 
     sendWhatsAppNotification(
-      `📩 *New Enquiry – Urban Hairplaza*\nFrom: ${enquiry.name} (${enquiry.phone})\nSubject: ${enquiry.subject}\nMessage: ${enquiry.message}`
+      `ðŸ“© *New Enquiry â€“ Urban Hairplaza*\nFrom: ${enquiry.name} (${enquiry.phone})\nSubject: ${enquiry.subject}\nMessage: ${enquiry.message}`
     ).catch(() => {});
 
     res.json({ success: true, id: enquiry.id });
@@ -2370,7 +2399,7 @@ app.post('/api/enquiries', rateLimit({ windowMs: 60000, max: 5, message: 'Please
   }
 });
 
-// ── ADMIN AUTHENTICATION MIDDLEWARE ─────────────────────────────────────────
+// â”€â”€ ADMIN AUTHENTICATION MIDDLEWARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function requireAdmin(req, res, next) {
   // 1. Session check
   if (req.session && req.session.isAdmin) {
@@ -2392,7 +2421,7 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: 'Unauthorized. Admin login required.' });
 }
 
-// ── ADMIN AUTH ROUTES ────────────────────────────────────────────────────────
+// â”€â”€ ADMIN AUTH ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Protected with brute-force rate limiter (max 15 attempts per 15 min per IP) and timing-safe comparison
 app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Too many login attempts. Please wait 15 minutes.' }), (req, res) => {
   const { username, password } = req.body;
@@ -2455,7 +2484,7 @@ app.post('/api/admin/logout', (req, res) => {
   }
 });
 
-// ── ADMIN DATA MANAGEMENT ───────────────────────────────────────────────────
+// â”€â”€ ADMIN DATA MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // GET /api/admin/stats
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
@@ -2540,7 +2569,7 @@ app.delete('/api/admin/bookings/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/transactions — View all payments
+// GET /api/admin/transactions â€” View all payments
 app.get('/api/admin/transactions', requireAdmin, async (req, res) => {
   try {
     const transactions = await db.getTransactions();
@@ -2550,7 +2579,7 @@ app.get('/api/admin/transactions', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/users — View all registered client profiles
+// GET /api/admin/users â€” View all registered client profiles
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const users = await db.getUsers();
@@ -2601,7 +2630,7 @@ app.post('/api/admin/services', requireAdmin, async (req, res) => {
       id: `SRV-${Date.now().toString(36).toUpperCase()}`,
       category: category || 'Haircut',
       type: type || 'inshop',
-      icon: icon || '✂️',
+      icon: icon || 'âœ‚ï¸',
       name: name.trim(),
       desc: (desc || '').trim(),
       price: Number(price) || 0,
@@ -2638,9 +2667,9 @@ app.delete('/api/admin/services/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// ── ADMIN MULTI-TENANT SALONS MANAGEMENT ───────────────────────────────────
+// â”€â”€ ADMIN MULTI-TENANT SALONS MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// GET /api/admin/salons — All registered salons (pending, approved, suspended)
+// GET /api/admin/salons â€” All registered salons (pending, approved, suspended)
 app.get('/api/admin/salons', requireAdmin, async (req, res) => {
   try {
     const { status, search } = req.query;
@@ -2651,7 +2680,7 @@ app.get('/api/admin/salons', requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/salons/:id/status — Approve, suspend, or set status
+// PATCH /api/admin/salons/:id/status â€” Approve, suspend, or set status
 app.patch('/api/admin/salons/:id/status', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -2674,9 +2703,9 @@ app.patch('/api/admin/salons/:id/status', requireAdmin, async (req, res) => {
     if (status === 'approved' && salon.phone) {
       const publicBase = getPublicBaseUrl(req);
       const cleanPhone = salon.phone.replace(/\D/g, '').slice(-10);
-      const smsMsg = `🎉 Congratulations! Your salon "${salon.name}" has been APPROVED on Urban Hairplaza! It is now live to customers. Access your dashboard: ${publicBase}/owner/login`;
+      const smsMsg = `ðŸŽ‰ Congratulations! Your salon "${salon.name}" has been APPROVED on Urban Hairplaza! It is now live to customers. Access your dashboard: ${publicBase}/owner/login`;
       sendRealSms(cleanPhone, smsMsg).catch(() => {});
-      sendWhatsAppNotification(`🎉 *Salon Approved!* ${salon.name} (${salon.phone}) is now live on the platform!`).catch(() => {});
+      sendWhatsAppNotification(`ðŸŽ‰ *Salon Approved!* ${salon.name} (${salon.phone}) is now live on the platform!`).catch(() => {});
     }
 
     res.json({ success: true, salon: updated });
@@ -2686,7 +2715,7 @@ app.patch('/api/admin/salons/:id/status', requireAdmin, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/salons/:id — Delete salon listing
+// DELETE /api/admin/salons/:id â€” Delete salon listing
 app.delete('/api/admin/salons/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -2700,7 +2729,7 @@ app.delete('/api/admin/salons/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/owners — All salon owners
+// GET /api/admin/owners â€” All salon owners
 app.get('/api/admin/owners', requireAdmin, async (req, res) => {
   try {
     const owners = await db.getOwners();
@@ -2710,7 +2739,7 @@ app.get('/api/admin/owners', requireAdmin, async (req, res) => {
   }
 });
 
-// ── ADMIN PAGE REDIRECTS ────────────────────────────────────────────────────
+// â”€â”€ ADMIN PAGE REDIRECTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get(['/admin', '/admin/'], (req, res) => {
   if (req.session && req.session.isAdmin) {
     return res.redirect('/admin/dashboard.html');
@@ -2718,28 +2747,559 @@ app.get(['/admin', '/admin/'], (req, res) => {
   res.redirect('/admin/login.html');
 });
 
-// ── INITIALIZATION & SERVER START ───────────────────────────────────────────
+// â”€â”€ INITIALIZATION & SERVER START â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 db.initDB().catch(err => console.error('[Init DB Error]', err));
+
+
+// ??????????????????????????????????????????????????????????????????????????????
+// ?? BEAUTY PARLOUR DEDICATED REST API (100% ISOLATED SUB-ECOSYSTEM)
+// ??????????????????????????????????????????????????????????????????????????????
+
+// Middleware: Beauty Parlour Admin Auth
+function requireParlourAdmin(req, res, next) {
+  const token = req.cookies?.uhp_parlour_admin_token || req.headers['x-parlour-admin-token'];
+  if (token) {
+    const verified = verifyAuthToken(token);
+    if (verified && verified.role === 'parlour_admin') {
+      req.parlourAdminUser = verified.user;
+      return next();
+    }
+  }
+  if (req.session && req.session.isParlourAdmin) {
+    return next();
+  }
+  // Check main admin session as fallback
+  if (req.session && req.session.isAdmin) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Parlour Admin login required.' });
+}
+
+// Middleware: Beauty Parlour Owner Auth
+async function requireParlourOwner(req, res, next) {
+  const token = req.cookies?.uhp_parlour_owner_token || req.headers['x-parlour-owner-token'];
+  if (token) {
+    const verified = verifyAuthToken(token);
+    if (verified && verified.role === 'parlour_owner') {
+      req.parlourOwner = await db.getParlourOwnerById(verified.ownerId);
+      if (req.parlourOwner) return next();
+    }
+  }
+  if (req.session && req.session.parlourOwnerId) {
+    req.parlourOwner = await db.getParlourOwnerById(req.session.parlourOwnerId);
+    if (req.parlourOwner) return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized. Parlour Owner login required.' });
+}
+
+// 1. GET /api/parlour/directory ? List all verified/approved beauty parlours
+app.get('/api/parlour/directory', async (req, res) => {
+  try {
+    const { city, search } = req.query;
+    let parlours = await db.getParlours({ status: 'approved' });
+    if (city) {
+      parlours = parlours.filter(p => p.city && p.city.toLowerCase().includes(city.toLowerCase().trim()));
+    }
+    if (search) {
+      const q = search.toLowerCase().trim();
+      parlours = parlours.filter(p =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.servicesSummary && p.servicesSummary.toLowerCase().includes(q)) ||
+        (p.city && p.city.toLowerCase().includes(q))
+      );
+    }
+    res.json(parlours);
+  } catch (err) {
+    console.error('[API-PARLOUR] directory error:', err);
+    res.status(500).json({ error: 'Failed to fetch beauty parlours' });
+  }
+});
+
+// 2. GET /api/parlour/services ? Get services for a specific beauty parlour
+app.get('/api/parlour/services', async (req, res) => {
+  try {
+    const parlourId = req.query.parlourId || 'parlour-urban-beauty';
+    const services = await db.getParlourServices(parlourId);
+    res.json(services);
+  } catch (err) {
+    console.error('[API-PARLOUR] services error:', err);
+    res.status(500).json({ error: 'Failed to fetch parlour services' });
+  }
+});
+
+// 3. GET /api/parlour/staff ? Get beauticians/staff for a specific beauty parlour
+app.get('/api/parlour/staff', async (req, res) => {
+  try {
+    const parlourId = req.query.parlourId || 'parlour-urban-beauty';
+    const staff = await db.getParlourStaff(parlourId);
+    res.json(staff);
+  } catch (err) {
+    console.error('[API-PARLOUR] staff error:', err);
+    res.status(500).json({ error: 'Failed to fetch parlour staff' });
+  }
+});
+
+// 4. GET /api/parlour/availability ? Isolated parlour slot checker
+app.get('/api/parlour/availability', async (req, res) => {
+  try {
+    const { parlourId, date, beautician } = req.query;
+    if (!date) return res.status(400).json({ error: 'Date is required.' });
+
+    const pId = parlourId || 'parlour-urban-beauty';
+    const allBookings = await db.getParlourBookings({ parlourId: pId });
+    const bookedSlots = allBookings
+      .filter(b => b.date === date && b.status !== 'cancelled' && (!beautician || beautician === 'Any Available' || b.beauticianName === beautician))
+      .map(b => b.time);
+
+    // Standard 9:00 AM ? 9:00 PM operating slots
+    const slots = [
+      '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+      '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+      '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+      '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
+      '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
+      '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM'
+    ];
+
+    const availability = slots.map(time => ({
+      time,
+      available: !bookedSlots.includes(time)
+    }));
+
+    res.json({ date, availability });
+  } catch (err) {
+    console.error('[API-PARLOUR] availability error:', err);
+    res.status(500).json({ error: 'Failed to compute availability' });
+  }
+});
+
+// 5. POST /api/parlour/bookings ? Dedicated Beauty Parlour appointment creation
+app.post('/api/parlour/bookings', async (req, res) => {
+  try {
+    const {
+      parlourId,
+      clientName,
+      clientPhone,
+      clientEmail,
+      serviceName,
+      beauticianName,
+      date,
+      time,
+      serviceType,
+      address,
+      notes,
+      price,
+      duration
+    } = req.body;
+
+    if (!clientName || !clientPhone || !serviceName || !date || !time) {
+      return res.status(400).json({ error: 'Name, phone, service, date, and time are required.' });
+    }
+
+    const cleanPhone = clientPhone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    const pId = parlourId || 'parlour-urban-beauty';
+    const parlour = await db.getParlourById(pId);
+    const parlourName = parlour ? parlour.name : 'Urban Hairplaza Beauty Parlour';
+
+    const booking = await db.createParlourBooking({
+      parlourId: pId,
+      parlourName,
+      clientName: clientName.trim(),
+      clientPhone: cleanPhone,
+      clientEmail: (clientEmail || '').trim(),
+      serviceName: serviceName.trim(),
+      beauticianName: (beauticianName || 'Any Available').trim(),
+      date: date.trim(),
+      time: time.trim(),
+      serviceType: serviceType || 'inparlour',
+      address: (address || '').trim(),
+      notes: (notes || '').trim(),
+      price: Number(price) || 0,
+      duration: duration || '45 mins',
+      status: 'confirmed'
+    });
+
+    // Send WhatsApp notification to client
+    try {
+      const typeText = booking.serviceType === 'home' ? 'Home Visit' : 'In-Parlour';
+      const msg = `?? *New Booking Confirmed!*\n\nDear ${booking.clientName},\nYour appointment at *${parlourName}* is locked.\n\n?? *Service:* ${booking.serviceName}\n?? *Beautician:* ${booking.beauticianName}\n?? *Date:* ${booking.date}\n?? *Time:* ${booking.time}\n?? *Type:* ${typeText}\n?? *Total:* ?${booking.price}\n\n?? Helpline: +91 6202 692 426\nThank you for choosing ${parlourName}!`;
+      await sendWhatsAppNotification(msg, cleanPhone);
+    } catch (e) {
+      console.warn('[WhatsApp] Parlour client alert failed:', e.message);
+    }
+
+    res.json({
+      success: true,
+      id: booking.id,
+      booking,
+      message: 'Beauty Parlour appointment confirmed successfully!'
+    });
+  } catch (err) {
+    console.error('[API-PARLOUR] booking error:', err);
+    res.status(500).json({ error: 'Failed to create beauty appointment' });
+  }
+});
+
+// 6. POST /api/parlour/register ? Register new beauty parlour + owner
+app.post('/api/parlour/register', async (req, res) => {
+  try {
+    const {
+      parlourName,
+      ownerName,
+      phone,
+      email,
+      password,
+      city,
+      address,
+      description,
+      servicesSummary,
+      image
+    } = req.body;
+
+    if (!parlourName || !ownerName || !phone || !password || !city || !address) {
+      return res.status(400).json({ error: 'Parlour name, owner name, phone, password, city, and address are required.' });
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    // Check if phone or email already registered
+    const existing = await db.getParlourOwnerByPhone(cleanPhone);
+    if (existing) {
+      return res.status(409).json({ error: 'A beauty parlour owner with this phone number is already registered.' });
+    }
+
+    const parlourId = 'parlour-' + Date.now().toString(36);
+    const ownerId = 'owner-p-' + Date.now().toString(36);
+
+    const newParlour = await db.saveParlour({
+      id: parlourId,
+      name: parlourName.trim(),
+      slug: parlourName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      ownerId,
+      phone: cleanPhone,
+      email: (email || '').trim(),
+      city: city.trim(),
+      address: address.trim(),
+      description: (description || 'Professional ladies beauty parlour offering skin care, waxing, nail art, and bridal makeup.').trim(),
+      servicesSummary: (servicesSummary || 'Skin & Face ? Waxing ? Nails ? Bridal Makeup ? Hair Spa').trim(),
+      image: image || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
+      status: 'pending', // Requires admin approval
+      featured: false
+    });
+
+    const newOwner = await db.saveParlourOwner({
+      id: ownerId,
+      parlourId,
+      name: ownerName.trim(),
+      phone: cleanPhone,
+      email: (email || '').trim(),
+      passwordHash: password,
+      status: 'pending'
+    });
+
+    res.json({
+      success: true,
+      parlourId,
+      message: 'Your beauty parlour has been registered! Our admin will review and verify your listing within 24 hours.'
+    });
+  } catch (err) {
+    console.error('[API-PARLOUR] registration error:', err);
+    res.status(500).json({ error: 'Failed to register beauty parlour' });
+  }
+});
+
+// ??????????????????????????????????????????????????????????????????????????????
+// ?? PARLOUR OWNER PORTAL ENDPOINTS
+// ??????????????????????????????????????????????????????????????????????????????
+
+// POST /api/parlour/owner/login
+app.post('/api/parlour/owner/login', async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Mobile number/email and password are required.' });
+    }
+
+    const clean = identifier.trim();
+    const cleanPhone = clean.replace(/\D/g, '').slice(-10);
+    let owner = null;
+
+    if (cleanPhone.length === 10) {
+      owner = await db.getParlourOwnerByPhone(cleanPhone);
+    }
+    if (!owner && clean.includes('@')) {
+      owner = await db.getParlourOwnerByEmail(clean);
+    }
+
+    if (!owner) {
+      return res.status(401).json({ error: 'No beauty parlour owner account found with these credentials.' });
+    }
+
+    if (owner.passwordHash !== password) {
+      return res.status(401).json({ error: 'Incorrect password.' });
+    }
+
+    const token = createAuthToken({
+      role: 'parlour_owner',
+      ownerId: owner.id,
+      parlourId: owner.parlourId,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000
+    });
+
+    if (req.session) {
+      req.session.parlourOwnerId = owner.id;
+      req.session.parlourId = owner.parlourId;
+    }
+
+    res.cookie('uhp_parlour_owner_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    const parlour = await db.getParlourById(owner.parlourId);
+    res.json({
+      success: true,
+      token,
+      owner: { id: owner.id, name: owner.name, phone: owner.phone, parlourId: owner.parlourId },
+      parlour
+    });
+  } catch (err) {
+    console.error('[API-PARLOUR] owner login error:', err);
+    res.status(500).json({ error: 'Internal login error' });
+  }
+});
+
+// POST /api/parlour/owner/logout
+app.post('/api/parlour/owner/logout', (req, res) => {
+  if (req.session) {
+    delete req.session.parlourOwnerId;
+    delete req.session.parlourId;
+  }
+  res.clearCookie('uhp_parlour_owner_token');
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// GET /api/parlour/owner/me
+app.get('/api/parlour/owner/me', requireParlourOwner, async (req, res) => {
+  try {
+    const parlour = await db.getParlourById(req.parlourOwner.parlourId);
+    res.json({
+      owner: {
+        id: req.parlourOwner.id,
+        name: req.parlourOwner.name,
+        phone: req.parlourOwner.phone,
+        email: req.parlourOwner.email,
+        status: req.parlourOwner.status
+      },
+      parlour
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+// GET /api/parlour/owner/bookings
+app.get('/api/parlour/owner/bookings', requireParlourOwner, async (req, res) => {
+  try {
+    const bookings = await db.getParlourBookings({ parlourId: req.parlourOwner.parlourId });
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load bookings' });
+  }
+});
+
+// PATCH /api/parlour/owner/bookings/:id
+app.patch('/api/parlour/owner/bookings/:id', requireParlourOwner, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await db.getParlourBookingById(req.params.id);
+    if (!booking || booking.parlourId !== req.parlourOwner.parlourId) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    const updated = await db.updateParlourBooking(req.params.id, { status });
+    res.json({ success: true, booking: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update booking' });
+  }
+});
+
+// POST /api/parlour/owner/services ? Add service
+app.post('/api/parlour/owner/services', requireParlourOwner, async (req, res) => {
+  try {
+    const { category, name, description, price, duration } = req.body;
+    if (!name || !price) return res.status(400).json({ error: 'Name and price are required.' });
+
+    const service = await db.saveParlourService({
+      parlourId: req.parlourOwner.parlourId,
+      category: category || 'General',
+      name: name.trim(),
+      description: (description || '').trim(),
+      price: Number(price),
+      duration: duration || '30 mins'
+    });
+    res.json({ success: true, service });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add service' });
+  }
+});
+
+// DELETE /api/parlour/owner/services/:id
+app.delete('/api/parlour/owner/services/:id', requireParlourOwner, async (req, res) => {
+  try {
+    await db.deleteParlourService(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete service' });
+  }
+});
+
+// POST /api/parlour/owner/staff ? Add beautician
+app.post('/api/parlour/owner/staff', requireParlourOwner, async (req, res) => {
+  try {
+    const { name, role, experience, photo, bio } = req.body;
+    if (!name || !role) return res.status(400).json({ error: 'Name and role are required.' });
+
+    const staff = await db.saveParlourStaff({
+      parlourId: req.parlourOwner.parlourId,
+      name: name.trim(),
+      role: role.trim(),
+      experience: experience || '3+ Years',
+      photo: photo || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+      bio: (bio || '').trim(),
+      rating: 5.0
+    });
+    res.json({ success: true, staff });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add beautician' });
+  }
+});
+
+// DELETE /api/parlour/owner/staff/:id
+app.delete('/api/parlour/owner/staff/:id', requireParlourOwner, async (req, res) => {
+  try {
+    await db.deleteParlourStaff(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete staff' });
+  }
+});
+
+// ??????????????????????????????????????????????????????????????????????????????
+// ??? PARLOUR ADMIN PORTAL ENDPOINTS
+// ??????????????????????????????????????????????????????????????????????????????
+
+// POST /api/parlour/admin/login
+app.post('/api/parlour/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').trim();
+  const adminPass = (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025').trim();
+
+  if (safeCompare(username || '', adminUser) && safeCompare(password || '', adminPass)) {
+    const token = createAuthToken({
+      role: 'parlour_admin',
+      user: adminUser,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000
+    });
+
+    if (req.session) {
+      req.session.isParlourAdmin = true;
+      req.session.parlourAdminUser = adminUser;
+    }
+
+    res.cookie('uhp_parlour_admin_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    return res.json({ success: true, token, user: adminUser });
+  }
+  return res.status(401).json({ error: 'Invalid admin username or password.' });
+});
+
+// POST /api/parlour/admin/logout
+app.post('/api/parlour/admin/logout', (req, res) => {
+  if (req.session) {
+    delete req.session.isParlourAdmin;
+    delete req.session.parlourAdminUser;
+  }
+  res.clearCookie('uhp_parlour_admin_token');
+  res.json({ success: true, message: 'Logged out from Parlour Admin' });
+});
+
+// GET /api/parlour/admin/parlours ? List all parlours (pending & approved)
+app.get('/api/parlour/admin/parlours', requireParlourAdmin, async (req, res) => {
+  try {
+    const parlours = await db.getParlours();
+    res.json(parlours);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch parlours' });
+  }
+});
+
+// PATCH /api/parlour/admin/parlours/:id/status ? Approve or reject parlour
+app.patch('/api/parlour/admin/parlours/:id/status', requireParlourAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['approved', 'pending', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be approved, pending, or rejected.' });
+    }
+    const updated = await db.updateParlour(req.params.id, { status });
+    if (!updated) return res.status(404).json({ error: 'Parlour not found' });
+    res.json({ success: true, parlour: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update parlour status' });
+  }
+});
+
+// GET /api/parlour/admin/bookings ? All parlour bookings
+app.get('/api/parlour/admin/bookings', requireParlourAdmin, async (req, res) => {
+  try {
+    const bookings = await db.getParlourBookings();
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load parlour bookings' });
+  }
+});
+
+// DELETE /api/parlour/admin/bookings/:id
+app.delete('/api/parlour/admin/bookings/:id', requireParlourAdmin, async (req, res) => {
+  try {
+    await db.deleteParlourBooking(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete booking' });
+  }
+});
+
 
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║               URBAN HAIRPLAZA WEB APP READY                  ║
-║                                                              ║
-║  🌐 Web App:    http://localhost:${PORT}                        ║
-║  🔑 Admin:      http://localhost:${PORT}/admin/                 ║
-║  💈 Location:   Simraha, Araria, Bihar                       ║
-║  📞 Phone:      +91 6202 692 426                             ║
-╚══════════════════════════════════════════════════════════════╝
+â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+â•‘               URBAN HAIRPLAZA WEB APP READY                  â•‘
+â•‘                                                              â•‘
+â•‘  ðŸŒ Web App:    http://localhost:${PORT}                        â•‘
+â•‘  ðŸ”‘ Admin:      http://localhost:${PORT}/admin/                 â•‘
+â•‘  ðŸ’ˆ Location:   Simraha, Araria, Bihar                       â•‘
+â•‘  ðŸ“ž Phone:      +91 6202 692 426                             â•‘
+â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     `);
   });
 }
 
 
-// ── WHATSAPP REMINDERS & NOTIFICATION ENDPOINTS ─────────────────────────────
+// â”€â”€ WHATSAPP REMINDERS & NOTIFICATION ENDPOINTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// GET /api/cron/reminders — Scheduled runner to trigger 2-hour pre-appointment WhatsApp reminders
+// GET /api/cron/reminders â€” Scheduled runner to trigger 2-hour pre-appointment WhatsApp reminders
 app.get('/api/cron/reminders', async (req, res) => {
   try {
     const result = await checkAndSendUpcomingReminders();
@@ -2754,7 +3314,7 @@ app.get('/api/cron/reminders', async (req, res) => {
   }
 });
 
-// POST /api/appointments/:id/send-reminder — Manual WhatsApp nudge by Owner or Admin
+// POST /api/appointments/:id/send-reminder â€” Manual WhatsApp nudge by Owner or Admin
 app.post('/api/appointments/:id/send-reminder', async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -2792,7 +3352,7 @@ app.post('/api/appointments/:id/send-reminder', async (req, res) => {
   }
 });
 
-// GET /api/admin/whatsapp-logs — View recent WhatsApp outgoing notifications
+// GET /api/admin/whatsapp-logs â€” View recent WhatsApp outgoing notifications
 app.get('/api/admin/whatsapp-logs', requireAdmin, async (req, res) => {
   res.json({
     success: true,

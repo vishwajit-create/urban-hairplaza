@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Beauty Parlour – Urban Hairplaza Partner</title>
+  <meta name="description" content="List your ladies beauty parlour on Urban Hairplaza. Get online appointment bookings, WhatsApp alerts, and free business promotion across Bihar.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .reg-container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    .reg-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: var(--shadow-card);
+    }
+    .form-section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-top: 24px;
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>Partner Registration Portal</span>
+        <span>Simraha, Araria, Bihar</span>
+      </div>
+      <div class="topbar-info">
+        <a href="parlours.html">Explore Parlours</a>
+        <a href="owner/login.html">Owner Login</a>
+        <a href="../index.html">Hair Salon</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+        </div>
+        <div>
+          <div class="nav-brand-title">Beauty Parlour</div>
+          <div class="nav-brand-sub">Partner Network</div>
+        </div>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services</a>
+        <a href="parlours.html" class="nav-link">Explore Parlours</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="owner/login.html" class="btn btn-secondary btn-sm">Owner Portal</a>
+        <a href="book.html" class="btn btn-accent btn-sm">Book Appointment</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="page-hero-content">
+        <div class="breadcrumb">
+          <a href="index.html">Beauty Parlour</a>
+          <span>›</span>Register Parlour
+        </div>
+        <h1>List Your Beauty Parlour</h1>
+        <p>Join Urban Hairplaza’s verified network of ladies beauty parlours. Expand your clientele with zero upfront listing fees.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORM CONTAINER -->
+  <div class="reg-container">
+    <div class="reg-card">
+      <div class="mono-tag" style="background:#FFF1F2; color:#E11D48;">Free Parlour Registration</div>
+      <h2 style="margin-top:6px; margin-bottom:8px;">Beauty Parlour Application</h2>
+      <p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:24px;">
+        Fill in your parlour and owner details. After a brief review by our admin team, your listing will go live!
+      </p>
+
+      <form id="reg-form">
+        <!-- 1. Parlour Info -->
+        <div class="form-section-title">1. Parlour Information</div>
+        <div class="form-group">
+          <label for="parlour-name">Beauty Parlour Name *</label>
+          <input type="text" id="parlour-name" placeholder="e.g. Shringar Beauty Lounge" required>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+          <div class="form-group">
+            <label for="parlour-city">City / District *</label>
+            <input type="text" id="parlour-city" placeholder="e.g. Simraha, Araria, Purnia" required>
+          </div>
+          <div class="form-group">
+            <label for="parlour-image">Parlour Photo URL (optional)</label>
+            <input type="url" id="parlour-image" placeholder="https://example.com/photo.jpg">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="parlour-address">Complete Parlour Address *</label>
+          <input type="text" id="parlour-address" placeholder="Shop #, Landmark, Street name, Pincode" required>
+        </div>
+
+        <div class="form-group">
+          <label for="services-summary">Key Services Offered *</label>
+          <input type="text" id="services-summary" placeholder="e.g. Facials · Rica Waxing · Gel Nails · Bridal HD Makeup · Hair Spa" required>
+        </div>
+
+        <div class="form-group">
+          <label for="parlour-desc">About Your Beauty Parlour</label>
+          <textarea id="parlour-desc" placeholder="Tell customers about your experience, certifications, hygienic tools, and special packages..."></textarea>
+        </div>
+
+        <!-- 2. Owner Info -->
+        <div class="form-section-title">2. Owner Account Details</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+          <div class="form-group">
+            <label for="owner-name">Owner / Lead Beautician Name *</label>
+            <input type="text" id="owner-name" placeholder="Sunita Devi" required>
+          </div>
+          <div class="form-group">
+            <label for="owner-phone">Mobile Number * (used for login &amp; WhatsApp alerts)</label>
+            <input type="tel" id="owner-phone" placeholder="9876543210" maxlength="10" required>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+          <div class="form-group">
+            <label for="owner-email">Email Address (optional)</label>
+            <input type="email" id="owner-email" placeholder="sunita@gmail.com">
+          </div>
+          <div class="form-group">
+            <label for="owner-password">Portal Password * (min 6 characters)</label>
+            <input type="password" id="owner-password" placeholder="Create a secure password" minlength="6" required>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <button type="submit" class="btn btn-accent btn-lg btn-block" id="submit-btn">
+            Submit Registration For Verification 🚀
+          </button>
+        </div>
+
+        <div id="reg-feedback" style="display:none; padding:16px; border-radius:var(--radius); margin-top:20px; font-size:0.92rem; line-height:1.6;"></div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container" style="text-align:center; padding:30px 0; color:rgba(255,255,255,0.4); font-size:0.85rem;">
+      © 2026 Urban Hairplaza Beauty Parlour Partner Network.
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('reg-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const feedback = document.getElementById('reg-feedback');
+
+      const parlourName = document.getElementById('parlour-name').value.trim();
+      const ownerName = document.getElementById('owner-name').value.trim();
+      const phone = document.getElementById('owner-phone').value.trim();
+      const email = document.getElementById('owner-email').value.trim();
+      const password = document.getElementById('owner-password').value;
+      const city = document.getElementById('parlour-city').value.trim();
+      const address = document.getElementById('parlour-address').value.trim();
+      const servicesSummary = document.getElementById('services-summary').value.trim();
+      const description = document.getElementById('parlour-desc').value.trim();
+      const image = document.getElementById('parlour-image').value.trim();
+
+      if (!parlourName || !ownerName || !phone || !password || !city || !address) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      if (phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+        alert('Please enter a valid 10-digit mobile number.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting Application...';
+
+      try {
+        const res = await fetch('/api/parlour/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parlourName,
+            ownerName,
+            phone,
+            email,
+            password,
+            city,
+            address,
+            servicesSummary,
+            description,
+            image
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          document.getElementById('reg-form').reset();
+          feedback.style.display = 'block';
+          feedback.style.background = 'var(--success-bg)';
+          feedback.style.color = 'var(--success)';
+          feedback.innerHTML = `
+            <strong>🎉 Registration Successful!</strong><br>
+            Your beauty parlour has been registered. Our admin team will review and verify your listing within 24 hours.<br><br>
+            <a href="owner/login.html" class="btn btn-primary btn-sm" style="margin-top:8px;">Go to Parlour Owner Portal →</a>
+          `;
+          btn.textContent = 'Submitted Successfully ✓';
+        } else {
+          feedback.style.display = 'block';
+          feedback.style.background = 'var(--danger-bg)';
+          feedback.style.color = 'var(--danger)';
+          feedback.textContent = data.error || 'Failed to submit registration. Please try again.';
+          btn.disabled = false;
+          btn.textContent = 'Submit Registration For Verification 🚀';
+        }
+      } catch (err) {
+        console.error('Registration error:', err);
+        feedback.style.display = 'block';
+        feedback.style.background = 'var(--danger-bg)';
+        feedback.style.color = 'var(--danger)';
+        feedback.textContent = 'Network error. Please try again or call support.';
+        btn.disabled = false;
+        btn.textContent = 'Submit Registration For Verification 🚀';
+      }
+    });
+  </script>
+</body>
+</html>

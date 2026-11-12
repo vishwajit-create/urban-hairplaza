@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore Beauty Parlours – Urban Hairplaza Network</title>
+  <meta name="description" content="Discover and book verified ladies beauty parlours in Simraha, Araria, and across Bihar. Compare services, bridal packages, ratings, and book online.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .parlour-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .parlour-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background: #FFFFFF;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-card);
+    }
+    .parlour-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--border-hover);
+    }
+    .parlour-card-img-wrap {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+    }
+    .parlour-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .parlour-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--accent);
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .parlour-badge-verified {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #059669;
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .parlour-card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .parlour-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .parlour-card-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .parlour-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #D97706;
+    }
+    .parlour-card-loc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .parlour-services-tagline {
+      font-size: 0.85rem;
+      color: var(--text-body);
+      background: var(--bg-subtle);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      flex: 1;
+    }
+    .parlour-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .search-filter-box {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .search-input {
+      flex: 1;
+      min-width: 220px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      outline: none;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>Verified Beauty Parlour Marketplace</span>
+        <span>Simraha, Araria – 854331, Bihar</span>
+      </div>
+      <div class="topbar-info">
+        <a href="register-parlour.html" style="color:var(--accent); font-weight:700;">+ List Your Parlour</a>
+        <a href="owner/login.html">Owner Portal</a>
+        <a href="../index.html">Hair Salon</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+        </div>
+        <div>
+          <div class="nav-brand-title">Beauty Parlour</div>
+          <div class="nav-brand-sub">Verified Network</div>
+        </div>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services</a>
+        <a href="parlours.html" class="nav-link active">Explore Parlours</a>
+        <a href="gallery.html" class="nav-link">Gallery</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="register-parlour.html" class="btn btn-outline btn-sm">+ List Parlour</a>
+        <a href="book.html" class="btn btn-accent btn-sm">Book Appointment</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="page-hero-content">
+        <div class="breadcrumb">
+          <a href="index.html">Beauty Parlour</a>
+          <span>›</span>Explore Parlours
+        </div>
+        <h1>Explore Verified Beauty Parlours</h1>
+        <p>Find top-rated ladies beauty parlours, check certified beauticians, view pricing, and book your appointment online.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIRECTORY SECTION -->
+  <section class="section">
+    <div class="container">
+
+      <!-- Search & Filters -->
+      <div class="search-filter-box">
+        <input type="text" id="search-input" class="search-input" placeholder="Search parlour by name, service, or locality...">
+        <select id="city-filter" class="search-input" style="max-width: 180px;">
+          <option value="">All Locations</option>
+          <option value="Simraha">Simraha</option>
+          <option value="Araria">Araria</option>
+          <option value="Forbesganj">Forbesganj</option>
+          <option value="Purnia">Purnia</option>
+        </select>
+        <button type="button" class="btn btn-accent" id="search-btn">Search Parlours</button>
+      </div>
+
+      <!-- Parlours Grid -->
+      <div class="parlour-grid" id="parlours-grid">
+        <div style="padding:40px; text-align:center; color:var(--text-muted); grid-column:1 / -1;">
+          Loading verified parlours...
+        </div>
+      </div>
+
+      <!-- Banner: Register parlour -->
+      <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:var(--radius-xl); padding:40px; margin-top:60px; text-align:center;">
+        <span class="mono-tag" style="background:#FFF1F2; color:#E11D48;">Are You A Parlour Owner?</span>
+        <h2 style="margin:10px 0;">Grow Your Beauty Parlour with Urban Hairplaza</h2>
+        <p style="color:var(--text-muted); max-width:560px; margin:0 auto 24px;">
+          Join our verified network of ladies beauty parlours. Get online bookings, WhatsApp appointment alerts, and a free digital storefront.
+        </p>
+        <a href="register-parlour.html" class="btn btn-accent btn-lg">+ Register Your Beauty Parlour</a>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container" style="text-align:center; padding:30px 0; color:rgba(255,255,255,0.4); font-size:0.85rem;">
+      © 2026 Urban Hairplaza Beauty Parlour Network. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    async function loadDirectory() {
+      const q = document.getElementById('search-input').value.trim();
+      const city = document.getElementById('city-filter').value.trim();
+      const grid = document.getElementById('parlours-grid');
+
+      grid.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted); grid-column:1 / -1;">Loading verified parlours...</div>';
+
+      try {
+        let url = '/api/parlour/directory';
+        const params = [];
+        if (q) params.push('search=' + encodeURIComponent(q));
+        if (city) params.push('city=' + encodeURIComponent(city));
+        if (params.length) url += '?' + params.join('&');
+
+        const res = await fetch(url);
+        const parlours = await res.json();
+
+        if (!parlours || parlours.length === 0) {
+          grid.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted); grid-column:1 / -1;">No beauty parlours found matching your criteria. Try resetting filters.</div>';
+          return;
+        }
+
+        grid.innerHTML = parlours.map(p => {
+          const img = p.image || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80';
+          const isFlagship = p.id === 'parlour-urban-beauty';
+          return `
+            <div class="parlour-card">
+              <div class="parlour-card-img-wrap">
+                <img src="${img}" class="parlour-card-img" alt="${escapeHtml(p.name)}">
+                ${isFlagship ? '<span class="parlour-badge">Flagship</span>' : ''}
+                <span class="parlour-badge-verified">✓ Verified</span>
+              </div>
+              <div class="parlour-card-body">
+                <div class="parlour-title-row">
+                  <h3 class="parlour-card-name">${escapeHtml(p.name)}</h3>
+                  <div class="parlour-rating">⭐ ${p.rating || 4.9} (${p.reviewsCount || 1})</div>
+                </div>
+                <div class="parlour-card-loc">
+                  📍 ${escapeHtml(p.address || p.city)} · ${escapeHtml(p.hours || '9 AM – 9 PM')}
+                </div>
+                <div class="parlour-services-tagline">
+                  ${escapeHtml(p.servicesSummary || 'Skin Care · Waxing · Nails · Bridal Makeup')}
+                </div>
+                <div class="parlour-card-footer">
+                  <div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Starts from</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--accent);">₹${p.startingPrice || 49}</div>
+                  </div>
+                  <a href="book.html?parlourId=${encodeURIComponent(p.id)}" class="btn btn-accent btn-sm">Book Appointment</a>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to load directory:', err);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    document.getElementById('search-btn').addEventListener('click', loadDirectory);
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loadDirectory();
+    });
+    document.getElementById('city-filter').addEventListener('change', loadDirectory);
+
+    document.addEventListener('DOMContentLoaded', loadDirectory);
+  </script>
+</body>
+</html>

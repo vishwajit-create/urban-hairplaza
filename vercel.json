@@ -2,6 +2,74 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/beauty-parlour",
+      "destination": "/beauty-parlour/index.html"
+    },
+    {
+      "source": "/beauty-parlour/",
+      "destination": "/beauty-parlour/index.html"
+    },
+    {
+      "source": "/beauty-parlour/services",
+      "destination": "/beauty-parlour/services.html"
+    },
+    {
+      "source": "/beauty-parlour/gallery",
+      "destination": "/beauty-parlour/gallery.html"
+    },
+    {
+      "source": "/beauty-parlour/contact",
+      "destination": "/beauty-parlour/contact.html"
+    },
+    {
+      "source": "/beauty-parlour/book",
+      "destination": "/beauty-parlour/book.html"
+    },
+    {
+      "source": "/beauty-parlour/parlours",
+      "destination": "/beauty-parlour/parlours.html"
+    },
+    {
+      "source": "/beauty-parlour/register-parlour",
+      "destination": "/beauty-parlour/register-parlour.html"
+    },
+    {
+      "source": "/beauty-parlour/register",
+      "destination": "/beauty-parlour/register-parlour.html"
+    },
+    {
+      "source": "/beauty-parlour/admin",
+      "destination": "/beauty-parlour/admin/login.html"
+    },
+    {
+      "source": "/beauty-parlour/admin/",
+      "destination": "/beauty-parlour/admin/login.html"
+    },
+    {
+      "source": "/beauty-parlour/admin/login",
+      "destination": "/beauty-parlour/admin/login.html"
+    },
+    {
+      "source": "/beauty-parlour/admin/dashboard",
+      "destination": "/beauty-parlour/admin/dashboard.html"
+    },
+    {
+      "source": "/beauty-parlour/owner",
+      "destination": "/beauty-parlour/owner/login.html"
+    },
+    {
+      "source": "/beauty-parlour/owner/",
+      "destination": "/beauty-parlour/owner/login.html"
+    },
+    {
+      "source": "/beauty-parlour/owner/login",
+      "destination": "/beauty-parlour/owner/login.html"
+    },
+    {
+      "source": "/beauty-parlour/owner/dashboard",
+      "destination": "/beauty-parlour/owner/dashboard.html"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     },

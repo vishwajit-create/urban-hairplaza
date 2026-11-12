@@ -1,0 +1,287 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery â€“ Beauty Parlour | Urban Hairplaza</title>
+  <meta name="description" content="Browse our beauty parlour gallery â€” makeup, nail art, facials, hair coloring, waxing, and bridal transformations. See real results.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-info">
+        <span>
+          <svg class="ui-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Mon â€“ Sun: 9:00 AM â€“ 9:00 PM
+        </span>
+      </div>
+      <div class="topbar-info">
+        <a href="../index.html">Urban Hairplaza</a>
+        <a href="book.html" style="color: var(--accent); font-weight: 600;">Book Now</a>
+        <a href="tel:+916202692426">+91 6202 692 426</a>
+      </div>
+    </div>
+  </div>
+
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand">
+        <div class="nav-brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+        </div>
+        <div>
+          <div class="nav-brand-title">Beauty Parlour</div>
+          <div class="nav-brand-sub">Urban Hairplaza Â· Simraha</div>
+        </div>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services</a>
+        <a href="gallery.html" class="nav-link active">Gallery</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="../index.html" class="nav-link">Hair Salon</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="book.html" class="btn btn-accent btn-sm">Book Now</a>
+        <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-drawer" id="mobile-drawer">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="services.html" class="nav-link">Services &amp; Pricing</a>
+    <a href="gallery.html" class="nav-link active">Gallery</a>
+    <a href="contact.html" class="nav-link">Contact Us</a>
+    <a href="../index.html" class="nav-link">Back to Urban Hairplaza</a>
+    <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+      <a href="book.html" class="btn btn-accent btn-block">Book Appointment</a>
+    </div>
+  </div>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="page-hero-content">
+        <div class="breadcrumb">
+          <a href="index.html">Beauty Parlour</a>
+          <span>â€º</span>Gallery
+        </div>
+        <h1>Our Work</h1>
+        <p>Real clients, real transformations. Browse our work for inspiration and see what we can do for you.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="section">
+    <div class="container">
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All Work</button>
+        <button class="filter-btn" data-filter="makeup">Bridal &amp; Makeup</button>
+        <button class="filter-btn" data-filter="skin">Facials &amp; Skin</button>
+        <button class="filter-btn" data-filter="nails">Nails &amp; Art</button>
+        <button class="filter-btn" data-filter="hair">Hair Services</button>
+        <button class="filter-btn" data-filter="waxing">Waxing</button>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div class="gallery-masonry">
+
+        <div class="gallery-card" data-category="makeup">
+          <div class="gallery-card-img makeup-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            Bridal Makeup
+          </div>
+          <div class="gallery-card-info">
+            <h4>Bridal Airbrush Look</h4>
+            <span>Bridal Â· HD Airbrush Â· Saree Draping</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="nails">
+          <div class="gallery-card-img nails-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path></svg>
+            Nail Art
+          </div>
+          <div class="gallery-card-info">
+            <h4>Floral Gel Nail Art</h4>
+            <span>Nails Â· Gel Extensions Â· Floral Design</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="skin">
+          <div class="gallery-card-img skin-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path></svg>
+            Facial Glow
+          </div>
+          <div class="gallery-card-info">
+            <h4>Gold Facial Result</h4>
+            <span>Skin Â· Gold Facial Â· Before &amp; After</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="hair">
+          <div class="gallery-card-img hair-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line></svg>
+            Hair Color
+          </div>
+          <div class="gallery-card-info">
+            <h4>Balayage Highlights</h4>
+            <span>Hair Â· Global Color Â· Highlights</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="makeup">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); color: #991B1B; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            Party Makeup
+          </div>
+          <div class="gallery-card-info">
+            <h4>Engagement Party Look</h4>
+            <span>Makeup Â· HD Finish Â· Eye Makeup</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="nails">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%); color: #4C1D95; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path></svg>
+            Acrylic Nails
+          </div>
+          <div class="gallery-card-info">
+            <h4>3D Acrylic Extensions</h4>
+            <span>Nails Â· Acrylic Â· 3D Art</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="waxing">
+          <div class="gallery-card-img wax-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Waxing
+          </div>
+          <div class="gallery-card-info">
+            <h4>Rica Wax Session</h4>
+            <span>Waxing Â· Rica Â· Sensitive Skin</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="skin">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #FFF1F2 0%, #FECDD3 100%); color: #9F1239; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path></svg>
+            D-Tan
+          </div>
+          <div class="gallery-card-info">
+            <h4>D-Tan Full Body Treatment</h4>
+            <span>Skin Â· D-Tan Â· Brightening</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="hair">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%); color: #14532D; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line></svg>
+            Keratin
+          </div>
+          <div class="gallery-card-info">
+            <h4>Keratin Smoothening</h4>
+            <span>Hair Â· Keratin Â· Frizz-free</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="makeup">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #FDF4FF 0%, #F0ABFC 100%); color: #701A75; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            Bridal
+          </div>
+          <div class="gallery-card-info">
+            <h4>Complete Bridal Package</h4>
+            <span>Bridal Â· Draping Â· Full Look</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="nails">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); color: #78350F; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path></svg>
+            Gel Nails
+          </div>
+          <div class="gallery-card-info">
+            <h4>Luxury Pedicure + Gel Polish</h4>
+            <span>Nails Â· Gel Polish Â· Pedicure</span>
+          </div>
+        </div>
+
+        <div class="gallery-card" data-category="skin">
+          <div class="gallery-card-img" style="background: linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%); color: #7C2D12; height:220px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.6"><circle cx="12" cy="12" r="10"></circle></svg>
+            Diamond Facial
+          </div>
+          <div class="gallery-card-info">
+            <h4>Diamond Facial Glow</h4>
+            <span>Skin Â· Diamond Facial Â· Anti-aging</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="text-align:center; margin-top:40px;">
+        <p style="color:var(--text-muted); margin-bottom:16px;">Want to see your transformation here? Book an appointment today.</p>
+        <a href="book.html" class="btn btn-accent btn-lg">Book Now</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" width="20" height="20"><path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L12 22l4.2-7.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"></path></svg>
+            <span>Beauty Parlour</span>
+          </div>
+          <p>Premium beauty services in Simraha, Araria, Bihar.</p>
+        </div>
+        <div>
+          <h4 class="footer-title">Services</h4>
+          <ul class="footer-links">
+            <li><a href="services.html#skin">Facial &amp; Skin</a></li>
+            <li><a href="services.html#waxing">Waxing</a></li>
+            <li><a href="services.html#nails">Nails</a></li>
+            <li><a href="services.html#makeup">Bridal Makeup</a></li>
+            <li><a href="services.html#hair">Hair</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="gallery.html">Gallery</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="book.html">Book Now</a></li>
+            <li><a href="../index.html">Urban Hairplaza</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Contact</h4>
+          <div class="footer-visit">
+            <p>Near Phanishwar Nath Renu Statue, Simraha, Araria â€“ 854331</p>
+            <table class="hours-table"><tr><td>Daily</td><td>9 AM â€“ 9 PM</td></tr></table>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>Â© 2026 Urban Hairplaza Beauty Parlour.</span>
+        <span><a href="../index.html">Urban Hairplaza</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/916202692426" class="wa-float" target="_blank" rel="noopener" aria-label="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"></path></svg>
+  </a>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
