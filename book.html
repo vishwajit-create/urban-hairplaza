@@ -736,7 +736,14 @@
     }
 
     function switchMode(mode) {
+      if (state.mode === mode) return;
       state.mode = mode;
+      state.selectedService = null;
+      state.selectedTime = '';
+      const step1Next = document.getElementById('btn-next-step-1');
+      if (step1Next) step1Next.disabled = true;
+      const step3Next = document.getElementById('btn-next-step-3');
+      if (step3Next) step3Next.disabled = true;
       document.getElementById('mode-inshop').classList.toggle('active', mode === 'inshop');
       document.getElementById('mode-home').classList.toggle('active', mode === 'home');
       document.getElementById('home-address-group').style.display = (mode === 'home') ? 'block' : 'none';
@@ -1097,6 +1104,27 @@
 
     function goToStep(step) {
       clearAlert();
+
+      // STEP PREREQUISITE GUARDS
+      if (step > 1 && !state.selectedService) {
+        showAlert('Please select a service before proceeding.', 'warning');
+        step = 1;
+      }
+      if (step > 2 && !state.selectedBarber) {
+        state.selectedBarber = 'Any Barber';
+      }
+      if (step > 3 && (!state.selectedDate || !state.selectedTime)) {
+        showAlert('Please select an appointment date and timeslot.', 'warning');
+        step = 3;
+      }
+      if (step > 4) {
+        const name = (document.getElementById('client-name').value || '').trim();
+        const phone = (document.getElementById('client-phone').value || '').trim().replace(/\D/g, '');
+        if (!name || phone.length !== 10) {
+          showAlert('Please provide your name and a valid 10-digit mobile number.', 'warning');
+          step = 4;
+        }
+      }
 
       document.querySelectorAll('.wizard-step').forEach(s => {
         const num = parseInt(s.dataset.step);

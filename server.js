@@ -125,6 +125,62 @@ const OPERATING_SLOTS = [
 
 const VALID_BARBERS = ['Raj Kumar', 'Sameer Khan', 'Amit Sharma'];
 
+// ── EXPLICIT STATE MACHINE TRANSITION MATRICES ─────────────────────────────
+const BOOKING_STATE_TRANSITIONS = {
+  payment_pending: ['confirmed', 'payment_failed', 'cancelled'],
+  pending_confirmation: ['confirmed', 'rejected', 'cancelled'],
+  payment_failed: ['payment_pending', 'cancelled'],
+  confirmed: ['completed', 'cancelled'],
+  rejected: [],  // Terminal
+  completed: [], // Terminal
+  cancelled: []  // Terminal
+};
+
+const SALON_STATE_TRANSITIONS = {
+  pending: ['approved', 'suspended', 'rejected'],
+  approved: ['suspended'],
+  suspended: ['approved'],
+  rejected: []
+};
+
+const PARLOUR_BOOKING_TRANSITIONS = {
+  pending_confirmation: ['confirmed', 'rejected', 'cancelled'],
+  confirmed: ['completed', 'cancelled'],
+  completed: [],
+  cancelled: [],
+  rejected: []
+};
+
+function validateTransition(machine, currentStatus, newStatus) {
+  const curr = (currentStatus || '').toLowerCase().trim();
+  const target = (newStatus || '').toLowerCase().trim();
+  if (curr === target) return { valid: true }; // No-op is safe
+  const allowed = machine[curr];
+  if (!allowed) {
+    return { valid: false, reason: `Unknown current status: "${currentStatus}"` };
+  }
+  if (!allowed.includes(target)) {
+    return {
+      valid: false,
+      reason: `Illegal state transition from "${currentStatus}" to "${newStatus}". Allowed targets: [${allowed.join(', ') || 'none (terminal state)'}]`
+    };
+  }
+  return { valid: true };
+}
+
+function appendStatusHistory(existingHistory, fromStatus, toStatus, actor, actorId, reason = '') {
+  const history = Array.isArray(existingHistory) ? [...existingHistory] : [];
+  history.push({
+    from: fromStatus || 'unknown',
+    to: toStatus,
+    actor: actor || 'system',
+    actorId: actorId ? String(actorId) : null,
+    timestamp: new Date().toISOString(),
+    reason: reason || ''
+  });
+  return history;
+}
+
 // â”€â”€ SECURITY HEADERS & DEFENSES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -1338,9 +1394,24 @@ app.patch('/api/owner/bookings/:id', requireOwner, async (req, res) => {
       return res.status(403).json({ error: 'Access denied. You cannot modify bookings of another salon.' });
     }
 
-    const { status, notes } = req.body;
+    const { status, notes, reason } = req.body;
     const updates = {};
-    if (status) updates.status = status;
+    if (status) {
+      const transitionCheck = validateTransition(BOOKING_STATE_TRANSITIONS, booking.status, status);
+      if (!transitionCheck.valid) {
+        return res.status(400).json({ error: transitionCheck.reason });
+      }
+      updates.status = status.toLowerCase().trim();
+      const ownerId = (req.owner && req.owner.ownerId) || (req.session && req.session.owner && req.session.owner.id) || salonId;
+      updates.statusHistory = appendStatusHistory(
+        booking.statusHistory,
+        booking.status,
+        updates.status,
+        'salon_owner',
+        ownerId,
+        reason || notes || ''
+      );
+    }
     if (notes !== undefined) updates.notes = notes;
 
     const updated = await db.updateBooking(booking.id, updates);
@@ -1692,7 +1763,25 @@ app.post('/api/user/cancel-booking', async (req, res) => {
       return res.status(403).json({ error: 'You do not have permission to cancel this appointment.' });
     }
 
-    await db.updateBooking(bookingId, { status: 'cancelled' });
+    const transitionCheck = validateTransition(BOOKING_STATE_TRANSITIONS, booking.status, 'cancelled');
+    if (!transitionCheck.valid) {
+      return res.status(400).json({ error: transitionCheck.reason });
+    }
+
+    const { reason } = req.body || {};
+    const newHistory = appendStatusHistory(
+      booking.statusHistory,
+      booking.status,
+      'cancelled',
+      'customer',
+      uPhone || uEmail,
+      reason || 'Cancelled by customer'
+    );
+
+    await db.updateBooking(bookingId, { 
+      status: 'cancelled',
+      statusHistory: newHistory
+    });
     res.json({ success: true, message: 'Appointment cancelled successfully.' });
   } catch (err) {
     console.error('[USER-CANCEL] Error:', err);
@@ -1970,7 +2059,7 @@ app.post('/api/create-payment-order', rateLimit({ windowMs: 60000, max: 10, mess
   }
 });
 
-// POST /api/verify-payment â€” Verify Cashfree payment completion & log transaction
+// POST /api/verify-payment — Verify Cashfree payment completion & log transaction
 app.post('/api/verify-payment', async (req, res) => {
   try {
     const { order_id, is_simulation } = req.body;
@@ -1981,6 +2070,27 @@ app.post('/api/verify-payment', async (req, res) => {
     const booking = await db.getBookingById(order_id);
     if (!booking) {
       return res.status(404).json({ error: 'Booking order not found.' });
+    }
+
+    // IDEMPOTENCY GUARD: If already confirmed & advance paid, return immediately (no duplicate SMS/WhatsApp or transactions)
+    if (booking.status === 'confirmed' && (booking.advancePaid > 0 || booking.advance_paid > 0)) {
+      const waMsg = buildWhatsAppMessage(booking);
+      const businessNumber = process.env.BUSINESS_WHATSAPP || '916202692426';
+      const encodedMsg = encodeURIComponent(waMsg);
+      const whatsappClientLink = `https://wa.me/${businessNumber}?text=${encodedMsg}`;
+      return res.json({
+        success: true,
+        order_id: booking.id,
+        booking: booking,
+        whatsapp_link: whatsappClientLink,
+        already_verified: true
+      });
+    }
+
+    // STATE TRANSITION GUARD
+    const transitionCheck = validateTransition(BOOKING_STATE_TRANSITIONS, booking.status, 'confirmed');
+    if (!transitionCheck.valid) {
+      return res.status(400).json({ error: transitionCheck.reason });
     }
 
     const appId = process.env.CASHFREE_APP_ID;
@@ -2028,10 +2138,20 @@ app.post('/api/verify-payment', async (req, res) => {
     }
 
     if (isPaid) {
+      const newHistory = appendStatusHistory(
+        booking.statusHistory,
+        booking.status,
+        'confirmed',
+        isConfigured && !is_simulation ? 'cashfree_gateway' : 'sandbox_simulation',
+        order_id,
+        `Advance deposit ₹${paidAmount} verified`
+      );
+
       const updatedBooking = await db.updateBooking(booking.id, {
         status: 'confirmed',
         advancePaid: paidAmount,
-        paymentVerifiedAt: new Date().toISOString()
+        paymentVerifiedAt: new Date().toISOString(),
+        statusHistory: newHistory
       });
 
       // Save persistent transaction record
@@ -2087,6 +2207,21 @@ app.post('/api/payment-failed', async (req, res) => {
 
     if (booking.status === 'confirmed' || booking.status === 'completed') {
       return res.json({ success: true, message: 'Booking is already confirmed.' });
+    }
+
+    if (booking.status === 'payment_pending') {
+      const newHistory = appendStatusHistory(
+        booking.statusHistory,
+        booking.status,
+        'payment_failed',
+        'payment_gateway',
+        order_id,
+        reason || 'Payment dropped or failed'
+      );
+      await db.updateBooking(booking.id, {
+        status: 'payment_failed',
+        statusHistory: newHistory
+      });
     }
 
     const publicBase = getPublicBaseUrl(req);
@@ -2268,14 +2403,40 @@ app.post('/api/cashfree-webhook', async (req, res) => {
 
     if (orderStatus === 'PAID' || orderStatus === 'SUCCESS') {
       if (booking.status !== 'confirmed') {
-        const updated = await db.updateBooking(booking.id, {
-          status: 'confirmed',
-          advancePaid: 50,
-          paymentVerifiedAt: new Date().toISOString()
-        });
-        sendBookingConfirmationNotifications(updated || booking, publicBase).catch(() => {});
+        const transitionCheck = validateTransition(BOOKING_STATE_TRANSITIONS, booking.status, 'confirmed');
+        if (transitionCheck.valid) {
+          const newHistory = appendStatusHistory(
+            booking.statusHistory,
+            booking.status,
+            'confirmed',
+            'cashfree_webhook',
+            orderId,
+            'Advance payment confirmed via Cashfree webhook'
+          );
+          const updated = await db.updateBooking(booking.id, {
+            status: 'confirmed',
+            advancePaid: 50,
+            paymentVerifiedAt: new Date().toISOString(),
+            statusHistory: newHistory
+          });
+          sendBookingConfirmationNotifications(updated || booking, publicBase).catch(() => {});
+        }
       }
     } else if (orderStatus === 'FAILED' || orderStatus === 'USER_DROPPED' || orderStatus === 'CANCELLED') {
+      if (booking.status === 'payment_pending') {
+        const newHistory = appendStatusHistory(
+          booking.statusHistory,
+          booking.status,
+          'payment_failed',
+          'cashfree_webhook',
+          orderId,
+          `Payment failed with status ${orderStatus}`
+        );
+        await db.updateBooking(booking.id, {
+          status: 'payment_failed',
+          statusHistory: newHistory
+        });
+      }
       sendPaymentFailedNotifications(booking, orderStatus, publicBase).catch(() => {});
     }
 
@@ -2551,7 +2712,31 @@ app.get('/api/admin/bookings', requireAdmin, async (req, res) => {
 app.patch('/api/admin/bookings/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await db.updateBooking(id, req.body);
+    const booking = await db.getBookingById(id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    const { status, notes, reason } = req.body;
+    const updates = { ...req.body };
+
+    if (status) {
+      const transitionCheck = validateTransition(BOOKING_STATE_TRANSITIONS, booking.status, status);
+      if (!transitionCheck.valid) {
+        return res.status(400).json({ error: transitionCheck.reason });
+      }
+      updates.status = status.toLowerCase().trim();
+      updates.statusHistory = appendStatusHistory(
+        booking.statusHistory,
+        booking.status,
+        updates.status,
+        'admin',
+        (req.session && req.session.user) || 'master_admin',
+        reason || notes || ''
+      );
+    }
+
+    const updated = await db.updateBooking(id, updates);
     res.json({ success: true, booking: updated });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update booking' });
@@ -2692,7 +2877,26 @@ app.patch('/api/admin/salons/:id/status', requireAdmin, async (req, res) => {
     const salon = await db.getSalonById(id);
     if (!salon) return res.status(404).json({ error: 'Salon not found.' });
 
-    const updated = await db.updateSalon(id, { status, updatedAt: new Date().toISOString() });
+    const transitionCheck = validateTransition(SALON_STATE_TRANSITIONS, salon.status, status);
+    if (!transitionCheck.valid) {
+      return res.status(400).json({ error: transitionCheck.reason });
+    }
+
+    const { reason } = req.body || {};
+    const newHistory = appendStatusHistory(
+      salon.statusHistory,
+      salon.status,
+      status,
+      'admin',
+      (req.session && req.session.user) || 'master_admin',
+      reason || `Salon status changed to ${status}`
+    );
+
+    const updated = await db.updateSalon(id, { 
+      status, 
+      statusHistory: newHistory,
+      updatedAt: new Date().toISOString() 
+    });
 
     // Also update associated owner status if exists
     if (salon.ownerId) {
@@ -3119,12 +3323,32 @@ app.get('/api/parlour/owner/bookings', requireParlourOwner, async (req, res) => 
 // PATCH /api/parlour/owner/bookings/:id
 app.patch('/api/parlour/owner/bookings/:id', requireParlourOwner, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, reason } = req.body;
     const booking = await db.getParlourBookingById(req.params.id);
     if (!booking || booking.parlourId !== req.parlourOwner.parlourId) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    const updated = await db.updateParlourBooking(req.params.id, { status });
+
+    if (status) {
+      const transitionCheck = validateTransition(PARLOUR_BOOKING_TRANSITIONS, booking.status, status);
+      if (!transitionCheck.valid) {
+        return res.status(400).json({ error: transitionCheck.reason });
+      }
+    }
+
+    const newHistory = status ? appendStatusHistory(
+      booking.statusHistory,
+      booking.status,
+      status,
+      'parlour_owner',
+      req.parlourOwner.ownerId || req.parlourOwner.phone,
+      reason || ''
+    ) : booking.statusHistory;
+
+    const updated = await db.updateParlourBooking(req.params.id, { 
+      status,
+      statusHistory: newHistory 
+    });
     res.json({ success: true, booking: updated });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update booking' });
@@ -3248,12 +3472,31 @@ app.get('/api/parlour/admin/parlours', requireParlourAdmin, async (req, res) => 
 // PATCH /api/parlour/admin/parlours/:id/status ? Approve or reject parlour
 app.patch('/api/parlour/admin/parlours/:id/status', requireParlourAdmin, async (req, res) => {
   try {
-    const { status } = req.body;
-    if (!['approved', 'pending', 'rejected'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status. Must be approved, pending, or rejected.' });
+    const { status, reason } = req.body;
+    if (!status || !['approved', 'pending', 'suspended', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be approved, pending, suspended, or rejected.' });
     }
-    const updated = await db.updateParlour(req.params.id, { status });
-    if (!updated) return res.status(404).json({ error: 'Parlour not found' });
+    const parlour = await db.getParlourById(req.params.id);
+    if (!parlour) return res.status(404).json({ error: 'Parlour not found' });
+
+    const transitionCheck = validateTransition(SALON_STATE_TRANSITIONS, parlour.status, status);
+    if (!transitionCheck.valid) {
+      return res.status(400).json({ error: transitionCheck.reason });
+    }
+
+    const newHistory = appendStatusHistory(
+      parlour.statusHistory,
+      parlour.status,
+      status,
+      'parlour_admin',
+      'master_admin',
+      reason || ''
+    );
+
+    const updated = await db.updateParlour(req.params.id, { 
+      status, 
+      statusHistory: newHistory 
+    });
     res.json({ success: true, parlour: updated });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update parlour status' });

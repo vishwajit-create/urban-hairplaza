@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Urban Hairplaza â€“ Unified Database Layer
  * Supports:
  *   1. Neon Cloud PostgreSQL (when DATABASE_URL is set) â€” Permanent enterprise storage
@@ -208,6 +208,8 @@ async function initDB() {
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS whatsapp_confirmed_at TIMESTAMPTZ;
           
           ALTER TABLE bookings ADD COLUMN IF NOT EXISTS whatsapp_owner_notified_at TIMESTAMPTZ;
+          ALTER TABLE bookings ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'::jsonb;
+          ALTER TABLE salons ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'::jsonb;
 
           CREATE TABLE IF NOT EXISTS parlours (
             id VARCHAR(64) PRIMARY KEY,
@@ -286,6 +288,9 @@ async function initDB() {
             status VARCHAR(50) DEFAULT 'approved',
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
+
+          ALTER TABLE parlour_bookings ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'::jsonb;
+          ALTER TABLE parlours ADD COLUMN IF NOT EXISTS status_history JSONB DEFAULT '[]'::jsonb;
 
         `);
         console.log('[DB] PostgreSQL schema verified successfully.');
@@ -590,6 +595,7 @@ async function getBookingById(id) {
           advancePaid: Number(r.advance_paid) || 0,
           paymentVerifiedAt: r.payment_verified_at,
           paymentOrderId: r.payment_order_id,
+          statusHistory: Array.isArray(r.status_history) ? r.status_history : [],
           createdAt: r.created_at,
           updatedAt: r.updated_at
         };
@@ -604,7 +610,8 @@ async function getBookingById(id) {
   return {
     ...found,
     salonId: found.salonId || 'salon-urban-hairplaza',
-    salonName: found.salonName || 'Urban Hairplaza'
+    salonName: found.salonName || 'Urban Hairplaza',
+    statusHistory: Array.isArray(found.statusHistory) ? found.statusHistory : []
   };
 }
 
@@ -725,6 +732,10 @@ async function updateBooking(id, updates) {
       if (updates.whatsappOwnerNotifiedAt !== undefined || updates.whatsapp_owner_notified_at !== undefined) {
         setClauses.push(`whatsapp_owner_notified_at = ${i++}`);
         values.push(updates.whatsappOwnerNotifiedAt || updates.whatsapp_owner_notified_at);
+      }
+      if (updates.statusHistory !== undefined) {
+        setClauses.push(`status_history = ${i++}::jsonb`);
+        values.push(JSON.stringify(updates.statusHistory));
       }
 
       setClauses.push(`updated_at = NOW()`);
@@ -1421,6 +1432,11 @@ async function updateSalon(id, updates) {
         if (col === 'updated_at') {
           hasUpdatedAt = true;
         }
+        if (col === 'status_history') {
+          setClauses.push(`${col} = ${i++}::jsonb`);
+          values.push(JSON.stringify(v));
+          continue;
+        }
         setClauses.push(`${col} = ${i++}`);
         values.push(v);
       }
@@ -1548,6 +1564,11 @@ async function updateOwner(id, updates) {
       let i = 2;
       for (const [k, v] of Object.entries(updates)) {
         const col = k.replace(/[A-Z]/g, m => '_' + m.toLowerCase());
+        if (col === 'status_history') {
+          setClauses.push(`${col} = ${i++}::jsonb`);
+          values.push(JSON.stringify(v));
+          continue;
+        }
         setClauses.push(`${col} = ${i++}`);
         values.push(v);
       }

@@ -534,6 +534,19 @@
 
     // Step navigation
     function setStep(stepNum) {
+      if (stepNum > 1 && !bookingState.parlourId) {
+        alert('Please select a beauty parlour to continue.');
+        stepNum = 1;
+      }
+      if (stepNum > 2 && !bookingState.serviceName) {
+        alert('Please select a beauty service to continue.');
+        stepNum = 2;
+      }
+      if (stepNum > 4 && (!bookingState.date || !bookingState.time)) {
+        alert('Please pick an appointment date and timeslot.');
+        stepNum = 4;
+      }
+
       document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.step-item').forEach(i => {
         const s = parseInt(i.dataset.step);
