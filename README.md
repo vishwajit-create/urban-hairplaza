@@ -51,7 +51,7 @@ The server will start on http://localhost:7890 by default.
 
 - Route: /admin/login.html - Admin login page
 - Route: /admin/dashboard.html - Full admin control panel
-- Default credentials (change in .env): admin / urban@hairplaza2025
+- Default credentials (change in .env): 
 
 ## NPM Scripts
 
