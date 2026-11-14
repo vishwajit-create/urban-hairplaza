@@ -1888,9 +1888,12 @@ function writeAdminAuthData(data) {
 }
 
 async function getAdminPassword() {
+  if (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS) {
+    return (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS).replace(/^['"]|['"]$/g, '').trim();
+  }
   const data = readAdminAuthData();
   if (data.password) return data.password;
-  return (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025').replace(/^['"]|['"]$/g, '').trim();
+  return 'urban@hairplaza2025';
 }
 
 async function setAdminPassword(newPassword) {
