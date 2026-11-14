@@ -564,11 +564,11 @@ async function sendRealEmail(email, subject, html) {
   }
 
   // 2. Gmail SMTP / Custom SMTP via Nodemailer
-  const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
-  const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+  const smtpUser = process.env.ADMIN_2FA_SMTP_USER || process.env.AUTH_EMAIL_USER || process.env.GMAIL_USER || process.env.SMTP_USER;
+  const smtpPass = process.env.ADMIN_2FA_SMTP_PASS || process.env.AUTH_EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
   if (nodemailer && smtpUser && smtpPass) {
     try {
-      const isGmail = Boolean(process.env.GMAIL_USER || (smtpUser && smtpUser.includes('@gmail.com')));
+      const isGmail = Boolean(process.env.ADMIN_2FA_SMTP_USER || process.env.GMAIL_USER || (smtpUser && smtpUser.includes('@gmail.com')));
       const transporter = nodemailer.createTransport(
         isGmail ? {
           service: 'gmail',
@@ -2717,17 +2717,102 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: 'Unauthorized. Admin login required.' });
 }
 
-// â”€â”€ ADMIN AUTH ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ADMIN AUTH ROUTES WITH 2FA, MAGIC LINK & PASSWORD RESET ─────────
+function getAdminEmail() {
+  return (process.env.ADMIN_2FA_RECIPIENT || process.env.ADMIN_AUTH_EMAIL || process.env.ADMIN_EMAIL || process.env.ADMIN_2FA_SMTP_USER || process.env.GMAIL_USER || 'darbhanga619@gmail.com').trim();
+}
+
 // Protected with brute-force rate limiter (max 15 attempts per 15 min per IP) and timing-safe comparison
-app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Too many login attempts. Please wait 15 minutes.' }), (req, res) => {
-  const { username, password } = req.body;
-  const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
-  const adminPass = (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025').replace(/^['"]|['"]$/g, '').trim();
+app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Too many login attempts. Please wait 15 minutes.' }), async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
+    const adminPass = await db.getAdminPassword();
 
-  const cleanUser = typeof username === 'string' ? username.trim() : '';
-  const cleanPass = typeof password === 'string' ? password : '';
+    const cleanUser = typeof username === 'string' ? username.trim() : '';
+    const cleanPass = typeof password === 'string' ? password : '';
 
-  if (safeCompare(cleanUser, adminUser) && safeCompare(cleanPass, adminPass)) {
+    if (!safeCompare(cleanUser, adminUser) || !safeCompare(cleanPass, adminPass)) {
+      return res.status(401).json({ success: false, error: 'Invalid username or password.' });
+    }
+
+    // Generate 6-digit OTP code (valid 10 mins)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await db.saveOtp('admin_2fa_' + cleanUser, otp, 'email');
+
+    // Generate 1-click Magic Link Token (valid 15 mins)
+    const magicToken = crypto.randomBytes(32).toString('hex');
+    await db.saveMagicToken(magicToken, { type: 'magic_login', user: cleanUser }, 15);
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.get('host') || ('localhost:' + (process.env.PORT || 7890));
+    const baseUrl = (process.env.BASE_URL || `${protocol}://${host}`).replace(/\/+$/, '');
+    const magicLink = `${baseUrl}/api/admin/magic-login?token=${magicToken}`;
+
+    const adminEmail = getAdminEmail();
+
+    const htmlContent = `
+      <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;background:#111111;color:#f0f0f0;border:1px solid #333333;border-radius:12px;overflow:hidden;">
+        <div style="background:#000000;padding:24px;text-align:center;border-bottom:1px solid #222222;">
+          <h1 style="color:#C9A84C;margin:0;font-size:22px;letter-spacing:1px;">URBAN HAIRPLAZA</h1>
+          <p style="color:#888888;font-size:12px;margin:4px 0 0;text-transform:uppercase;letter-spacing:2px;">Admin 2-Factor Authentication</p>
+        </div>
+        <div style="padding:28px 24px;">
+          <p style="font-size:15px;margin:0 0 16px;color:#cccccc;">Hello Administrator,</p>
+          <p style="font-size:14px;color:#aaaaaa;line-height:1.5;">A sign-in request was initiated for your Urban Hairplaza Admin Dashboard. Please use the 6-digit one-time verification code below:</p>
+          <div style="text-align:center;margin:24px 0;">
+            <span style="display:inline-block;background:#1a1a1a;border:2px dashed #C9A84C;color:#C9A84C;font-size:32px;font-weight:700;letter-spacing:8px;padding:14px 28px;border-radius:8px;">${otp}</span>
+          </div>
+          <p style="font-size:13px;color:#888888;text-align:center;margin:0 0 24px;">This code is valid for 10 minutes.</p>
+          
+          <div style="text-align:center;margin:24px 0 16px;padding-top:20px;border-top:1px solid #222222;">
+            <p style="font-size:13px;color:#aaaaaa;margin-bottom:14px;">Or skip the code and sign in instantly with 1-click:</p>
+            <a href="${magicLink}" style="display:inline-block;background:#C9A84C;color:#0d0d0d;font-weight:700;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:14px;">Instant 1-Click Sign In →</a>
+          </div>
+          
+          <div style="margin-top:28px;padding:12px 16px;background:#181818;border-left:3px solid #C9A84C;font-size:12px;color:#777777;">
+            Security alert: If you did not attempt this login, your password may be known to someone else. Please change your credentials immediately.
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Send email via real email dispatcher
+    sendRealEmail(adminEmail, '🔐 Admin 2FA Code & Magic Link - Urban Hairplaza', htmlContent).catch(err => {
+      console.error('[Admin Auth] Error dispatching 2FA email:', err.message);
+    });
+
+    const maskedEmail = adminEmail.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + '*'.repeat(gp3.length));
+    return res.json({
+      success: true,
+      requiresOtp: true,
+      username: cleanUser,
+      emailMasked: maskedEmail,
+      message: `2FA verification code and instant magic link have been sent to ${maskedEmail}.`
+    });
+  } catch (err) {
+    console.error('[Admin Login Error]', err);
+    res.status(500).json({ success: false, error: 'Internal server error during login.' });
+  }
+});
+
+// POST /api/admin/verify-otp
+app.post('/api/admin/verify-otp', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: 'Too many OTP attempts. Please wait 15 minutes.' }), async (req, res) => {
+  try {
+    const { username, otp } = req.body;
+    const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
+    const cleanUser = typeof username === 'string' ? username.trim() : '';
+    const cleanOtp = typeof otp === 'string' ? otp.trim() : '';
+
+    if (!safeCompare(cleanUser, adminUser)) {
+      return res.status(401).json({ success: false, error: 'Unauthorized.' });
+    }
+
+    const isValid = await db.verifyOtp('admin_2fa_' + cleanUser, cleanOtp);
+    if (!isValid) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP verification code.' });
+    }
+
     const token = createAuthToken({
       role: 'admin',
       user: cleanUser,
@@ -2747,8 +2832,256 @@ app.post('/api/admin/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, mess
     });
 
     return res.json({ success: true, user: cleanUser, token });
+  } catch (err) {
+    console.error('[Admin Verify OTP Error]', err);
+    res.status(500).json({ success: false, error: 'Internal server error verifying OTP.' });
   }
-  res.status(401).json({ success: false, error: 'Invalid username or password.' });
+});
+
+// POST /api/admin/resend-otp
+app.post('/api/admin/resend-otp', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: 'Too many resend attempts. Please wait.' }), async (req, res) => {
+  try {
+    const { username } = req.body;
+    const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
+    const cleanUser = typeof username === 'string' ? username.trim() : '';
+
+    if (!safeCompare(cleanUser, adminUser)) {
+      return res.status(401).json({ success: false, error: 'Unauthorized.' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await db.saveOtp('admin_2fa_' + cleanUser, otp, 'email');
+
+    const magicToken = crypto.randomBytes(32).toString('hex');
+    await db.saveMagicToken(magicToken, { type: 'magic_login', user: cleanUser }, 15);
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.get('host') || ('localhost:' + (process.env.PORT || 7890));
+    const baseUrl = (process.env.BASE_URL || `${protocol}://${host}`).replace(/\/+$/, '');
+    const magicLink = `${baseUrl}/api/admin/magic-login?token=${magicToken}`;
+    const adminEmail = getAdminEmail();
+
+    const htmlContent = `
+      <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;background:#111111;color:#f0f0f0;border:1px solid #333333;border-radius:12px;overflow:hidden;">
+        <div style="background:#000000;padding:24px;text-align:center;border-bottom:1px solid #222222;">
+          <h1 style="color:#C9A84C;margin:0;font-size:22px;letter-spacing:1px;">URBAN HAIRPLAZA</h1>
+          <p style="color:#888888;font-size:12px;margin:4px 0 0;text-transform:uppercase;letter-spacing:2px;">New Admin 2FA Code</p>
+        </div>
+        <div style="padding:28px 24px;">
+          <p style="font-size:15px;margin:0 0 16px;color:#cccccc;">Hello Administrator,</p>
+          <p style="font-size:14px;color:#aaaaaa;line-height:1.5;">Here is your new 6-digit one-time verification code:</p>
+          <div style="text-align:center;margin:24px 0;">
+            <span style="display:inline-block;background:#1a1a1a;border:2px dashed #C9A84C;color:#C9A84C;font-size:32px;font-weight:700;letter-spacing:8px;padding:14px 28px;border-radius:8px;">${otp}</span>
+          </div>
+          <div style="text-align:center;margin:24px 0 16px;padding-top:20px;border-top:1px solid #222222;">
+            <a href="${magicLink}" style="display:inline-block;background:#C9A84C;color:#0d0d0d;font-weight:700;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:14px;">Instant 1-Click Sign In →</a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    sendRealEmail(adminEmail, '🔐 New Admin 2FA Code & Magic Link - Urban Hairplaza', htmlContent).catch(err => {
+      console.error('[Admin Auth] Error dispatching resend email:', err.message);
+    });
+
+    return res.json({ success: true, message: 'A new OTP and Magic Link have been emailed.' });
+  } catch (err) {
+    console.error('[Admin Resend OTP Error]', err);
+    res.status(500).json({ success: false, error: 'Internal server error resending OTP.' });
+  }
+});
+
+// GET /api/admin/magic-login
+app.get('/api/admin/magic-login', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).send('<h3>Invalid or missing magic link token.</h3>');
+    }
+
+    const payload = await db.verifyAndConsumeMagicToken(token);
+    if (!payload || payload.type !== 'magic_login') {
+      return res.status(400).send('<h3>Magic link is invalid or has expired. Please log in again.</h3>');
+    }
+
+    const adminUser = payload.user || 'admin';
+    const authToken = createAuthToken({
+      role: 'admin',
+      user: adminUser,
+      exp: Date.now() + 30 * 24 * 60 * 60 * 1000
+    });
+
+    if (req.session) {
+      req.session.isAdmin = true;
+      req.session.user = adminUser;
+    }
+
+    res.cookie('uhp_admin_token', authToken, {
+      httpOnly: true,
+      secure: 'auto',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    // Seamless browser redirect with localStorage token persistence
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Signing In – Urban Hairplaza</title>
+        <style>
+          body { background: #0D0D0D; color: #C9A84C; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .box { text-align: center; padding: 40px; border: 1px solid rgba(201,168,76,0.3); border-radius: 12px; background: #161616; }
+          h2 { font-size: 20px; margin-bottom: 8px; }
+          p { color: #888; font-size: 14px; margin: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <h2>✨ Authentication Successful</h2>
+          <p>Redirecting you to the Admin Dashboard...</p>
+        </div>
+        <script>
+          localStorage.setItem('uhp_admin_token', '${authToken}');
+          window.location.replace('/admin/dashboard.html');
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error('[Admin Magic Login Error]', err);
+    res.status(500).send('<h3>Internal error processing magic login.</h3>');
+  }
+});
+
+// POST /api/admin/forgot-password
+app.post('/api/admin/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: 'Too many reset requests. Please wait 15 minutes.' }), async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
+    const adminEmail = getAdminEmail();
+
+    const cleanInput = typeof identifier === 'string' ? identifier.trim().toLowerCase() : '';
+    const matchUser = cleanInput === adminUser.toLowerCase();
+    const matchEmail = cleanInput === adminEmail.toLowerCase();
+
+    if (!matchUser && !matchEmail) {
+      return res.json({ success: true, message: 'If the credentials match our records, reset instructions have been sent.' });
+    }
+
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    await db.saveOtp('admin_reset_' + adminUser, resetOtp, 'email');
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    await db.saveMagicToken(resetToken, { type: 'password_reset', user: adminUser }, 15);
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.get('host') || ('localhost:' + (process.env.PORT || 7890));
+    const baseUrl = (process.env.BASE_URL || `${protocol}://${host}`).replace(/\/+$/, '');
+    const resetLink = `${baseUrl}/admin/login.html?reset_token=${resetToken}`;
+
+    const htmlContent = `
+      <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;background:#111111;color:#f0f0f0;border:1px solid #333333;border-radius:12px;overflow:hidden;">
+        <div style="background:#000000;padding:24px;text-align:center;border-bottom:1px solid #222222;">
+          <h1 style="color:#C9A84C;margin:0;font-size:22px;letter-spacing:1px;">URBAN HAIRPLAZA</h1>
+          <p style="color:#888888;font-size:12px;margin:4px 0 0;text-transform:uppercase;letter-spacing:2px;">Admin Password Reset</p>
+        </div>
+        <div style="padding:28px 24px;">
+          <p style="font-size:15px;margin:0 0 16px;color:#cccccc;">Hello Administrator,</p>
+          <p style="font-size:14px;color:#aaaaaa;line-height:1.5;">We received a request to reset your Urban Hairplaza admin password. You can reset using the OTP code or direct link below:</p>
+          <div style="text-align:center;margin:24px 0;">
+            <p style="font-size:12px;color:#888888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">Your Reset OTP Code</p>
+            <span style="display:inline-block;background:#1a1a1a;border:2px dashed #C9A84C;color:#C9A84C;font-size:32px;font-weight:700;letter-spacing:8px;padding:14px 28px;border-radius:8px;">${resetOtp}</span>
+          </div>
+          <div style="text-align:center;margin:24px 0 16px;padding-top:20px;border-top:1px solid #222222;">
+            <p style="font-size:13px;color:#aaaaaa;margin-bottom:14px;">Or click below to open the secure password reset page directly:</p>
+            <a href="${resetLink}" style="display:inline-block;background:#C9A84C;color:#0d0d0d;font-weight:700;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:14px;">Reset Password Now →</a>
+          </div>
+          <p style="font-size:12px;color:#777777;margin-top:24px;">Both the code and link expire in 15 minutes. If you did not make this request, you can safely ignore this email.</p>
+        </div>
+      </div>
+    `;
+
+    sendRealEmail(adminEmail, '🔑 Admin Password Reset - Urban Hairplaza', htmlContent).catch(err => {
+      console.error('[Admin Auth] Error dispatching reset email:', err.message);
+    });
+
+    const maskedEmail = adminEmail.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + '*'.repeat(gp3.length));
+    return res.json({
+      success: true,
+      emailMasked: maskedEmail,
+      message: `Password reset instructions have been sent to ${maskedEmail}.`
+    });
+  } catch (err) {
+    console.error('[Admin Forgot Password Error]', err);
+    res.status(500).json({ success: false, error: 'Internal server error processing password reset.' });
+  }
+});
+
+// POST /api/admin/reset-password
+app.post('/api/admin/reset-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many reset attempts. Please wait.' }), async (req, res) => {
+  try {
+    const { token, otp, newPassword } = req.body;
+    const adminUser = (process.env.ADMIN_USERNAME || process.env.ADMIN_USER || 'admin').replace(/^['"]|['"]$/g, '').trim();
+    const adminEmail = getAdminEmail();
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long.' });
+    }
+
+    let verified = false;
+
+    // Verify by token
+    if (token) {
+      const payload = await db.verifyAndConsumeMagicToken(token);
+      if (payload && payload.type === 'password_reset') {
+        verified = true;
+      }
+    }
+
+    // Verify by OTP if not verified by token
+    if (!verified && otp) {
+      const isValidOtp = await db.verifyOtp('admin_reset_' + adminUser, otp);
+      if (isValidOtp) {
+        verified = true;
+      }
+    }
+
+    if (!verified) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired password reset link or OTP code.' });
+    }
+
+    // Save new admin password in db
+    await db.setAdminPassword(newPassword.trim());
+
+    // Send confirmation security alert
+    const alertHtml = `
+      <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:540px;margin:0 auto;background:#111111;color:#f0f0f0;border:1px solid #333333;border-radius:12px;overflow:hidden;">
+        <div style="background:#000000;padding:24px;text-align:center;border-bottom:1px solid #222222;">
+          <h1 style="color:#C9A84C;margin:0;font-size:22px;letter-spacing:1px;">URBAN HAIRPLAZA</h1>
+          <p style="color:#888888;font-size:12px;margin:4px 0 0;text-transform:uppercase;letter-spacing:2px;">Security Notice</p>
+        </div>
+        <div style="padding:28px 24px;">
+          <p style="font-size:15px;margin:0 0 16px;color:#cccccc;">Hello Administrator,</p>
+          <p style="font-size:14px;color:#aaaaaa;line-height:1.5;">Your Urban Hairplaza Admin Dashboard password was changed successfully on ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}.</p>
+          <div style="margin-top:20px;padding:12px 16px;background:#181818;border-left:3px solid #27ae60;font-size:13px;color:#27ae60;">
+            ✓ Your credentials are now updated.
+          </div>
+          <p style="font-size:12px;color:#777777;margin-top:24px;">If you did not perform this change, please contact your systems administrator or restore access immediately.</p>
+        </div>
+      </div>
+    `;
+
+    sendRealEmail(adminEmail, '🛡️ Security Alert: Admin Password Updated - Urban Hairplaza', alertHtml).catch(err => {
+      console.error('[Admin Auth] Error dispatching password update alert:', err.message);
+    });
+
+    return res.json({ success: true, message: 'Password updated successfully! You can now log in with your new password.' });
+  } catch (err) {
+    console.error('[Admin Reset Password Error]', err);
+    res.status(500).json({ success: false, error: 'Internal server error resetting password.' });
+  }
 });
 
 app.get('/api/admin/me', (req, res) => {

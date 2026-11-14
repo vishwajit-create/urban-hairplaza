@@ -27,7 +27,8 @@ const FILES = {
   parlour_services: path.join(DATA_DIR, 'parlour_services.json'),
   parlour_staff:    path.join(DATA_DIR, 'parlour_staff.json'),
   parlour_bookings: path.join(DATA_DIR, 'parlour_bookings.json'),
-  parlour_owners:   path.join(DATA_DIR, 'parlour_owners.json')
+  parlour_owners:   path.join(DATA_DIR, 'parlour_owners.json'),
+  admin_auth:       path.join(DATA_DIR, 'admin_auth.json')
 };
 
 // â”€â”€ JSON FILE HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1862,6 +1863,68 @@ async function updateParlourOwner(id, updates) {
   return all[idx];
 }
 
+// ── ADMIN 2FA & AUTH TOKEN HELPERS ──────────────────────────────────────
+function readAdminAuthData() {
+  try {
+    if (!fs.existsSync(FILES.admin_auth)) return { password: null, tokens: [] };
+    const raw = JSON.parse(fs.readFileSync(FILES.admin_auth, 'utf8'));
+    return {
+      password: raw.password || null,
+      tokens: Array.isArray(raw.tokens) ? raw.tokens : []
+    };
+  } catch (e) {
+    return { password: null, tokens: [] };
+  }
+}
+
+function writeAdminAuthData(data) {
+  try {
+    fs.writeFileSync(FILES.admin_auth, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error('[DB] writeAdminAuthData error:', e.message);
+    return false;
+  }
+}
+
+async function getAdminPassword() {
+  const data = readAdminAuthData();
+  if (data.password) return data.password;
+  return (process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS || 'urban@hairplaza2025').replace(/^['"]|['"]$/g, '').trim();
+}
+
+async function setAdminPassword(newPassword) {
+  const data = readAdminAuthData();
+  data.password = String(newPassword).trim();
+  data.updatedAt = new Date().toISOString();
+  return writeAdminAuthData(data);
+}
+
+async function saveMagicToken(token, payload, ttlMinutes = 15) {
+  const data = readAdminAuthData();
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
+  // Filter out expired
+  data.tokens = data.tokens.filter(t => new Date(t.expiresAt) > new Date());
+  data.tokens.push({
+    token: String(token).trim(),
+    payload,
+    expiresAt,
+    createdAt: new Date().toISOString()
+  });
+  return writeAdminAuthData(data);
+}
+
+async function verifyAndConsumeMagicToken(token) {
+  const cleanToken = String(token).trim();
+  const data = readAdminAuthData();
+  const now = new Date();
+  const idx = data.tokens.findIndex(t => t.token === cleanToken && new Date(t.expiresAt) > now);
+  if (idx === -1) return null;
+  const match = data.tokens[idx];
+  data.tokens.splice(idx, 1);
+  writeAdminAuthData(data);
+  return match.payload;
+}
 
 module.exports = {
   // Beauty Parlour Exports
@@ -1925,5 +1988,9 @@ module.exports = {
   saveStaff,
   deleteStaff,
   getServicesBySalon,
-  getBookingsBySalon
+  getBookingsBySalon,
+  getAdminPassword,
+  setAdminPassword,
+  saveMagicToken,
+  verifyAndConsumeMagicToken
 };
