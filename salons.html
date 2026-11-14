@@ -372,7 +372,7 @@
         return `
           <div class="salon-card">
             <div class="salon-card-img-wrap">
-              <img src="${imgUrl}" alt="${escapeHtml(salon.name)}" class="salon-card-img" onerror="this.onerror=null; this.src='images/gallery_shop_interior.png';">
+              <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(salon.name)}" class="salon-card-img" onerror="this.onerror=null; this.src='images/gallery_shop_interior.png';">
               ${isFeatured ? '<span class="salon-badge-featured">Flagship</span>' : ''}
               <span class="salon-badge-verified">
                 <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>

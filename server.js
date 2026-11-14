@@ -30,7 +30,38 @@ function safeCompare(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-// â”€â”€ STATELESS AUTH TOKEN (HMAC SHA-256) FOR SERVERLESS / MULTI-INSTANCE RESILIENCE â”€â”€
+// SEC-04: Production environment security advisories
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'urban-hairplaza-secret-2026') {
+    console.warn('[SECURITY ALERT] Running in production with default or unset SESSION_SECRET. Set a unique secret in environment variables.');
+  }
+  if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD === 'urban@hairplaza2025') {
+    console.warn('[SECURITY ALERT] Running in production with default ADMIN_PASSWORD. Set a unique password in environment variables.');
+  }
+}
+
+// SEC-05: Secure password hashing & verification (scrypt with backward compatibility)
+function hashPassword(plainPassword) {
+  if (!plainPassword) return '';
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(plainPassword, salt, 64).toString('hex');
+  return `scrypt:${salt}:${hash}`;
+}
+
+function verifyPassword(plainPassword, storedHash) {
+  if (!storedHash || !plainPassword) return false;
+  if (storedHash.startsWith('scrypt:')) {
+    const parts = storedHash.split(':');
+    if (parts.length !== 3) return false;
+    const [, salt, hash] = parts;
+    const keyBuffer = Buffer.from(hash, 'hex');
+    const derivedKey = crypto.scryptSync(plainPassword, salt, 64);
+    if (keyBuffer.length !== derivedKey.length) return false;
+    return crypto.timingSafeEqual(keyBuffer, derivedKey);
+  }
+  return storedHash === plainPassword;
+}
+
 const AUTH_SECRET = process.env.SESSION_SECRET || 'urban-hairplaza-secret-2026';
 
 function createAuthToken(payload) {
@@ -192,6 +223,17 @@ app.use((req, res, next) => {
 
 // Lightweight in-memory rate limiter for abuse prevention
 const rateLimitStore = new Map();
+
+// SEC-11: Periodic TTL cleanup prevents unbounded memory growth
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore.entries()) {
+    if (now > record.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
 function rateLimit({ windowMs = 60000, max = 20, message = 'Too many requests. Please slow down.' }) {
   return (req, res, next) => {
     const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
@@ -216,8 +258,34 @@ function rateLimit({ windowMs = 60000, max = 20, message = 'Too many requests. P
 }
 
 // â”€â”€ MIDDLEWARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({
+  limit: '2mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// SEC-12: Standard zero-dependency cookie parser middleware so req.cookies is populated reliably
+app.use((req, res, next) => {
+  req.cookies = {};
+  const cookieHeader = req.headers.cookie;
+  if (cookieHeader) {
+    cookieHeader.split(';').forEach(c => {
+      const idx = c.indexOf('=');
+      if (idx !== -1) {
+        const key = c.slice(0, idx).trim();
+        const val = c.slice(idx + 1).trim();
+        try {
+          req.cookies[key] = decodeURIComponent(val);
+        } catch {
+          req.cookies[key] = val;
+        }
+      }
+    });
+  }
+  next();
+});
 
 app.set('trust proxy', 1);
 
@@ -233,6 +301,24 @@ app.use(session({
     maxAge: 30 * 24 * 60 * 60 * 1000
   }
 }));
+
+// SEC-01: Disallow direct static access to server files, database JSON, and environment configs
+app.use((req, res, next) => {
+  const cleanPath = decodeURIComponent(req.path).toLowerCase();
+  if (
+    cleanPath.startsWith('/data') ||
+    cleanPath.startsWith('/.git') ||
+    cleanPath.includes('.env') ||
+    cleanPath.endsWith('.json') ||
+    cleanPath === '/server.js' ||
+    cleanPath === '/db.js' ||
+    cleanPath === '/package.json' ||
+    cleanPath === '/package-lock.json'
+  ) {
+    return res.status(403).json({ error: 'Access forbidden.' });
+  }
+  next();
+});
 
 // Static files
 app.use(express.static(path.join(__dirname)));
@@ -1144,7 +1230,7 @@ app.post('/api/salons/register', rateLimit({ windowMs: 60000, max: 8, message: '
       name: ownerName.trim(),
       phone: cleanPhone,
       email: (email || '').trim().toLowerCase(),
-      passwordHash: password || 'owner123',
+      passwordHash: hashPassword(password || 'owner123'),
       salonId: salonId,
       status: 'pending',
       createdAt: new Date().toISOString()
@@ -1207,8 +1293,13 @@ app.post('/api/owner/login', rateLimit({ windowMs: 60000, max: 10, message: 'Too
       return res.status(401).json({ error: 'No salon owner account found with these credentials.' });
     }
 
-    if (owner.passwordHash && owner.passwordHash !== password.trim()) {
+    if (owner.passwordHash && !verifyPassword(password.trim(), owner.passwordHash)) {
       return res.status(401).json({ error: 'Incorrect password. Please try again.' });
+    }
+
+    // Transparently upgrade legacy plaintext password to secure scrypt hash
+    if (owner.passwordHash && !owner.passwordHash.startsWith('scrypt:')) {
+      db.updateOwner(owner.id, { passwordHash: hashPassword(password.trim()) }).catch(() => {});
     }
 
     const salon = await db.getSalonById(owner.salonId);
@@ -1628,8 +1719,8 @@ app.get('/api/user/me', (req, res) => {
   res.json({ loggedIn: false, user: null });
 });
 
-// GET /api/textbee/status â€” Diagnostic endpoint to check Textbee configuration
-app.get('/api/textbee/status', async (req, res) => {
+// GET /api/textbee/status ── Diagnostic endpoint to check Textbee configuration (Restricted to Admin)
+app.get('/api/textbee/status', requireAdmin, async (req, res) => {
   const queryKey = typeof req.query.apiKey === 'string' ? req.query.apiKey.trim() : '';
   const rawKey = queryKey || (process.env.TEXTBEE_API_KEY || process.env.TEXTBEE_KEY || process.env.TEXT_BEE_API_KEY || '').trim();
   const textbeeKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
@@ -2242,7 +2333,7 @@ app.post('/api/payment-failed', async (req, res) => {
   }
 });
 
-// GET /api/booking-details/:id â€” Safe booking details for payment retry page
+// GET /api/booking-details/:id ── Safe booking details for payment retry page
 app.get('/api/booking-details/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -2251,19 +2342,42 @@ app.get('/api/booking-details/:id', async (req, res) => {
       return res.status(404).json({ error: 'Appointment not found.' });
     }
 
+    // SEC-09: Authorization check for full PII vs masked view
+    const isAdmin = Boolean(req.session?.isAdmin);
+    const ownerToken = req.headers['x-owner-token'] || req.cookies?.uhp_owner_token;
+    const verifiedOwner = ownerToken ? verifyAuthToken(ownerToken) : null;
+    const ownerSalonId = req.session?.owner?.salonId || verifiedOwner?.salonId;
+    const isAuthorized = isAdmin || Boolean(ownerSalonId && booking.salonId && String(ownerSalonId) === String(booking.salonId));
+
+    const phoneStr = (booking.phone || '').trim();
+    const cleanDigits = phoneStr.replace(/\D/g, '');
+    const maskedPhone = isAuthorized
+      ? phoneStr
+      : (cleanDigits.length >= 6
+          ? `${cleanDigits.slice(0, 2)}******${cleanDigits.slice(-4)}`
+          : phoneStr);
+
+    const safeAddress = isAuthorized
+      ? (booking.address || '')
+      : (booking.type === 'home' ? 'Home Visit (Address on file)' : (booking.address || 'In-Shop Salon'));
+
+    const safeEmail = isAuthorized
+      ? (booking.email || '')
+      : ((booking.email || '').replace(/(^.{2})(.*)(@.*$)/, '$1***$3'));
+
     res.json({
       success: true,
       booking: {
         id: booking.id,
         name: booking.name,
-        phone: booking.phone,
-        email: booking.email,
+        phone: maskedPhone,
+        email: safeEmail,
         service: booking.service,
         barber: booking.barber,
         date: booking.date,
         time: booking.time,
         type: booking.type,
-        address: booking.address,
+        address: safeAddress,
         price: booking.price,
         duration: booking.duration,
         advancePaid: booking.advancePaid || 0,
@@ -2382,9 +2496,30 @@ app.post('/api/retry-payment', rateLimit({ windowMs: 60000, max: 15, message: 'T
   }
 });
 
-// POST /api/cashfree-webhook â€” Handle asynchronous Cashfree payment notifications
+// POST /api/cashfree-webhook ── Handle asynchronous Cashfree payment notifications
 app.post('/api/cashfree-webhook', async (req, res) => {
   try {
+    // SEC-02: Cryptographic signature verification for Cashfree webhooks
+    const signature = req.headers['x-webhook-signature'];
+    const timestamp = req.headers['x-webhook-timestamp'];
+    const secretKey = (process.env.CASHFREE_SECRET_KEY || '').trim();
+
+    if (secretKey && process.env.NODE_ENV === 'production') {
+      if (!signature || !timestamp) {
+        console.warn('[CASHFREE-WEBHOOK] Rejected: Missing signature or timestamp headers');
+        return res.status(401).json({ error: 'Missing webhook signature headers' });
+      }
+      const rawPayload = req.rawBody || JSON.stringify(req.body);
+      const computedPayload = timestamp + rawPayload;
+      const expectedSig = crypto.createHmac('sha256', secretKey).update(computedPayload).digest('base64');
+      const sigBuf = Buffer.from(signature);
+      const expBuf = Buffer.from(expectedSig);
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+        console.warn('[CASHFREE-WEBHOOK] Rejected: Invalid webhook HMAC signature');
+        return res.status(401).json({ error: 'Invalid webhook signature' });
+      }
+    }
+
     const data = req.body?.data || req.body;
     const order = data?.order || data;
     const orderId = order?.order_id || req.body?.order_id;
@@ -3204,7 +3339,7 @@ app.post('/api/parlour/register', async (req, res) => {
       name: ownerName.trim(),
       phone: cleanPhone,
       email: (email || '').trim(),
-      passwordHash: password,
+      passwordHash: hashPassword(password),
       status: 'pending'
     });
 
@@ -3246,8 +3381,13 @@ app.post('/api/parlour/owner/login', async (req, res) => {
       return res.status(401).json({ error: 'No beauty parlour owner account found with these credentials.' });
     }
 
-    if (owner.passwordHash !== password) {
+    if (!verifyPassword(password, owner.passwordHash)) {
       return res.status(401).json({ error: 'Incorrect password.' });
+    }
+
+    // Transparently upgrade legacy plaintext password to secure scrypt hash
+    if (owner.passwordHash && !owner.passwordHash.startsWith('scrypt:')) {
+      db.saveParlourOwner({ ...owner, passwordHash: hashPassword(password) }).catch(() => {});
     }
 
     const token = createAuthToken({
@@ -3540,11 +3680,17 @@ if (!process.env.VERCEL) {
 }
 
 
-// â”€â”€ WHATSAPP REMINDERS & NOTIFICATION ENDPOINTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── WHATSAPP REMINDERS & NOTIFICATION ENDPOINTS ────────────────────────────
 
-// GET /api/cron/reminders â€” Scheduled runner to trigger 2-hour pre-appointment WhatsApp reminders
+// GET /api/cron/reminders ── Scheduled runner to trigger 2-hour pre-appointment WhatsApp reminders
 app.get('/api/cron/reminders', async (req, res) => {
   try {
+    const cronKey = req.headers['x-cron-key'] || req.query.cronKey || req.query.key;
+    const configuredKey = process.env.CRON_SECRET || process.env.CRON_KEY;
+    if (configuredKey && cronKey !== configuredKey) {
+      return res.status(401).json({ error: 'Unauthorized cron runner trigger.' });
+    }
+
     const result = await checkAndSendUpcomingReminders();
     res.json({
       success: true,
@@ -3557,13 +3703,27 @@ app.get('/api/cron/reminders', async (req, res) => {
   }
 });
 
-// POST /api/appointments/:id/send-reminder â€” Manual WhatsApp nudge by Owner or Admin
+// POST /api/appointments/:id/send-reminder ── Manual WhatsApp nudge by Owner or Admin
 app.post('/api/appointments/:id/send-reminder', async (req, res) => {
   try {
+    // SEC-06: Verify authentication first to prevent unauthenticated enumeration and spam
+    const isAdmin = Boolean(req.session?.isAdmin);
+    const ownerToken = req.headers['x-owner-token'] || req.cookies?.uhp_owner_token;
+    const verifiedOwner = ownerToken ? verifyAuthToken(ownerToken) : null;
+    const ownerSalonId = req.session?.owner?.salonId || verifiedOwner?.salonId;
+
+    if (!isAdmin && !ownerSalonId) {
+      return res.status(401).json({ error: 'Unauthorized. You must be an administrator or salon owner to send reminders.' });
+    }
+
     const bookingId = req.params.id;
     const booking = await db.getBookingById(bookingId);
     if (!booking) {
       return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    if (!isAdmin && booking.salonId && String(ownerSalonId) !== String(booking.salonId)) {
+      return res.status(403).json({ error: 'Forbidden. You can only send reminders for your own salon appointments.' });
     }
 
     let salon = null;
@@ -3572,7 +3732,12 @@ app.post('/api/appointments/:id/send-reminder', async (req, res) => {
     }
 
     const { customMessage } = req.body || {};
-    const message = customMessage || buildReminderWhatsApp(booking, salon, 'soon');
+    // Sanitize any custom text (strip HTML tags, limit length) to prevent arbitrary phishing links
+    let sanitizedCustom = null;
+    if (typeof customMessage === 'string' && customMessage.trim().length > 0) {
+      sanitizedCustom = customMessage.trim().slice(0, 500).replace(/[<>]/g, '');
+    }
+    const message = sanitizedCustom || buildReminderWhatsApp(booking, salon, 'soon');
 
     const result = await sendWhatsAppNotification(message, booking.phone);
     if (!result.success) {

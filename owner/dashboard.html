@@ -671,6 +671,16 @@
       if (target) target.classList.add('active');
     }
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     async function loadStats() {
       try {
         const res = await ownerFetch('/api/owner/stats');
@@ -711,42 +721,42 @@
           return `
             <tr>
               <td>
-                <span style="font-family:'DM Mono', monospace; font-weight:700; color:var(--gold);">#${b.id}</span>
+                <span style="font-family:'DM Mono', monospace; font-weight:700; color:var(--gold);">#${escapeHtml(b.id)}</span>
               </td>
               <td>
-                <div style="font-weight:600; color:#fff;">${b.name}</div>
-                <div style="font-size:0.8rem; color:var(--muted);">📞 <a href="tel:${b.phone}" style="color:var(--text);">${b.phone}</a></div>
+                <div style="font-weight:600; color:#fff;">${escapeHtml(b.name)}</div>
+                <div style="font-size:0.8rem; color:var(--muted);">📞 <a href="tel:${escapeHtml(b.phone)}" style="color:var(--text);">${escapeHtml(b.phone)}</a></div>
               </td>
               <td>
-                <div style="font-weight:600;">${b.service}</div>
-                <div style="font-size:0.8rem; color:var(--muted);">Stylist: ${b.barber || 'Assigned'}</div>
+                <div style="font-weight:600;">${escapeHtml(b.service)}</div>
+                <div style="font-size:0.8rem; color:var(--muted);">Stylist: ${escapeHtml(b.barber || 'Assigned')}</div>
               </td>
               <td>
-                <div>📅 ${b.date}</div>
-                <div style="font-size:0.8rem; color:var(--gold);">⏰ ${b.time}</div>
+                <div>📅 ${escapeHtml(b.date)}</div>
+                <div style="font-size:0.8rem; color:var(--gold);">⏰ ${escapeHtml(b.time)}</div>
               </td>
               <td>
-                <div>₹${b.price} Total</div>
-                <div style="font-size:0.8rem; color:var(--success);">₹${b.advancePaid || 0} Adv</div>
+                <div>₹${Number(b.price) || 0} Total</div>
+                <div style="font-size:0.8rem; color:var(--success);">₹${Number(b.advancePaid) || 0} Adv</div>
               </td>
               <td>
                 <span style="color:${badgeColor}; font-weight:700; text-transform:uppercase; font-size:0.75rem;">
-                  ${b.status}
+                  ${escapeHtml(b.status)}
                 </span>
               </td>
               <td>
                 <div style="display:flex; gap:6px;">
                   ${!isCompleted && !isCancelled ? `
-                    <button onclick="updateBookingStatus('${b.id}', 'completed')" class="btn btn-sm btn-ghost" title="Mark Completed">✓ Done</button>
+                    <button onclick="updateBookingStatus('${escapeHtml(b.id)}', 'completed')" class="btn btn-sm btn-ghost" title="Mark Completed">✓ Done</button>
                   ` : ''}
                   ${!isConfirmed && !isCompleted && !isCancelled ? `
-                    <button onclick="updateBookingStatus('${b.id}', 'confirmed')" class="btn btn-sm btn-gold">Confirm</button>
+                    <button onclick="updateBookingStatus('${escapeHtml(b.id)}', 'confirmed')" class="btn btn-sm btn-gold">Confirm</button>
                   ` : ''}
                   ${!isCancelled ? `
-                    <button onclick="updateBookingStatus('${b.id}', 'cancelled')" class="btn btn-sm btn-danger">Cancel</button>
+                    <button onclick="updateBookingStatus('${escapeHtml(b.id)}', 'cancelled')" class="btn btn-sm btn-danger">Cancel</button>
                   ` : ''}
                   ${cleanPhone ? `
-                    ${b.reminderSentAt ? '<span style="font-size:0.75rem; color:#34D399; font-weight:600; padding:4px 8px; border:1px solid rgba(52,211,153,0.3); border-radius:4px;">✓ Reminded</span>' : (isConfirmed ? '<button onclick="sendManualReminder(\'' + b.id + '\')" class="btn btn-sm btn-ghost" style="color:#34D399; border:1px solid rgba(52,211,153,0.25);">💬 Remind</button>' : '')}
+                    ${b.reminderSentAt ? '<span style="font-size:0.75rem; color:#34D399; font-weight:600; padding:4px 8px; border:1px solid rgba(52,211,153,0.3); border-radius:4px;">✓ Reminded</span>' : (isConfirmed ? '<button onclick="sendManualReminder(\'' + escapeHtml(b.id) + '\')" class="btn btn-sm btn-ghost" style="color:#34D399; border:1px solid rgba(52,211,153,0.25);">💬 Remind</button>' : '')}
                   <a href="https://wa.me/91${cleanPhone}" target="_blank" class="btn btn-sm btn-ghost" title="Chat on WhatsApp">💬 Chat</a>
                   ` : ''}
                 </div>
@@ -811,12 +821,12 @@
 
         tbody.innerHTML = services.map(s => `
           <tr>
-            <td style="font-weight:600; color:#fff;">${s.icon || '✂️'} ${s.name}</td>
-            <td>${s.category || 'Haircut'}</td>
-            <td>${s.duration || 30} mins</td>
-            <td style="font-weight:700; color:var(--gold);">₹${s.price}</td>
+            <td style="font-weight:600; color:#fff;">${escapeHtml(s.icon || '✂️')} ${escapeHtml(s.name)}</td>
+            <td>${escapeHtml(s.category || 'Haircut')}</td>
+            <td>${Number(s.duration) || 30} mins</td>
+            <td style="font-weight:700; color:var(--gold);">₹${Number(s.price) || 0}</td>
             <td>
-              <button onclick="deleteService('${s.id}')" class="btn btn-sm btn-danger">Delete</button>
+              <button onclick="deleteService('${escapeHtml(s.id)}')" class="btn btn-sm btn-danger">Delete</button>
             </td>
           </tr>
         `).join('');
@@ -838,12 +848,12 @@
 
         tbody.innerHTML = staff.map(st => `
           <tr>
-            <td style="font-weight:600; color:#fff;">💈 ${st.name}</td>
-            <td>${st.role || 'Barber'}</td>
-            <td>${st.experience || '3+ Years'}</td>
+            <td style="font-weight:600; color:#fff;">💈 ${escapeHtml(st.name)}</td>
+            <td>${escapeHtml(st.role || 'Barber')}</td>
+            <td>${escapeHtml(st.experience || '3+ Years')}</td>
             <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">AVAILABLE</span></td>
             <td>
-              <button onclick="deleteStaff('${st.id}')" class="btn btn-sm btn-danger">Delete</button>
+              <button onclick="deleteStaff('${escapeHtml(st.id)}')" class="btn btn-sm btn-danger">Delete</button>
             </td>
           </tr>
         `).join('');
